@@ -110,13 +110,13 @@ body {
     border-radius: 18px;
     text-align: center;
     padding: 10px;
-    margin-left: 40px;
+    margin-left: 70px;
 }
 .period{
     color: var(--text-color);
     font-family: var(--font-family);
     float: right;
-    margin-right: 40px;
+    margin-right: 70px;
     background: var(--text-background);
     padding: 0px 20px 0px 20px;
     border-radius: 18px;
