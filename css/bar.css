@@ -110,13 +110,13 @@ body {
     border-radius: 18px;
     text-align: center;
     padding: 10px;
-    margin-left: 40px;
+    margin-left: 60px;
 }
 .period{
     color: var(--text-color);
     font-family: var(--font-family);
     float: right;
-    margin-right: 40px;
+    margin-right: 60px;
     background: var(--text-background);
     padding: 0px 20px 0px 20px;
     border-radius: 18px;
@@ -178,7 +178,7 @@ body {
 #clock {
     color: var(--text-color);
     font-family: var(--clock-font-family);
-    font-size: 5vw;
+    font-size: 6vw;
     margin: 0;
 }
 
@@ -199,7 +199,7 @@ body {
 }
 
 #img {
-    height: 5vw;
+    height: 6vw;
 }
 
 .logo_container {
