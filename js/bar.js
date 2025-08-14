@@ -352,9 +352,6 @@ function reloadPage(hour) {
 
 window.addEventListener("DOMContentLoaded", getSchedules);
 setInterval(getSchedules, 1000 * 60 * 60 * 24);
-reloadPage(6);
-reloadPage(7);
-reloadPage(14);
 
 const devLink =
     "https://script.google.com/macros/s/AKfycbwXkuEQVGKb4jCzP_fyWszaHTQ5cu3GQ1t_t8oOnZxthUvOA46gDeL7i5JqO2zKQ1dOFA/exec";
