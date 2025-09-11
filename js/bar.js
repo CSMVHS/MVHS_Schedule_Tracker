@@ -351,7 +351,7 @@ function reloadPage(hour) {
 }
 
 reloadPage(6);
-reload(7);
+reloadPage(7);
 
 window.addEventListener("DOMContentLoaded", getSchedules);
 setInterval(getSchedules, 1000 * 60 * 60 * 24);
