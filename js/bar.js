@@ -275,25 +275,17 @@ function dateSchedule() {
 
         case 5: //Friday
          
-        //     schedule[0] = new Schedule(
-        //       "7:00;Happy Friday!;7:30,7:30;Teacher Office Hours;7:45,7:45;Period 1;8:36,8:36;Passing Period;8:41,8:41;Period 2;9:32,9:32;Passing Period;9:37,9:37;Period 3;10:28,10:28;Passing Period;10:33,10:33;Period 4;11:24,11:24;A Lunch;12:02,12:02;Passing Period;12:07,12:07;Period 5;12:58,12:58;Passing Period;13:03,13:03;Period 6;13:54, 13:54;Passing Period;13:59,13:59;Period 7;14:50",
+            schedule[0] = new Schedule(
+              "7:00;Happy Friday!;7:30,7:30;Teacher Office Hours;7:45,7:45;Period 1;8:36,8:36;Passing Period;8:41,8:41;Period 2;9:32,9:32;Passing Period;9:37,9:37;Period 3;10:28,10:28;Passing Period;10:33,10:33;Period 4;11:24,11:24;A Lunch;12:02,12:02;Passing Period;12:07,12:07;Period 5;12:58,12:58;Passing Period;13:03,13:03;Period 6;13:54, 13:54;Passing Period;13:59,13:59;Period 7;14:50",
     
-        //     );
-        //   schedule[1] = new Schedule(
-        //         "11:24;Passing Period;11:29,11:29;Period 5;12:20,12:20;B Lunch;12:58",
-        //     );
-        //    break;
+            );
+          schedule[1] = new Schedule(
+                "11:24;Passing Period;11:29,11:29;Period 5;12:20,12:20;B Lunch;12:58",
+            );
+           break;
 
 
 
-        // delete this after hoco
-        schedule[0] = new Schedule(
-            "7:00;Good Morning!;7:30,7:30;Teacher Office Hours;7:45,7:45;Period 1;9:04,9:04;Passing Period;9:09,9:09;Period 2;10:28,10:28;Passing Period;10:33,10:33;Assembly;11:33,11:33;A Lunch;12:02,12:02;Passing Period;12:07,12:07;Period 3;13:26,13:26;Passing Period;13:31,13:31;Period 4;14:50",
-        );
-        schedule[1] = new Schedule(
-            "11:33;Passing Period;11:38,11:38;Period 3;12:57,12:57;B Lunch;13:26,13:26;Passing Period;13:31",
-        );
-        break;
 
 
 
