@@ -257,7 +257,7 @@ function dateSchedule() {
         //    );
 
         schedule[0] = new Schedule(
-            "7:00;Good Morning!;7:45,7:45;Testing;10:30,10:30;Lunch;11:05,11:05;Go to 1st Period;11:10,11:10;Period 1;11:37,11:37;Period 2;12:09,12:09;Period 3;12:41,12:41;Period 4;13:13,13:13;Period 5;13:45,13:45;Period 6;14:17,14:17;Period 7;14:50",
+            "7:00;Good Morning!;7:45,7:45;Testing;10:30,10:30;Lunch;11:05,11:05;Go to 1st Period;11:10,11:10;Period 1;11:37,11:37;Period 2;12:09,12:09;Period 3;12:41,12:41;Period 4;13:13,13:13;Period 5;13:45,13:45;Period 6;14:17,14:17;Passing Period;14:22,14:22;Period 7 (28 min);14:50",
         );
         schedule[1] = new Schedule(
             "8:20;(Placeholder);8:22",
