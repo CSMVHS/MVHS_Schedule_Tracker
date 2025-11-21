@@ -295,3 +295,14 @@ p#identification {
 	color: white;
 	font-family: 'DM Mono', monospace;
 }
+
+
+p.total-time-remaining {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	margin: 2px;
+	font-size: 14px;
+	color: white;
+	font-family: 'DM Sans', sans-serif;
+}
