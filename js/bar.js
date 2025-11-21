@@ -593,3 +593,30 @@ document.addEventListener("DOMContentLoaded", () => {
 })
 
 // padding: top/bottom 16, left/right 28
+
+function updateTotalTimeRemaining() {
+    const now = new Date();
+    const endOfDay = new Date();
+    
+    // Set end time to 14:50:00
+    endOfDay.setHours(14, 50, 0, 0);
+
+    const element = document.querySelector("p.total-time-remaining");
+    if (!element) return;
+
+    const diff = endOfDay - now;
+
+    if (diff <= 0) {
+        element.textContent = "0h 0m";
+        return;
+    }
+
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+    element.textContent = `${hours}h ${minutes}m`;
+}
+
+// Run immediately on load and then every second
+window.addEventListener("DOMContentLoaded", updateTotalTimeRemaining);
+setInterval(updateTotalTimeRemaining, 1000);
