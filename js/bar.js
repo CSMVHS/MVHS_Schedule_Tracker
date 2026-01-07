@@ -277,16 +277,12 @@ function dateSchedule() {
 
 
     case 4: //Thursday
-        // schedule[0] = new Schedule(
-        //     "7:00;Good Morning!;7:30,7:30;Teacher PLC;8:05,8:05;Period 5;9:39,9:39;Homeroom;9:49,9:49;Eagle Time;10:56,10:56;A Lunch;11:32,11:32;Passing Period;11:37,11:37;Period 6;13:11,13:11;Passing Period;13:16,13:16;Period 7;14:50"
-        // );
-        // schedule[1] = new Schedule(
-        //     "10:56;Passing Period;11:01,11:01;Period 6;12:35,12:35;B Lunch;13:11"
-        // );
-
-        // FINALS
-        schedule[0] = new Schedule("7:00;Good Morning!;7:30,7:30;Teacher Office Hours;7:45,7:45;Period 7;9:15,9:15;Homeroom;14:50");
-        schedule[1] = new Schedule("7:00;...;7:01"); // LEAVE THIS ALONE
+         schedule[0] = new Schedule(
+             "7:00;Good Morning!;7:30,7:30;Teacher PLC;8:05,8:05;Period 5;9:39,9:39;Homeroom;9:49,9:49;Eagle Time;10:56,10:56;A Lunch;11:32,11:32;Passing Period;11:37,11:37;Period 6;13:11,13:11;Passing Period;13:16,13:16;Period 7;14:50"
+         );
+        schedule[1] = new Schedule(
+            "10:56;Passing Period;11:01,11:01;Period 6;12:35,12:35;B Lunch;13:11"
+         );
 
         // DELAY
         // schedule[0] = new Schedule("7:00;Good Morning!;9:00,9:00;Eagle Time;9:30,9:30;Passing Period;9:35,9:35;Period 5;11:05,11:05;A Lunch;11:40,11:40;Passing Period;11:45,11:45;Period 6;13:15,13:15;Passing Period;13:20,13:20;Period 7;14:50");
