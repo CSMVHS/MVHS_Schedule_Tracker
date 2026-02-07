@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MVHS Admin Dashboard</title>
+    <link rel="stylesheet" href="admin.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,1..1000&family=Azeret+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="login-container" class="center-container">
+        <div class="card">
+            <h1>Admin Login</h1>
+            <input type="email" id="admin-email" placeholder="Enter Admin Email">
+            <input type="password" id="admin-password" placeholder="Enter Password">
+            <button id="login-btn">Login</button>
+            <p id="login-error" class="error"></p>
+        </div>
+    </div>
+
+    <div id="admin-dashboard" class="dashboard-container" style="display: none;">
+        <header>
+            <h1>Schedule Tracker Admin</h1>
+            <button id="logout-btn">Logout</button>
+        </header>
+
+        <main>
+            <section class="global-controls card">
+                <h2>Global Actions</h2>
+                <div class="btn-group">
+                    <button id="refresh-all-btn" class="btn-warning">Refresh All Displays</button>
+                    <div class="global-setting-item">
+                        <label>Global Theme:</label>
+                        <div class="color-pickers">
+                            <div class="picker-group">
+                                <span>BG</span>
+                                <input type="color" id="input-global-bg" value="#00401e">
+                                <button class="btn-reset" data-target="input-global-bg" data-default="#00401e">Reset</button>
+                            </div>
+                            <div class="picker-group">
+                                <span>Bar</span>
+                                <input type="color" id="input-global-bar" value="#b1953a">
+                                <button class="btn-reset" data-target="input-global-bar" data-default="#b1953a">Reset</button>
+                            </div>
+                        </div>
+                        <button id="save-global-theme-btn">Apply to All</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="device-list-container">
+                <h2>Connected Devices (<span id="device-count">0</span>)</h2>
+                <div id="device-list" class="device-grid">
+                    <!-- Devices will be injected here -->
+                    <p class="empty-msg">Waiting for devices to connect...</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="control-modal" class="modal" style="display: none;">
+        <div class="modal-content card">
+            <span class="close-btn">&times;</span>
+            <h2 id="modal-device-name">Device Name</h2>
+            <p class="device-id-sub">ID: <span id="modal-device-id">XXXXXX</span></p>
+
+            <div class="control-section">
+                <h3>General</h3>
+                <label>Display Name:</label>
+                <input type="text" id="input-name" placeholder="Hallway TV 1">
+                <button id="save-name-btn">Save Name</button>
+            </div>
+
+            <hr>
+
+            <div class="control-section">
+                <h3>Settings</h3>
+                <div class="setting-item">
+                    <label>Background Color:</label>
+                    <div class="input-with-reset">
+                        <input type="color" id="input-bg-color" value="#00401e">
+                        <button class="btn-reset" data-target="input-bg-color" data-default="#00401e">Reset</button>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <label>Progress Bar Color:</label>
+                    <div class="input-with-reset">
+                        <input type="color" id="input-bar-color" value="#b1953a">
+                        <button class="btn-reset" data-target="input-bar-color" data-default="#b1953a">Reset</button>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <label>Time Offset (Minutes):</label>
+                    <input type="number" id="input-offset" value="0">
+                </div>
+                <button id="save-settings-btn">Save Settings</button>
+            </div>
+
+            <hr>
+
+            <div class="control-section">
+                <h3>Override</h3>
+                <label>Overlay Text:</label>
+                <textarea id="input-override-text" placeholder="Enter message for full-screen override"></textarea>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="input-override-active">
+                    <label for="input-override-active">Activate Full Screen Override</label>
+                </div>
+                <button id="save-override-btn">Update Override</button>
+            </div>
+
+            <hr>
+
+            <div class="control-section">
+                <h3>Metadata</h3>
+                <div class="metadata-grid">
+                    <p><span>IP Address:</span> <span id="modal-ip">---</span></p>
+                    <p><span>Browser:</span> <span id="modal-browser">---</span></p>
+                    <p><span>First Seen:</span> <span id="modal-first-seen">---</span></p>
+                    <p><span>Uptime:</span> <span id="modal-uptime">---</span></p>
+                </div>
+            </div>
+
+            <hr>
+
+            <div class="control-section">
+                <h3>Actions</h3>
+                <div class="btn-group">
+                    <button id="refresh-device-btn" class="btn-warning">Refresh Device</button>
+                    <button id="delete-device-btn" class="btn-danger">Delete Device</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>

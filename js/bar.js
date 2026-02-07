@@ -1,637 +1,487 @@
-var cancelProgress = "norm";
-let persistentBack = localStorage.getItem("persistentBack");
-if (!persistentBack) {
-    localStorage.setItem("persistentBack", "false");
-}
+/**
+ * MVHS Schedule Tracker
+ * Optimized & Refactored for Hallway TV Display
+ */
 
-class ProgressBar {
-    constructor(bar, statusText, container, title, schedule) {
-        this.bar = bar;
-        this.container = container;
-        this.timeLeftStatus = statusText;
-        this.title = title;
-        this.schedule = schedule;
+const CONFIG = {
+    WEATHER_API_KEY: "7a08aa9c10a1a7edae637fa85fc3ecae",
+    CITY: "Highlands Ranch, CO",
+    LAT: 39.5481,
+    LON: -104.9739,
+    SCHOOL_END_TIME: "14:50",
+    FIREBASE: {
+        apiKey: "AIzaSyDbnzWXHsqr6rOXEq99FMYyJEgVp5QSUAo",
+        authDomain: "mvhs-st.firebaseapp.com",
+        databaseURL: "https://mvhs-st-default-rtdb.firebaseio.com",
+        projectId: "mvhs-st",
+        storageBucket: "mvhs-st.firebasestorage.app",
+        messagingSenderId: "156783766681",
+        appId: "1:156783766681:web:ee2d859d4372859a909c08"
+    }
+};
+
+class RemoteManager {
+    constructor(tracker) {
+        this.tracker = tracker;
+        this.id = this.getOrCreateId();
+        this.firstSeen = this.getOrCreateFirstSeen();
+        this.sessionStart = Date.now();
+        this.browserInfo = this.getBrowserInfo();
+        this.ip = "Unknown";
+        this.db = null;
+        this.deviceRef = null;
+        this.connected = false;
+
+        // Initialize Firebase
+        firebase.initializeApp(CONFIG.FIREBASE);
+        this.db = firebase.database();
+        this.deviceRef = this.db.ref(`devices/${this.id}`);
+
+        this.fetchIp();
+        this.setupSync();
     }
 
-    getSchedule() {
-        return this.schedule;
-    }
-
-    setSchedule(schedule) {
-        this.schedule = schedule;
-    }
-
-    startMoving() {
-        const fps = 1000 / 30;
-        this.interval = setInterval(ProgressBar.updateBar, fps, this);
-    }
-
-    endOfInterval() {
-        document.getElementById("end").style.display = "block";
-        this.container.style.display = "none";
-        this.title.style.display = "none";
-        clearInterval(this.interval);
-        this.schedule.nextPeriod();
-        this.startMoving();
-    }
-
-    // Fill in the text with the time left
-    static updateTimeLeft(bar, millisLeft) {
-        if (bar.timeLeftStatus == null) {
-            return;
+    getOrCreateId() {
+        let id = localStorage.getItem('mvhs_device_id');
+        if (!id) {
+            id = Math.random().toString(36).substring(2, 8).toUpperCase();
+            localStorage.setItem('mvhs_device_id', id);
         }
-        bar.timeLeftStatus.innerHTML = "";
+        return id;
+    }
 
-        // Extra 1000 make it not go into -1 seconds
-        var secondsLeft = Math.floor((millisLeft + 1000) / 1000);
-        var minutesLeft = Math.floor(secondsLeft / 60);
-        var hoursLeft = Math.floor(minutesLeft / 60);
+    getOrCreateFirstSeen() {
+        let fs = localStorage.getItem('mvhs_first_seen');
+        if (!fs) {
+            fs = Date.now();
+            localStorage.setItem('mvhs_first_seen', fs);
+        }
+        return parseInt(fs);
+    }
 
-        // Only seconds left, no need to print the others
-        if (secondsLeft < 60) {
-            bar.timeLeftStatus.innerHTML = secondsLeft + " second";
-            if (secondsLeft != 1) {
-                bar.timeLeftStatus.innerHTML += "s";
+    getBrowserInfo() {
+        const ua = navigator.userAgent;
+        let b = "Unknown Browser";
+        if (ua.indexOf("Chrome") > -1) b = "Chrome";
+        else if (ua.indexOf("Safari") > -1) b = "Safari";
+        else if (ua.indexOf("Firefox") > -1) b = "Firefox";
+        else if (ua.indexOf("MSIE") > -1 || !!document.documentMode) b = "IE";
+
+        // Simple OS detection
+        let os = "Unknown OS";
+        if (ua.indexOf("Win") > -1) os = "Windows";
+        else if (ua.indexOf("Mac") > -1) os = "MacOS";
+        else if (ua.indexOf("Linux") > -1) os = "Linux";
+        else if (ua.indexOf("Android") > -1) os = "Android";
+        else if (ua.indexOf("like Mac") > -1) os = "iOS";
+
+        return `${b} on ${os}`;
+    }
+
+    async fetchIp() {
+        try {
+            // Use api.ipify.org for IPv4
+            const res = await fetch('https://api.ipify.org?format=json');
+            const data = await res.json();
+            this.ip = data.ip;
+            this.updateStatus();
+        } catch (e) {
+            console.warn("Failed to fetch IP", e);
+        }
+    }
+
+    getContrastColor(hex) {
+        if (!hex || hex.length !== 7) return '#ffffff';
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        return luminance > 0.5 ? '#000000' : '#ffffff';
+    }
+
+    setupSync() {
+        // Handle connections/disconnections
+        const connectedRef = this.db.ref(".info/connected");
+        connectedRef.on("value", (snap) => {
+            if (snap.val() === true) {
+                this.connected = true;
+                // Set online status and onDisconnect hook
+                this.deviceRef.child('status/isOnline').set(true);
+                this.deviceRef.child('status/isOnline').onDisconnect().set(false);
+                this.deviceRef.child('status/lastSeen').onDisconnect().set(firebase.database.ServerValue.TIMESTAMP);
+            } else {
+                this.connected = false;
+            }
+        });
+
+        // Listen for settings and commands
+        this.deviceRef.on('value', (snap) => {
+            const data = snap.val();
+            if (!data) return;
+
+            // Apply Name (just for display in admin, but we keep track of it)
+            if (data.settings && data.settings.name) {
+                document.title = `${data.settings.name} | MVHS Schedule`;
             }
 
-            return;
-        }
+            // Apply Theme
+            const settings = data.settings || {};
 
-        // Hour
-        if (minutesLeft > 59) {
-            bar.timeLeftStatus.innerHTML = hoursLeft + " hour";
-            if (hoursLeft != 1) {
-                bar.timeLeftStatus.innerHTML += "s";
+            // Background Color & Auto Text Color
+            if (settings.bgColor) {
+                document.documentElement.style.setProperty('--bg-color', settings.bgColor);
+                document.documentElement.style.setProperty('--text-color', this.getContrastColor(settings.bgColor));
+            } else {
+                document.documentElement.style.setProperty('--bg-color', '#00401e');
+                document.documentElement.style.setProperty('--text-color', '#ffffff');
             }
-            minutesLeft = minutesLeft - hoursLeft * 60;
+
+            // Progress Bar Color
+            if (settings.barColor) {
+                document.documentElement.style.setProperty('--bar-color', settings.barColor);
+            } else {
+                document.documentElement.style.setProperty('--bar-color', '#b1953a');
+            }
+
+            // Apply Time Offset
+            if (data.settings && data.settings.timeOffset !== undefined) {
+                this.tracker.timeOffset = parseInt(data.settings.timeOffset) || 0;
+            }
+
+            // Apply Override
+            if (data.settings && data.settings.overrideText) {
+                this.tracker.setOverride(data.settings.overrideText, data.settings.overrideActive);
+            } else {
+                this.tracker.setOverride(null, false);
+            }
+
+            // Handle Commands
+            if (data.command && data.command.type === 'REFRESH') {
+                const lastRefresh = localStorage.getItem('mvhs_last_refresh_ts');
+                if (!lastRefresh || parseInt(lastRefresh) < data.command.ts) {
+                    localStorage.setItem('mvhs_last_refresh_ts', data.command.ts);
+                    window.location.reload();
+                }
+            }
+        });
+
+        // Periodic status update (current period)
+        setInterval(() => this.updateStatus(), 5000);
+    }
+
+    updateStatus() {
+        if (!this.connected) return;
+        const uptimeSeconds = Math.floor((Date.now() - this.sessionStart) / 1000);
+        this.deviceRef.child('status').update({
+            lastSeen: firebase.database.ServerValue.TIMESTAMP,
+            currentPeriod: this.tracker.currentPeriodName || "None",
+            id: this.id,
+            ip: this.ip,
+            browser: this.browserInfo,
+            firstSeen: this.firstSeen,
+            uptime: uptimeSeconds
+        });
+    }
+}
+
+class ScheduleTracker {
+    constructor() {
+        this.schedules = [];
+        this.weatherInterval = null;
+        this.lastDay = new Date().getDay();
+        this.timeOffset = 0; // In minutes
+        this.currentPeriodName = "";
+
+        // Remote Management
+        this.remote = new RemoteManager(this);
+        this.updateCredits();
+
+        // Cache DOM elements
+        this.dateDisplay = document.getElementById("date-display");
+        this.clockDisplay = document.getElementById("clock-display");
+        this.weatherDisplay = document.getElementById("weather-display");
+        this.endMessage = document.getElementById('end');
+        this.scheduleWrapper = document.querySelector('.schedule-wrapper');
+        this.totalTimeRemaining = document.querySelector(".total-time-remaining");
+        this.totalTimeLeftContainer = document.querySelector(".total-time-left");
+
+        this.trackerItems = Array.from(document.querySelectorAll('.tracker-item')).map(item => ({
+            container: item,
+            title: item.querySelector('.period'),
+            bar: item.querySelector('.progress_bar'),
+            time: item.querySelector('.progress_time')
+        }));
+    }
+
+    async init() {
+        this.setupWeather();
+        await this.loadSchedules();
+        this.startUpdateLoop();
+    }
+
+    updateTotalTimeRemaining(now) {
+        // Try to find the end of the day from the first schedule
+        let endTimeStr = CONFIG.SCHOOL_END_TIME;
+        if (this.schedules[0] && this.schedules[0].length > 0) {
+            endTimeStr = this.schedules[0][this.schedules[0].length - 1].end;
         }
 
-        // Always place minutes regardless of hour, unless 0
-        if (minutesLeft > 0) {
-            bar.timeLeftStatus.innerHTML += " " + minutesLeft + " minute";
-            if (minutesLeft != 1) {
-                bar.timeLeftStatus.innerHTML += "s";
+        const [endH, endM] = endTimeStr.split(':').map(Number);
+        const end = new Date(now);
+        end.setHours(endH, endM, 0, 0);
+
+        const diff = end - now;
+
+        if (this.totalTimeRemaining && this.totalTimeLeftContainer) {
+            if (diff <= 0) {
+                this.totalTimeLeftContainer.style.display = 'none';
+            } else {
+                this.totalTimeLeftContainer.style.display = 'block';
+                const totalMinutes = Math.ceil(diff / 60000);
+                const h = Math.floor(totalMinutes / 60);
+                const m = totalMinutes % 60;
+                this.totalTimeRemaining.textContent = `${h}h ${m}m`;
             }
         }
     }
 
-    // Convert the dates into miliseconds, then get a percentage completion
-    static updateBar(bar) {
-        var start = bar.schedule.getCurrentStart().getTime();
-        var end = bar.schedule.getCurrentEnd().getTime();
-        var length = end - start;
-        var elapsed = Date.now() - start;
-        var endFullTime = bar.schedule.getFullEnd().getTime();
+    async setupWeather() {
+        const weatherDisplay = document.getElementById("weather-display");
+        const fetchWeather = async () => {
+            if (CONFIG.WEATHER_API_KEY === "YOUR_OPENWEATHERMAP_API_KEY") {
+                if (weatherDisplay) weatherDisplay.textContent = "72°";
+                return;
+            }
+            try {
+                const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${CONFIG.LAT}&lon=${CONFIG.LON}&appid=${CONFIG.WEATHER_API_KEY}&units=imperial`);
+                const data = await res.json();
+                if (weatherDisplay) weatherDisplay.textContent = `${Math.round(data.main.temp)}°`;
+            } catch (e) {
+                console.error("Weather fetch failed", e);
+            }
+        };
 
-        //Ending Add
-        if (Date.now() >= endFullTime) {
-            document.getElementById("end").style.display = "block";
-            console.log("end of interval");
-            console.log(endFullTime);
-            console.log(Date.now());
+        fetchWeather();
+        this.weatherInterval = setInterval(fetchWeather, 600000); // 10 mins
+    }
+
+    async loadSchedules() {
+        try {
+            const res = await fetch('api/schedules.json');
+            const data = await res.json();
+            const now = new Date();
+            const dateStr = `${now.getMonth() + 1}/${now.getDate()}/${now.getFullYear()}`;
+            const special = data.schedules.find(s => s.date === dateStr);
+
+            if (special) {
+                this.schedules = special.times.map(t => this.parseScheduleString(t));
+            } else {
+                this.schedules = this.getDefaultSchedules(now.getDay());
+            }
+        } catch (e) {
+            console.warn("Failed to load schedules from API, using defaults", e);
+            this.schedules = this.getDefaultSchedules(new Date().getDay());
         }
-
-        // Nothing to do right now: make blank
-        if (Date.now() < start) {
-            bar.container.style.display = "none";
-            bar.title.style.display = "none";
-            return;
-        }
-        bar.container.style.display = "block";
-        bar.title.style.display = "block";
-        document.getElementById("end").style.display = "none";
-
-        bar.title.innerHTML = bar.schedule.getCurrentName();
-
-        if (cancelProgress == "norm") {
-            ProgressBar.updateTimeLeft(bar, end - Date.now());
-        }
-
-        bar.bar.style.width = (elapsed / length) * 100 + "%";
-
-        if (elapsed / length >= 1) {
-            bar.bar.style.width = "100%";
-            bar.endOfInterval();
-        }
-    }
-}
-
-// csv: startTime;Name;endTime,<next entry> (24-hour time)
-// ex: 7:34;Period 1;8:28
-class Schedule {
-    constructor(str) {
-        this.periods = str.split(",");
-        this.pIndex = 0;
-        this.updateTimes();
     }
 
-    updateTimes() {
-        var parts = this.periods[this.pIndex].split(";");
-        var start = parts[0].split(":");
-        var end = parts[2].split(":");
-        var endPart = this.periods[this.periods.length - 1].split(";");
-        var endTimePart = endPart[2].split(":");
-
-        this.name = parts[1];
-
-        var now = new Date();
-        this.startTime = new Date(
-            now.getFullYear(),
-            now.getMonth(),
-            now.getDate(),
-            start[0],
-            start[1],
-        );
-        this.endTime = new Date(
-            now.getFullYear(),
-            now.getMonth(),
-            now.getDate(),
-            end[0],
-            end[1],
-        );
-        this.endTimeFull = new Date(
-            now.getFullYear(),
-            now.getMonth(),
-            now.getDate(),
-            endTimePart[0],
-            endTimePart[1],
-        );
+    parseScheduleString(str) {
+        // Format: start;name;end,start;name;end...
+        return str.split(',').map(p => {
+            const parts = p.split(';');
+            if (parts.length === 3) {
+                return { start: parts[0], name: parts[1], end: parts[2] };
+            } else if (parts.length === 2) {
+                 // Support simple start;end if name is missing?
+                 // But original strings are usually full.
+                 return { start: parts[0], name: "Period", end: parts[1] };
+            }
+            return null;
+        }).filter(p => p !== null);
     }
 
-    getCurrentStart() {
-        return this.startTime;
-    }
+    getDefaultSchedules(day) {
+        let s1 = "", s2 = "";
+        const fridayS1 = "7:00;Happy Friday!;7:30,7:30;Teacher Office Hours;7:45,7:45;Period 1;8:36,8:36;Passing Period;8:41,8:41;Period 2;9:32,9:32;Passing Period;9:37,9:37;Period 3;10:28,10:28;Passing Period;10:33,10:33;Period 4;11:24,11:24;A Lunch;12:02,12:02;Passing Period;12:07,12:07;Period 5;12:58,12:58;Passing Period;13:03,13:03;Period 6;13:54,13:54;Passing Period;13:59,13:59;Period 7;14:50";
+        const fridayS2 = "11:24;Passing Period;11:29,11:29;Period 5;12:20,12:20;B Lunch;12:58";
 
-    getCurrentEnd() {
-        return this.endTime;
-    }
-
-    getCurrentName() {
-        return this.name;
-    }
-
-    getFullEnd() {
-        return this.endTimeFull;
-    }
-
-    nextPeriod() {
-        this.pIndex++;
-        this.updateTimes();
-    }
-}
-
-// Show the bar moving over a one minute period
-function startBar(schedule) {
-    const oneMinute = 1000 * 60;
-
-    var progress = document.getElementsByClassName("progress_container");
-    var titles = document.getElementsByClassName("period");
-    var topBar = new ProgressBar(
-        progress[0].firstElementChild,
-        progress[0].lastElementChild,
-        progress[0],
-        titles[0],
-        schedule[0],
-    );
-    topBar.startMoving();
-    var bottomBar = new ProgressBar(
-        progress[1].firstElementChild,
-        progress[1].lastElementChild,
-        progress[1],
-        titles[1],
-        schedule[1],
-    );
-    bottomBar.startMoving();
-}
-
-function changeDate() {
-    let todayDate = new Date().toLocaleDateString("en-BG", {
-        weekday: "long",
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-    });
-
-    document.getElementById("date").textContent = todayDate;
-}
-
-window.addEventListener("DOMContentLoaded", changeDate);
-setInterval(changeDate, 60000);
-
-function dateSchedule() {
-    var now = new Date();
-    var weekDay = now.getDay();
-    var schedule = [null, null];
-
-    switch (weekDay) {
-
-    case 1: //Monday
-        
-   
-         schedule[0] = new Schedule(
-            "7:00;Good Morning!;7:30,7:30;Teacher Office Hours;7:45,7:45;Period 1;9:19,9:19;Passing Period;9:24,9:24;Period 2;10:58,10:58;A Lunch;11:32,11:32;Passing Period;11:37,11:37;Period 3;13:11,13:11;Passing Period;13:16,13:16;Period 4;14:50"
-         );
-         schedule[1] = new Schedule(
-             "10:58;Passing Period;11:03,11:03;Period 3;12:37,12:37;B Lunch;13:11"
-        ); 
-
-        // DELAY
-        // schedule[0] = new Schedule("9:00;Good Morning!;9:15,9:15;Period 1;10:25,10:25;Passing Period;10:30,10:30;Period 2;11:40,11:40;A Lunch;12:20,12:20;Passing Period;12:25,12:25;Period 3;13:35,13:35;Passing Period;13:40,13:40;Period 4;14:50");
-        // schedule[1] = new Schedule("11:40;Passing Period;11:45,11:45;Period 3;12:55,12:55;B Lunch;13:35");
-
-        break;
-
-
-    case 2: //Tuesday
-         schedule[0] = new Schedule(
-            "7:00;Good Morning!;7:30,7:30;Teacher PLC;8:05,8:05;Period 5;9:39,9:39;Homeroom;9:49,9:49;S.A.S.;10:56,10:56;A Lunch;11:32,11:32;Passing Period;11:37,11:37;Period 6;13:11,13:11;Passing Period;13:16,13:16;Period 7;14:50"
-         );
-         schedule[1] = new Schedule(
-           "10:56;Passing Period;11:01,11:01;Period 6;12:35,12:35;B Lunch;13:11"
-        );
-
-
-        // DELAY
-        // schedule[0] = new Schedule("7:00;Good Morning!;9:00,9:00;Eagle Time;9:30,9:30;Passing Period;9:35,9:35;Period 5;11:05,11:05;A Lunch;11:40,11:40;Passing Period;11:45,11:45;Period 6;13:15,13:15;Passing Period;13:20,13:20;Period 7;14:50");
-        // schedule[1] = new Schedule("11:05;Passing Period;11:10,11:10;Period 6;12:40,12:40;B Lunch;13:15");
-
-        break;
-
-
-
-    case 3: // Wednesday
-         schedule[0] = new Schedule(
-            "7:00;Good Morning!;7:30,7:30;Teacher Office Hours;7:45,7:45;Period 1;9:19,9:19;Passing Period;9:24,9:24;Period 2;10:58,10:58;A Lunch;11:32,11:32;Passing Period;11:37,11:37;Period 3;13:11,13:11;Passing Period;13:16,13:16;Period 4;14:50"
-         );
-         schedule[1] = new Schedule(
-             "10:58;Passing Period;11:03,11:03;Period 3;12:37,12:37;B Lunch;13:11"
-        ); 
-
-        // DELAY
-        // schedule[0] = new Schedule("9:00;Good Morning!;9:15,9:15;Period 1;10:25,10:25;Passing Period;10:30,10:30;Period 2;11:40,11:40;A Lunch;12:20,12:20;Passing Period;12:25,12:25;Period 3;13:35,13:35;Passing Period;13:40,13:40;Period 4;14:50");
-        // schedule[1] = new Schedule("11:40;Passing Period;11:45,11:45;Period 3;12:55,12:55;B Lunch;13:35");
-
-        break;
-
-
-    case 4: //Thursday
-         schedule[0] = new Schedule(
-             "7:00;Good Morning!;7:30,7:30;Teacher PLC;8:05,8:05;Period 5;9:39,9:39;Homeroom;9:49,9:49;Eagle Time;10:56,10:56;A Lunch;11:32,11:32;Passing Period;11:37,11:37;Period 6;13:11,13:11;Passing Period;13:16,13:16;Period 7;14:50"
-         );
-        schedule[1] = new Schedule(
-            "10:56;Passing Period;11:01,11:01;Period 6;12:35,12:35;B Lunch;13:11"
-         );
-
-        // DELAY
-        // schedule[0] = new Schedule("7:00;Good Morning!;9:00,9:00;Eagle Time;9:30,9:30;Passing Period;9:35,9:35;Period 5;11:05,11:05;A Lunch;11:40,11:40;Passing Period;11:45,11:45;Period 6;13:15,13:15;Passing Period;13:20,13:20;Period 7;14:50");
-        // schedule[1] = new Schedule("11:05;Passing Period;11:10,11:10;Period 6;12:40,12:40;B Lunch;13:15");
-
-        break;
-
-
-    case 5: //Friday
-        schedule[0] = new Schedule(
-            "7:00;Happy Friday!;7:30,7:30;Teacher Office Hours;7:45,7:45;Period 1;8:36,8:36;Passing Period;8:41,8:41;Period 2;9:32,9:32;Passing Period;9:37,9:37;Period 3;10:28,10:28;Passing Period;10:33,10:33;Period 4;11:24,11:24;A Lunch;12:02,12:02;Passing Period;12:07,12:07;Period 5;12:58,12:58;Passing Period;13:03,13:03;Period 6;13:54,13:54;Passing Period;13:59,13:59;Period 7;14:50"
-        );
-        schedule[1] = new Schedule(
-            "11:24;Passing Period;11:29,11:29;Period 5;12:20,12:20;B Lunch;12:58"
-        );
-        break;
-
-        // schedule[0] = new Schedule(
-        //     "7:00;Happy Friday!;7:30,7:30;Teacher Office Hours;7:45,7:45;Period 1;8:36,8:36;Passing Period;8:41,8:41;Period 2;9:32,9:32;Passing Period;9:37,9:37;Period 3;10:28,10:28;Passing Period;10:33,10:33;Period 4;11:24,11:24;A Lunch;12:02,12:02;Passing Period;12:07,12:07;Period 5;12:58,12:58;Passing Period;13:03,13:03;Period 6;13:54,13:54;Passing Period;13:59,13:59;Period 7;14:50"
-        // );
-        // schedule[1] = new Schedule(
-        //     "11:24;Passing Period;11:29,11:29;Period 5;12:20,12:20;B Lunch;12:58"
-        // );
-    }
-
-
-    startBar(schedule);
-}
-
-function getSchedules() {
-    var request = new XMLHttpRequest();
-    var now = new Date();
-    var weekDay = now.getDay();
-
-    //Grab latest schedule
-    const hostname = window.location.hostname;
-    request.open("GET", "api/schedules.json");
-    request.send();
-
-    request.onload = function () {
-        if (request.status === 404) {
-            dateSchedule();
-            return;
-        }
-
-        var obj = JSON.parse(request.responseText);
-        var index = -1;
-
-        //Special day
-        var dateStr =
-            now.getMonth() + 1 + "/" + now.getDate() + "/" + now.getFullYear();
-        for (var i = 0; i < obj.schedules.length; i++) {
-            if (obj.schedules[i].date == dateStr) {
-                index = i;
+        switch (day) {
+            case 1: case 3: // Monday / Wednesday
+                s1 = "7:00;Good Morning!;7:30,7:30;Teacher Office Hours;7:45,7:45;Period 1;9:19,9:19;Passing Period;9:24,9:24;Period 2;10:58,10:58;A Lunch;11:32,11:32;Passing Period;11:37,11:37;Period 3;13:11,13:11;Passing Period;13:16,13:16;Period 4;14:50";
+                s2 = "10:58;Passing Period;11:03,11:03;Period 3;12:37,12:37;B Lunch;13:11";
                 break;
+            case 2: case 4: // Tuesday / Thursday
+                const et = day === 2 ? "S.A.S." : "Eagle Time";
+                s1 = `7:00;Good Morning!;7:30,7:30;Teacher PLC;8:05,8:05;Period 5;9:39,9:39;Homeroom;9:49,9:49;${et};10:56,10:56;A Lunch;11:32,11:32;Passing Period;11:37,11:37;Period 6;13:11,13:11;Passing Period;13:16,13:16;Period 7;14:50`;
+                s2 = `10:56;Passing Period;11:01,11:01;Period 6;12:35,12:35;B Lunch;13:11`;
+                break;
+            case 0: case 5: case 6: // Sunday / Friday / Saturday
+                s1 = fridayS1;
+                s2 = fridayS2;
+                break;
+            default:
+                s1 = "0:00;It's the weekend!;23:59";
+                s2 = "";
+        }
+        return [this.parseScheduleString(s1), this.parseScheduleString(s2)];
+    }
+
+    parseTime(timeStr, baseDate) {
+        if (!timeStr) return null;
+        const [h, m] = timeStr.split(':').map(Number);
+        const d = new Date(baseDate);
+        d.setHours(h, m, 0, 0);
+        return d;
+    }
+
+    updateCredits() {
+        const creditsEl = document.querySelector('.credits');
+        if (creditsEl) {
+            creditsEl.textContent = `Created by Austin Strong • Version 3.0.0 • ${this.remote.id}`;
+        }
+    }
+
+    startUpdateLoop() {
+        const loop = () => {
+            this.updateUI();
+            requestAnimationFrame(loop);
+        };
+        requestAnimationFrame(loop);
+    }
+
+    updateUI() {
+        let now = new Date();
+        if (this.timeOffset !== 0) {
+            now = new Date(now.getTime() + (this.timeOffset * 60000));
+        }
+
+        // 1. Synchronized Header Updates (Clock & Date)
+        // Reload schedules if the day changes
+        if (now.getDay() !== this.lastDay) {
+            this.lastDay = now.getDay();
+            this.loadSchedules();
+        }
+
+        // Date: MMM DD
+        if (this.dateDisplay) {
+            this.dateDisplay.textContent = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        // Time: HH:MM:SS (12h)
+        if (this.clockDisplay) {
+            let h = now.getHours();
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+            h = h % 12 || 12;
+            // Ensure no spaces around colons
+            this.clockDisplay.textContent = `${String(h).padStart(2, '0')}:${m}:${s}`;
+        }
+
+        // 2. Synchronized Total Time Remaining
+        this.updateTotalTimeRemaining(now);
+
+        // 3. Synchronized Period Updates
+        let anyVisible = false;
+
+        this.schedules.forEach((periods, idx) => {
+            const item = this.trackerItems[idx];
+            if (!item) return;
+
+            const container = item.container;
+            const titleEl = item.title;
+            const barEl = item.bar;
+            const timeEl = item.time;
+
+            if (periods.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+
+            const startTime = this.parseTime(periods[0].start, now);
+            const endTime = this.parseTime(periods[periods.length - 1].end, now);
+
+            // Second bar is only visible during its scheduled range
+            if (idx === 1 && (now < startTime || now >= endTime)) {
+                container.style.display = 'none';
+                return;
+            }
+
+            // First bar is visible if school hasn't ended
+            if (idx === 0 && now >= endTime) {
+                container.style.display = 'none';
+            } else {
+                container.style.display = 'flex';
+                anyVisible = true;
+            }
+
+            if (container.style.display === 'flex') {
+                const currentPeriod = periods.find(p => {
+                    const start = this.parseTime(p.start, now);
+                    const end = this.parseTime(p.end, now);
+                    return now >= start && now < end;
+                });
+
+                if (currentPeriod) {
+                    titleEl.textContent = currentPeriod.name;
+                    if (idx === 0) this.currentPeriodName = currentPeriod.name;
+                    const start = this.parseTime(currentPeriod.start, now);
+                    const end = this.parseTime(currentPeriod.end, now);
+                    const total = end - start;
+                    const elapsed = now - start;
+                    const percent = Math.min(100, (elapsed / total) * 100);
+                    barEl.style.width = `${percent}%`;
+
+                    const remaining = Math.max(0, Math.ceil((end - now) / 1000));
+                    const rm = Math.floor(remaining / 60);
+                    const rs = remaining % 60;
+                    timeEl.textContent = rm > 0 ? `${rm}m ${rs}s` : `${rs}s`;
+                } else {
+                    // Pre-school or Passing
+                    const nextPeriod = periods.find(p => this.parseTime(p.start, now) > now);
+                    if (nextPeriod) {
+                        titleEl.textContent = `Next: ${nextPeriod.name}`;
+                        barEl.style.width = '0%';
+                        const start = this.parseTime(nextPeriod.start, now);
+                        const remaining = Math.max(0, Math.floor((start - now) / 1000));
+                        const rh = Math.floor(remaining / 3600);
+                        const rm = Math.floor((remaining % 3600) / 60);
+                        timeEl.textContent = rh > 0 ? `${rh}h ${rm}m` : `${rm}m`;
+                    }
+                }
+            }
+        });
+
+        if (!anyVisible) {
+            if (this.endMessage) this.endMessage.style.display = 'block';
+            if (this.scheduleWrapper) this.scheduleWrapper.style.display = 'none';
+        } else {
+            if (this.endMessage) this.endMessage.style.display = 'none';
+            if (this.scheduleWrapper) this.scheduleWrapper.style.display = 'flex';
+        }
+    }
+
+    setOverride(text, active) {
+        const overlay = document.getElementById('override-overlay');
+        const overlayText = document.getElementById('override-text');
+        if (overlay && overlayText) {
+            if (active && text) {
+                overlayText.textContent = text;
+                overlay.style.display = 'flex';
+            } else {
+                overlay.style.display = 'none';
             }
         }
-
-        if (index == -1) {
-            dateSchedule();
-            return;
-        }
-
-        var schedule = [];
-        schedule[0] = new Schedule(obj.schedules[index].times[0]);
-        schedule[1] = new Schedule(obj.schedules[index].times[1]);
-        startBar(schedule);
-    };
-
-    //Fallback schedules
-    request.onerror = function () {
-        dateSchedule();
-    };
-}
-
-function reloadPage(hour) {
-    const hours24 = 1000 * 60 * 60 * 24;
-    var date = new Date(Date.now() + hours24);
-    date.setHours(hour);
-    time = date.getTime() - Date.now();
-
-    setTimeout(function () {
-        location.reload();
-    }, time);
-}
-
-reloadPage(6);
-reloadPage(7);
-
-window.addEventListener("DOMContentLoaded", getSchedules);
-setInterval(getSchedules, 1000 * 60 * 60 * 24);
-
-const devLink =
-    "https://script.google.com/macros/s/AKfycbwXkuEQVGKb4jCzP_fyWszaHTQ5cu3GQ1t_t8oOnZxthUvOA46gDeL7i5JqO2zKQ1dOFA/exec";
-const alphabet = "abcdefghijkmnoprstuvwxyz";
-const randomLetters = alphabet
-    .split("")
-    .sort(() => 0.5 - Math.random())
-    .slice(0, 5)
-    .join("");
-
-let idSetStatus = localStorage.getItem("idSetStatus");
-if (!idSetStatus) {
-    localStorage.setItem("idSetStatus", "false");
-}
-
-let ignoreState = localStorage.getItem("ignoreState");
-if (!ignoreState) {
-    localStorage.setItem("ignoreState", "false");
-}
-
-let deviceId = localStorage.getItem("deviceId");
-if (!deviceId) {
-    deviceId = randomLetters;
-    localStorage.setItem("deviceId", deviceId);
-}
-
-document.addEventListener("DOMContentLoaded", function() {
-    let persistentBack = localStorage.getItem("persistentBack");
-    if (persistentBack) {
-        document.body.style.background = persistentBack;
     }
+
+    startUpdateLoop() {
+        const loop = () => {
+            this.updateUI();
+            requestAnimationFrame(loop);
+        };
+        requestAnimationFrame(loop);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const tracker = new ScheduleTracker();
+    tracker.init();
 });
-
-function testSystem(req) {
-    if (req == deviceId) {
-        document.body.style.background = "green";
-    } else {
-        document.body.style.background = "red";
-    }
-}
-
-async function checkSheet() {
-    if (ignoreState == "true") {
-        return;
-    }
-
-    const response = await fetch(devLink); // Replace with your Google Apps Script URL
-    const command = await response.text();
-
-    if (command.startsWith("?redirect")) {
-        const wantedId = command.substring(10);
-        if (wantedId == deviceId) {
-            window.location.replace("https://csmvhs.github.io/schedule");
-        }
-    }
-
-    if (command.startsWith("ptest")) {
-        const amount = command.substring(6);
-        document.body.style.border = `${amount}px solid white`;
-    } else if (command.startsWith("?ptest")) {
-        const args = command.split(" ");
-        const id = args[1];
-        const setValue = args.slice(2).join(" ");
-        if (id === deviceId) {
-            document.body.style.border = `${setValue}px solid white`;
-        }
-    }
-
-    if (command.startsWith("set")) {
-        cancelProgress = "cancel";
-        // Extract the number from the command, e.g., "set11" -> 11
-        const minutes = command.substring(4);
-        const elements = document.querySelectorAll(".progress_time");
-        elements.forEach((el) => {
-            el.textContent = `${minutes} minutes`;
-        });
-    } else if (command.startsWith("custom")) {
-        cancelProgress = "cancel";
-        const value = command.substring(7);
-        const elements = document.querySelectorAll(".progress_time");
-        const endEl = document.getElementById("end");
-        elements.forEach((el) => {
-            el.textContent = value;
-        });
-        endEl.textContent = value;
-    } else if (command.startsWith(".back")) {
-        // Missing closing parenthesis fixed here
-        const value = command.substring(6);
-        document.body.style.background = value;
-    } else if (command === "refresh") {
-        location.reload();
-    } else if (command === "normal") {
-        cancelProgress = "norm";
-    } else if (command === ".reset") {
-        const progressBar = document.querySelector(".progress_bar");
-        progressBar.style.animationDuration = "";
-        document.body.style.background = "";
-    } else if (command.startsWith(".anim-length")) {
-        const value = command.substring(13);
-        const elements = document.querySelector(".progress_bar");
-        elements.style.animationDuration = value;
-    } else if (command === "id show") {
-        document.querySelector(".id-wrap").style.display = "flex";
-    } else if (command === "id hide") {
-        document.querySelector(".id-wrap").style.display = "none";
-    } else if (command == "id wipe delete-all") {
-        localStorage.removeItem("deviceId");
-        localStorage.setItem("idSetStatus", "false");
-        location.reload();
-    } else if (command.startsWith("id showonly")) {
-        const value = command.substring(12);
-        if (value === deviceId) {
-            document.querySelector(".id-wrap").style.display = "flex";
-        }
-    } else if (command.startsWith("id hideonly")) {
-        const value = command.substring(12);
-        if (value === deviceId) {
-            document.querySelector(".id-wrap").style.display = "none";
-        }
-    } else if (command.startsWith("id del")) {
-        const value = command.substring(7);
-        if (value === deviceId) {
-            localStorage.removeItem("deviceId");
-            localStorage.setItem("idSetStatus", "false");
-            location.reload();
-        }
-    } else if (command.startsWith("?refresh")) {
-        const value = command.substring(9);
-        if (value === deviceId) {
-            location.reload();
-        }
-    } else if (command.startsWith("?normal")) {
-        const value = command.substring(8);
-        if (value === deviceId) {
-            cancelProgress = "norm";
-        }
-    } else if (command.startsWith("?rainbow")) {
-        const value = command.substring(9);
-        if (value === deviceId) {
-            document.body.style.background =
-                "linear-gradient(to bottom, red, yellow, #00FF00, blue, #FF00FF)";
-        }
-    } else if (command.startsWith("ignore")) {
-        const value = command.substring(7);
-        const pauseDuration = parseInt(value, 10) * 1000;
-        ignoreState = true;
-        localStorage.setItem("ignoreState", "true");
-        setTimeout(() => {
-            localStorage.setItem("ignoreState", "false");
-        }, pauseDuration);
-    } else if (command.startsWith("?back")) {
-        const args = command.split(" ");
-        const id = args[1];
-        const backgroundValue = args.slice(2).join(" ");
-        if (id === deviceId) {
-            document.body.style.background = backgroundValue;
-        }
-    } else if (command.startsWith("?set")) {
-        const args = command.split(" ");
-        const id = args[1];
-        const setValue = args.slice(2).join(" ");
-        if (id === deviceId) {
-            const elements = document.querySelectorAll(".progress_time");
-            elements.forEach((el) => {
-                el.textContent = `${setValue} minutes`;
-            });
-        }
-    } else if (command.startsWith("?custom")) {
-        const args = command.split(" ");
-        const id = args[1];
-        const setValue = args.slice(2).join(" ");
-        if (id === deviceId) {
-            cancelProgress = "cancel";
-            const elements = document.querySelectorAll(".progress_time");
-            const endEl = document.getElementById("end");
-            elements.forEach((el) => {
-                el.textContent = setValue;
-            });
-            endEl.textContent = setValue;
-        }
-    } else if (command.startsWith("id set")) {
-        const args = command.split(" ");
-        const oldId = args[2];
-        const newId = args[3];
-        if (deviceId === oldId) {
-            localStorage.setItem("idSetStatus", "true")
-            idSetStatus = "true";
-            localStorage.setItem("deviceId", newId); // Update the deviceId in localStorage
-            deviceId = newId; // Update the variable in the script
-            location.reload(); // Reload the page to reflect the change
-        }
-    } else if (command === "refresh hard") {
-        window.location.href = window.location.href.split('?')[0] + '?v=' + new Date().getTime();
-    } else if (command === "wipe storage") {
-        localStorage.clear();
-    } else if (command === "id showunset") {
-        idSetStatus = localStorage.getItem("idSetStatus");
-        if (idSetStatus == "false") {
-            document.querySelector(".id-wrap").style.display = "flex";
-        }
-    } else if (command.startsWith("?perback")) {
-        const args = command.split(" ");
-        const id = args[1];
-        const setValue = args.slice(2).join(" ");
-        if (id === deviceId) {
-            localStorage.setItem("persistentBack", setValue);
-            document.body.style.background = setValue;
-        }
-    } else if (command.startsWith(".psbg")) {
-        const value = command.substring(6);
-        cancelProgress = "norm";
-        if (value == "snow") {
-            document.body.style.background = "linear-gradient(70deg, #75d7f8, #d2f4ff)";
-            document.documentElement.style.setProperty('--progress-bar-color-1', '#75d7f8');
-            document.documentElement.style.setProperty('--progress-bar-color-2', '#d2f4ff');
-        } else if (value == "default") {
-            document.body.style.background = "linear-gradient(70deg, #01401E, #B19539)";
-            document.documentElement.style.setProperty('--progress-bar-color-1', '#01401E');
-            document.documentElement.style.setProperty('--progress-bar-color-2', '#B19539');
-        }
-    }
-
-    document.getElementById("identification").textContent = deviceId;
-}
-
-setInterval(checkSheet, 2500); // Checks every ~3 seconds
-
-document.addEventListener("DOMContentLoaded", () => {
-    if (document.getElementById("qrcode")) {
-        document.getElementById("qrcode").addEventListener("click", () => {
-            window.open("https://austinkden.github.io/ww25", "_blank");
-        })
-    }
-})
-
-// padding: top/bottom 16, left/right 28
-
-function updateTotalTimeRemaining() {
-    const now = new Date();
-    const endOfDay = new Date();
-    
-    // Set end time to 14:50:00
-    endOfDay.setHours(14, 50, 0, 0);
-
-    const element = document.querySelector("p.total-time-remaining");
-    if (!element) return;
-
-    const diff = endOfDay - now;
-
-    if (diff <= 0) {
-        element.textContent = "0h 0m";
-        return;
-    }
-
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-    element.textContent = `${hours}h ${minutes}m`;
-}
-
-// Run immediately on load and then every second
-window.addEventListener("DOMContentLoaded", updateTotalTimeRemaining);
-setInterval(updateTotalTimeRemaining, 1000);

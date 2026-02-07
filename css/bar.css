@@ -1,308 +1,232 @@
-/* FONTS */
-/* Default font */
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
-/* Slab font (good for ancient things) */
-@import url('https://fonts.googleapis.com/css2?family=Zilla+Slab:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap');
-/* Default number font */
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&display=swap');
-/* Playful font */
-@import url('https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap');
-/* Old font (serif as can be) */
-@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&display=swap');
-/* Halloween font */
-@import url('https://fonts.googleapis.com/css2?family=Jolly+Lodger&display=swap');
-/* Smooth bolder rounded (slice A) */
-@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap');
-/* Hawaiian font (Wish Week 2025) */
-@import url('https://fonts.googleapis.com/css2?family=Short+Stack&display=swap');
-
-/* ONLY EDIT ABOVE THIS LINE TO ADD FONTS - EDIT BELOW THIS LINE TO UPDATE VARIABLES/STYLES */
-
 :root {
+    --bg-color: #00401e; /* Dark green */
     --text-color: #ffffff;
-
-    --font-family: 'DM Sans', sans-serif;
-
-    --clock-font-family: 'DM Mono', sans-serif;
-    /* This font should always remain DM Mono or another font that is very easy to read numbers in. */
-
-    --background: linear-gradient(70deg, #01401E, #B19539);
-
-    --text-background: rgba(0, 0, 0, 0.5);
-
-    --progress-bar-animation-length: 10s;
-
-    --progress-bar-angle: to right;
-
-    --progress-bar-color-1: #007d3b;
-
-    --progress-bar-color-2: #d2b246;
-
-    --progress-bar-text-color: white;
-
-    --progress-bar-background: rgba(0, 0, 0, 0.5);
-
-    --progress-bar-border: #FFFFFF;
-
-    --names-color: rgb(255, 255, 255);
+    --bar-bg: rgba(0, 0, 0, 0.3); /* Slightly darker track for better contrast */
+    --bar-color: #b1953a; /* Default Gold */
 }
 
-
-/* DO NOT EDIT BELOW THIS TEXT (UNLESS YOU KNOW WHAT YOU'RE DOING) */
-
-
-/**/
-/**/
-/**/
-
 * {
-    transition: all 0.3s ease;
-	font-family: 'DM Sans', sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 body {
-    background: var(--background);
-    font-family: var(--font-family);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Google Sans Flex', sans-serif;
+    overflow: hidden;
     height: 100vh;
     width: 100vw;
-    background-size: cover;
-    background-repeat: no-repeat;
-    box-sizing: border-box;
-    background-position: center center;
-    overflow: hidden;
-    margin: 0;
+}
+
+.background_container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 1.5vh 3vw 3vh 3vw;
 }
 
 .title_container {
-    position: relative;
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
     align-items: center;
-    justify-content: center; /* Centers the clock horizontally */
-    margin-bottom: 6vh;
-    background: var(--text-background);
-    font-family: var(--font-family);
-    font-size: 3vw;
+    margin-bottom: 1vh;
+    font-size: 4vmin;
+    font-weight: 700;
 }
 
-.footer_container {
-    background: var(--text-background);
-    color: var(--text-color);
-    font-family: var(--font-family);
+.top-bar-item:nth-child(1) { text-align: left; }
+.top-bar-item:nth-child(2) {
     text-align: center;
+    font-family: 'Google Sans Flex', sans-serif;
+    font-size: 8vmin;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+    text-shadow: none !important;
+}
+.top-bar-item:nth-child(3) { text-align: right; }
+
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding-top: 4vh;
+    gap: 6vh;
 }
 
-.footer_container p {
-    font-size: 1.6vw;
+.schedule-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 6vh;
 }
 
-.footer_container h4 {
-    font-size: 2.8vw;
+.tracker-item {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5vh;
 }
 
-
-.title{
-    color: var(--text-color);
-   /* color: #FFAB0D;*/
-    text-align: center;
-    width: 100vw;
-    margin: 0;
+.text_container {
+    padding-left: 2vw;
 }
 
-.end{
-   color: var(--text-color);
-   background: var(--text-background);
-   font-family: var(--font-family);
-     /*background: rgba(117, 24,7,0.75);
-    color: #FFAB0D;*/
-    border-radius: 1000px;
-    box-shadow: 0px 0px 15px -3px black;
-    text-align: center;
-    font-size: 5vw;
-    font-weight: bold;
-    display: table;
-    margin: 0 auto;
-    width: 60vw;
-    display: none;
-	padding-bottom: 10px;
-}
-
-.end_container{
-    margin-top: 11vh;
-}
-
-.text_container{
-    font-weight: bold;
-    font-size: 3vw;
-    padding-bottom: 3vw;
-}
-
-
-.date{
-    color: var(--text-color);
-    background: var(--text-background);
-    font-family: var(--font-family);
-    border-radius: 20px;
-    text-align: center;
-    padding: 10px;
-    margin-left: 40px;
-}
-.period{
-    color: var(--text-color);
-    font-family: var(--font-family);
-    float: right;
-    margin-right: 40px;
-    background: var(--text-background);
-    padding: 0px 20px 0px 20px;
-    border-radius: 20px;
-    text-align: center;
-    padding: 10px;
-}
-
-.bar-placeholder{
-    padding: 10px;
-}
-
-.names{
-	color: var(--names-color);
-	position: absolute;
-	bottom: 0;
-    font-family: var(--font-family);
-	right: 0;
-    margin: 1px;
-    font-size: 16px;
+.period {
+    font-size: 8vmin;
+    font-weight: 700;
 }
 
 .progress_container {
-    width: 75%;
-    margin: auto;
-    height: 5.5vw;
-    overflow: hidden;
-    background-color: var(--progress-bar-background);
-    font-family: var(--font-family);
-    border-radius: 30px;
     position: relative;
-    border: 4px solid var(--progress-bar-border);
-	box-shadow: 0px 0px 20px -5px var(--progress-bar-border);
-
+    height: 10vh;
+    background: var(--bar-bg);
+    border-radius: 5vh;
+    overflow: hidden;
 }
 
 .progress_bar {
-    width: 50%;
-transition: width 0.3s ease;
+    position: absolute;
+    left: 0;
+    top: 0;
     height: 100%;
-    color: var(--progress-bar-text-color);
-    font-family: var(--font-family);
-    background: repeating-linear-gradient(90deg, var(--progress-bar-color-1), var(--progress-bar-color-2), var(--progress-bar-color-1));
-    background-size: 200% auto;
-    background-position: 0 100%;
-    animation: gradient var(--progress-bar-animation-length) infinite;
-    animation-fill-mode: forwards;
-    animation-timing-function: linear;
+    background: var(--bar-color);
+    border-radius: 5vh;
+    width: 0%;
+    overflow: hidden; /* Keep the blurred edges inside the bar */
+}
+
+/* Bubbles inside the bar - Dynamic Liquid effect */
+.progress_bar::before,
+.progress_bar::after {
+    content: '';
+    position: absolute;
+    top: -5vh;
+    left: -5vh;
+    right: -5vh;
+    bottom: -5vh;
+    filter: blur(2vh);
+    border-radius: 5vh;
+}
+
+.progress_bar::before {
+    background:
+        radial-gradient(circle at 20% 35%, rgba(255, 255, 255, 0.5) 0%, transparent 40%),
+        radial-gradient(circle at 70% 65%, rgba(255, 255, 255, 0.4) 0%, transparent 45%);
+    background-size: 100vh 100%;
+    background-repeat: repeat-x;
+    animation: liquidFlow1 20s linear infinite;
+    opacity: 0.5;
+    z-index: 1;
+}
+
+.progress_bar::after {
+    background:
+        radial-gradient(circle at 40% 70%, rgba(255, 255, 255, 0.3) 0%, transparent 40%),
+        radial-gradient(circle at 80% 30%, rgba(255, 255, 255, 0.4) 0%, transparent 50%);
+    background-size: 85vh 100%;
+    background-repeat: repeat-x;
+    animation: liquidFlow2 15s linear infinite reverse;
+    opacity: 0.4;
+    z-index: 2;
+}
+
+@keyframes liquidFlow1 {
+    from { background-position: 0 0; }
+    to { background-position: 100vh 0; }
+}
+
+@keyframes liquidFlow2 {
+    from { background-position: 0 0; }
+    to { background-position: 85vh 0; }
 }
 
 .progress_time {
     position: absolute;
+    /* Spacing logic: Right margin should match the top/bottom gap.
+       Container is 10vh. Font is 5.5vmin (5.5vh on 16:9). Vertical padding 0.7vh.
+       Total height = 5.5 + 1.4 = 6.9vh. Gap = (10 - 6.9)/2 = 1.55vh.
+    */
+    right: 1.55vh;
     top: 50%;
     transform: translateY(-50%);
-    right: 10px;
-    color: var(--progress-bar-text-color);
-    font-family: var(--font-family);
-    font-weight: bold;
-    font-size: 4vw;
-	   text-shadow: 0px 0px 15px black;
-
+    font-family: 'Azeret Mono', monospace;
+    font-size: 5.5vmin;
+    line-height: 1;
+    font-weight: 500;
+    color: #ffffff;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 0.7vh 2.5vw;
+    border-radius: 4vh;
+    z-index: 20;
+    text-shadow: none !important;
+    -webkit-font-smoothing: antialiased;
 }
 
-#clock {
-    color: var(--text-color);
-    font-family: var(--clock-font-family) !important;
-    font-size: 5vw;
-    margin: 0;
+.end-message {
+    display: none;
+    text-align: center;
+    font-size: 15vmin;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 8vh 5vw;
+    border-radius: 10vh;
+    box-shadow: 0 2vh 5vh rgba(0,0,0,0.3);
+    margin: auto 0; /* Center vertically when it's the only thing */
 }
 
-@keyframes gradient { 
-  0%   { background-position: 0 0; }
-  100% { background-position: -200% 0; }
-}
-
-@keyframes gradient2 {
-	0% { background-position: 0% 50%}
-	50% { background-position: 100% 50%}
-	100% { background-position: 0% 50%}
-}
-
-
-#mvhs-logo {
-    height: 5vw; /* Adjust this value to match the size of the clock */
-}
-
-#img {
-    height: 5vw;
-}
-
-.logo_container {
-    position: absolute;
-    left: 15px;
+.total-time-left {
+    position: fixed;
+    bottom: 4vh;
+    left: 4vw;
+    z-index: 100;
     display: flex;
-    align-items: center;
-    height: 100%;
+    align-items: flex-end; /* Align text to bottom of the pill */
+    gap: 1.5vw;
 }
 
-.img_container {
-    position: absolute;
-    right: 15px;
-    display: flex;
-    align-items: center;
-    height: 100%;
+.total-time-remaining {
+    font-size: 4.5vmin;
+    font-weight: 500;
+    background: rgba(0, 0, 0, 0.8);
+    color: #ffffff;
+    padding: 1.5vh 2.5vw;
+    border-radius: 2.5vh;
+    backdrop-filter: blur(10px);
+    text-shadow: none !important;
 }
 
-.qrcode {
-    height: 142px;
-    width: 142px;
-    border-radius: 4px;
-    opacity: 0.95;
-    padding: 5px;
-    position: absolute;
-    left: 50px;
-    bottom: 50px;
-    margin: 5px;
-    z-index: 10;
-    display: flex;
+.credits {
+    color: #004d24; /* Darkened for lower contrast against #00401e */
+    font-size: 2vmin;
+    font-weight: 400;
+    margin-bottom: 0.5vh; /* Slight lift to look centered with the text of the pill */
+    margin-left: 20px;
+    white-space: nowrap;
+}
+
+/* Remote Override Overlay */
+.override-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #000000;
+    z-index: 9999;
+    display: none; /* Controlled by JS */
     justify-content: center;
     align-items: center;
-    background: linear-gradient(to top right, var(--wwpink), var(--wwblue), var(--wwyellow));
-    padding: 5px;
-    border-radius: 6px;
-    opacity: 0.85;
-    cursor: pointer;
+    padding: 10vw;
+    text-align: center;
 }
 
-div.id-wrap {
-    height: 100vh;
-    width: 100vw;
-    display: flex;
-    align-items: center;
-	justify-content: center;
-    background: rgba(0, 0, 0, 0.85);
-	display: none;
-	position: fixed;
-	top: 0;
-	left: 0;
-}
-
-p#identification {
-	font-size: clamp(50px, 5vw, 200px);
-	color: white;
-	font-family: 'DM Mono', monospace;
-}
-
-
-p.total-time-remaining {
-	position: fixed;
-	bottom: 0;
-	left: 0;
-	margin: 2px;
-	font-size: 26px;
-	color: white;
-	font-family: 'DM Sans', sans-serif;
+.override-text {
+    color: #ffffff;
+    font-size: 10vmin;
+    font-weight: 700;
+    line-height: 1.2;
+    word-wrap: break-word;
+    max-width: 95vw;
 }
