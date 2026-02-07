@@ -40,7 +40,7 @@ body {
 .top-bar-item:nth-child(1) { text-align: left; }
 .top-bar-item:nth-child(2) {
     text-align: center;
-    font-family: 'DM Mono', monospace;
+    font-family: 'Azeret Mono', monospace;
     font-size: 8vmin;
     font-weight: 500;
     -webkit-font-smoothing: antialiased;
@@ -100,9 +100,9 @@ body {
     left: 0;
     top: 0;
     height: 100%; /* Fills the 14vh liquid_well */
-    /* Moving Linear Gradient from Gold to White */
-    background: linear-gradient(90deg, var(--gold), #ffffff, var(--gold));
-    background-size: 200% 100%;
+    /* Moving Linear Gradient from Gold to White - Fixed to viewport for seamlessness across blobs */
+    background: linear-gradient(90deg, var(--gold), #ffffff, var(--gold)) fixed;
+    background-size: 200vw 100%;
     animation: moveGradient 3s linear infinite;
     border-radius: 0 7vh 7vh 0; /* Rounded end, oversize height handles flush sides */
     width: 0%;
@@ -111,7 +111,7 @@ body {
 
 @keyframes moveGradient {
     0% { background-position: 0% 0; }
-    100% { background-position: -200% 0; }
+    100% { background-position: -200vw 0; }
 }
 
 /* Bubbles inside the bar - adjusted opacity for gradient */
@@ -138,9 +138,11 @@ body {
     top: 0;
     width: 12vh;
     height: 100%; /* Match bar height (14vh) */
-    background: inherit; /* Inherits the moving gradient */
+    /* Same background as parent, also fixed, to ensure seamless transition */
+    background: linear-gradient(90deg, var(--gold), #ffffff, var(--gold)) fixed;
+    background-size: 200vw 100%;
     border-radius: 42%;
-    animation: liquidRotate 4s infinite linear;
+    animation: moveGradient 3s linear infinite, liquidRotate 4s infinite linear;
 }
 
 @keyframes bubbleFlow {
@@ -162,7 +164,7 @@ body {
     right: 1.55vh;
     top: 50%;
     transform: translateY(-50%);
-    font-family: 'DM Mono', monospace;
+    font-family: 'Azeret Mono', monospace;
     font-size: 5.5vmin;
     line-height: 1;
     font-weight: 500;
