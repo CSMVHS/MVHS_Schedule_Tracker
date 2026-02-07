@@ -215,6 +215,12 @@ button:hover {
 
 .btn-warning { background: var(--warning); }
 .btn-danger { background: var(--danger); }
+.btn-secondary { background: #666; }
+
+.btn-sm {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.75rem;
+}
 
 .btn-group {
     display: flex;

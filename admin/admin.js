@@ -234,6 +234,18 @@ document.getElementById('refresh-device-btn').onclick = () => {
     .catch(e => alert("Error: " + e.message));
 };
 
+document.getElementById('redirect-old-btn').onclick = () => {
+    if (confirm("Remotely redirect this display to the old version?")) {
+        firebase.database().ref('devices').child(currentDeviceId).child('command').set({
+            type: 'REDIRECT',
+            url: 'https://csmvhs.github.io/MVHS_Schedule_Tracker/old',
+            ts: Date.now()
+        })
+        .then(() => alert("Redirect command sent!"))
+        .catch(e => alert("Error: " + e.message));
+    }
+};
+
 document.getElementById('delete-device-btn').onclick = () => {
     if (confirm(`Are you sure you want to delete ${currentDeviceId}? It will disappear from the list until it connects again.`)) {
         firebase.database().ref('devices').child(currentDeviceId).remove()

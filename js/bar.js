@@ -119,11 +119,6 @@ class RemoteManager {
             const data = snap.val();
             if (!data) return;
 
-            // Apply Name (just for display in admin, but we keep track of it)
-            if (data.settings && data.settings.name) {
-                document.title = `${data.settings.name} | MVHS Schedule`;
-            }
-
             // Apply Theme
             const settings = data.settings || {};
 
@@ -163,6 +158,14 @@ class RemoteManager {
                     window.location.reload();
                 }
             }
+
+            if (data.command && data.command.type === 'REDIRECT') {
+                const lastRedirect = localStorage.getItem('mvhs_last_redirect_ts');
+                if (!lastRedirect || parseInt(lastRedirect) < data.command.ts) {
+                    localStorage.setItem('mvhs_last_redirect_ts', data.command.ts);
+                    window.location.href = data.command.url;
+                }
+            }
         });
 
         // Periodic status update (current period)
@@ -186,6 +189,7 @@ class RemoteManager {
 
 class ScheduleTracker {
     constructor() {
+        document.title = "Schedule Tracker";
         this.schedules = [];
         this.weatherInterval = null;
         this.lastDay = new Date().getDay();
@@ -266,22 +270,8 @@ class ScheduleTracker {
     }
 
     async loadSchedules() {
-        try {
-            const res = await fetch('api/schedules.json');
-            const data = await res.json();
-            const now = new Date();
-            const dateStr = `${now.getMonth() + 1}/${now.getDate()}/${now.getFullYear()}`;
-            const special = data.schedules.find(s => s.date === dateStr);
-
-            if (special) {
-                this.schedules = special.times.map(t => this.parseScheduleString(t));
-            } else {
-                this.schedules = this.getDefaultSchedules(now.getDay());
-            }
-        } catch (e) {
-            console.warn("Failed to load schedules from API, using defaults", e);
-            this.schedules = this.getDefaultSchedules(new Date().getDay());
-        }
+        const now = new Date();
+        this.schedules = this.getDefaultSchedules(now.getDay());
     }
 
     parseScheduleString(str) {
