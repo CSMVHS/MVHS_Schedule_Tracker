@@ -1,15 +1,3 @@
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyDbnzWXHsqr6rOXEq99FMYyJEgVp5QSUAo",
-  authDomain: "mvhs-st.firebaseapp.com",
-  projectId: "mvhs-st",
-  storageBucket: "mvhs-st.firebasestorage.app",
-  messagingSenderId: "156783766681",
-  appId: "1:156783766681:web:ee2d859d4372859a909c08",
-  measurementId: "G-RM0Q3H3XYL"
-};
-
 /**
  * MVHS Schedule Tracker
  * Optimized & Refactored for Hallway TV Display
@@ -22,13 +10,13 @@ const CONFIG = {
     LON: -104.9739,
     SCHOOL_END_TIME: "14:50",
     FIREBASE: {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-        databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_PROJECT_ID.appspot.com",
-        messagingSenderId: "YOUR_SENDER_ID",
-        appId: "YOUR_APP_ID"
+        apiKey: "AIzaSyDbnzWXHsqr6rOXEq99FMYyJEgVp5QSUAo",
+        authDomain: "mvhs-st.firebaseapp.com",
+        databaseURL: "https://mvhs-st-default-rtdb.firebaseio.com",
+        projectId: "mvhs-st",
+        storageBucket: "mvhs-st.firebasestorage.app",
+        messagingSenderId: "156783766681",
+        appId: "1:156783766681:web:ee2d859d4372859a909c08"
     }
 };
 
@@ -36,19 +24,21 @@ class RemoteManager {
     constructor(tracker) {
         this.tracker = tracker;
         this.id = this.getOrCreateId();
+        this.firstSeen = this.getOrCreateFirstSeen();
+        this.sessionStart = Date.now();
+        this.browserInfo = this.getBrowserInfo();
+        this.ip = "Unknown";
         this.db = null;
         this.deviceRef = null;
         this.connected = false;
 
         // Initialize Firebase
-        if (CONFIG.FIREBASE.apiKey !== "YOUR_API_KEY") {
-            firebase.initializeApp(CONFIG.FIREBASE);
-            this.db = firebase.database();
-            this.deviceRef = this.db.ref(`devices/${this.id}`);
-            this.setupSync();
-        } else {
-            console.warn("Firebase not configured. Remote management disabled.");
-        }
+        firebase.initializeApp(CONFIG.FIREBASE);
+        this.db = firebase.database();
+        this.deviceRef = this.db.ref(`devices/${this.id}`);
+
+        this.fetchIp();
+        this.setupSync();
     }
 
     getOrCreateId() {
@@ -58,6 +48,45 @@ class RemoteManager {
             localStorage.setItem('mvhs_device_id', id);
         }
         return id;
+    }
+
+    getOrCreateFirstSeen() {
+        let fs = localStorage.getItem('mvhs_first_seen');
+        if (!fs) {
+            fs = Date.now();
+            localStorage.setItem('mvhs_first_seen', fs);
+        }
+        return parseInt(fs);
+    }
+
+    getBrowserInfo() {
+        const ua = navigator.userAgent;
+        let b = "Unknown Browser";
+        if (ua.indexOf("Chrome") > -1) b = "Chrome";
+        else if (ua.indexOf("Safari") > -1) b = "Safari";
+        else if (ua.indexOf("Firefox") > -1) b = "Firefox";
+        else if (ua.indexOf("MSIE") > -1 || !!document.documentMode) b = "IE";
+
+        // Simple OS detection
+        let os = "Unknown OS";
+        if (ua.indexOf("Win") > -1) os = "Windows";
+        else if (ua.indexOf("Mac") > -1) os = "MacOS";
+        else if (ua.indexOf("Linux") > -1) os = "Linux";
+        else if (ua.indexOf("Android") > -1) os = "Android";
+        else if (ua.indexOf("like Mac") > -1) os = "iOS";
+
+        return `${b} on ${os}`;
+    }
+
+    async fetchIp() {
+        try {
+            const res = await fetch('https://api64.ipify.org?format=json');
+            const data = await res.json();
+            this.ip = data.ip;
+            this.updateStatus();
+        } catch (e) {
+            console.warn("Failed to fetch IP", e);
+        }
     }
 
     setupSync() {
@@ -119,10 +148,15 @@ class RemoteManager {
 
     updateStatus() {
         if (!this.connected) return;
+        const uptimeSeconds = Math.floor((Date.now() - this.sessionStart) / 1000);
         this.deviceRef.child('status').update({
             lastSeen: firebase.database.ServerValue.TIMESTAMP,
             currentPeriod: this.tracker.currentPeriodName || "None",
-            id: this.id // Ensure ID is in the data
+            id: this.id,
+            ip: this.ip,
+            browser: this.browserInfo,
+            firstSeen: this.firstSeen,
+            uptime: uptimeSeconds
         });
     }
 }

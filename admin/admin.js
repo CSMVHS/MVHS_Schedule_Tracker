@@ -1,13 +1,12 @@
 // Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyDbnzWXHsqr6rOXEq99FMYyJEgVp5QSUAo",
   authDomain: "mvhs-st.firebaseapp.com",
+  databaseURL: "https://mvhs-st-default-rtdb.firebaseio.com",
   projectId: "mvhs-st",
   storageBucket: "mvhs-st.firebasestorage.app",
   messagingSenderId: "156783766681",
-  appId: "1:156783766681:web:ee2d859d4372859a909c08",
-  measurementId: "G-RM0Q3H3XYL"
+  appId: "1:156783766681:web:ee2d859d4372859a909c08"
 };
 
 // Admin Config
@@ -37,19 +36,8 @@ function initDashboard() {
     loginContainer.style.display = 'none';
     adminDashboard.style.display = 'block';
 
-    if (CONFIG.FIREBASE.apiKey === "YOUR_API_KEY") {
-        alert("Please configure your Firebase credentials in admin.js");
-        return;
-    }
-
-    firebase.initializeApp(CONFIG.FIREBASE);
+    firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-
-    // Listen for all devices
-    db.ref('devices').on('value', (snap) => {
-        devicesData = snap.val() || {};
-        renderDevices();
-    });
 
     // Global Actions
     document.getElementById('refresh-all-btn').addEventListener('click', () => {
@@ -57,6 +45,24 @@ function initDashboard() {
             Object.keys(devicesData).forEach(id => {
                 db.ref(`devices/${id}/command`).set({ type: 'REFRESH', ts: Date.now() });
             });
+        }
+    });
+
+    document.getElementById('save-global-theme-btn').addEventListener('click', () => {
+        const color = document.getElementById('input-global-color').value;
+        if (confirm(`Change theme color to ${color} for ALL displays?`)) {
+            Object.keys(devicesData).forEach(id => {
+                db.ref(`devices/${id}/settings/themeColor`).set(color);
+            });
+        }
+    });
+
+    // Auto-update modal if open
+    db.ref('devices').on('value', (snap) => {
+        devicesData = snap.val() || {};
+        renderDevices();
+        if (controlModal.style.display === 'flex' && currentDeviceId) {
+            updateModalData(currentDeviceId);
         }
     });
 }
@@ -87,6 +93,7 @@ function renderDevices() {
         const name = device.settings?.name || "Unnamed Device";
         const lastSeen = device.status?.lastSeen ? new Date(device.status.lastSeen).toLocaleString() : "Never";
         const period = device.status?.currentPeriod || "Unknown";
+        const ip = device.status?.ip || "?.?.?.?";
 
         const card = document.createElement('div');
         card.className = `device-card ${isOnline ? 'online' : 'offline'}`;
@@ -96,6 +103,7 @@ function renderDevices() {
             <div class="device-id">${id}</div>
             <div class="device-info">
                 <p><span>Period:</span> ${period}</p>
+                <p><span>IP:</span> ${ip}</p>
                 <p><span>Last Seen:</span> ${lastSeen}</p>
             </div>
         `;
@@ -106,18 +114,41 @@ function renderDevices() {
 
 function openControlModal(id) {
     currentDeviceId = id;
+    updateModalData(id, true);
+    controlModal.style.display = 'flex';
+}
+
+function updateModalData(id, updateInputs = false) {
     const device = devicesData[id];
+    if (!device) return;
     const settings = device.settings || {};
+    const status = device.status || {};
 
     document.getElementById('modal-device-name').textContent = settings.name || "Unnamed Device";
     document.getElementById('modal-device-id').textContent = id;
-    document.getElementById('input-name').value = settings.name || "";
-    document.getElementById('input-color').value = settings.themeColor || "#b1953a";
-    document.getElementById('input-offset').value = settings.timeOffset || 0;
-    document.getElementById('input-override-text').value = settings.overrideText || "";
-    document.getElementById('input-override-active').checked = settings.overrideActive || false;
 
-    controlModal.style.display = 'flex';
+    if (updateInputs) {
+        document.getElementById('input-name').value = settings.name || "";
+        document.getElementById('input-color').value = settings.themeColor || "#b1953a";
+        document.getElementById('input-offset').value = settings.timeOffset || 0;
+        document.getElementById('input-override-text').value = settings.overrideText || "";
+        document.getElementById('input-override-active').checked = settings.overrideActive || false;
+    }
+
+    // Update Metadata
+    document.getElementById('modal-ip').textContent = status.ip || "Unknown";
+    document.getElementById('modal-browser').textContent = status.browser || "Unknown";
+    document.getElementById('modal-first-seen').textContent = status.firstSeen ? new Date(status.firstSeen).toLocaleString() : "Unknown";
+
+    if (status.uptime !== undefined) {
+        const up = status.uptime;
+        const h = Math.floor(up / 3600);
+        const m = Math.floor((up % 3600) / 60);
+        const s = up % 60;
+        document.getElementById('modal-uptime').textContent = `${h}h ${m}m ${s}s`;
+    } else {
+        document.getElementById('modal-uptime').textContent = "Unknown";
+    }
 }
 
 // Modal Actions
