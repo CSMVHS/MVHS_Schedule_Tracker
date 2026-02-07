@@ -83,7 +83,7 @@ body {
     height: 10vh;
     background: var(--bar-bg);
     border-radius: 5vh;
-    overflow: hidden;
+    overflow: hidden; /* Ensures liquid effect is contained within the track */
 }
 
 .liquid_well {
@@ -126,12 +126,12 @@ body {
 .progress_bar::after {
     content: '';
     position: absolute;
-    right: -20px;
-    top: -25%;
+    right: -40px;
+    top: 0;
     width: 80px;
-    height: 150%;
+    height: 100%; /* Match bar height exactly */
     background: var(--bar-fill);
-    border-radius: 40%;
+    border-radius: 35%;
     animation: liquidRotate 4s infinite linear;
 }
 
@@ -147,15 +147,20 @@ body {
 
 .progress_time {
     position: absolute;
-    right: 2vw;
+    /* Spacing logic: Right margin should match the top/bottom gap.
+       Container is 10vh. Font is 5.5vmin (5.5vh on 16:9). Vertical padding 0.7vh.
+       Total height = 5.5 + 1.4 = 6.9vh. Gap = (10 - 6.9)/2 = 1.55vh.
+    */
+    right: 1.55vh;
     top: 50%;
     transform: translateY(-50%);
     font-family: 'DM Mono', monospace;
     font-size: 5.5vmin;
+    line-height: 1;
     font-weight: 500;
     color: #ffffff;
     background: rgba(0, 0, 0, 0.8);
-    padding: 0.8vh 2.5vw;
+    padding: 0.7vh 2.5vw;
     border-radius: 4vh;
     z-index: 20;
     text-shadow: none !important;
