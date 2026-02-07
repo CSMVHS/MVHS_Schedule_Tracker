@@ -16,6 +16,22 @@ class ScheduleTracker {
         this.schedules = [];
         this.weatherInterval = null;
         this.lastDay = new Date().getDay();
+
+        // Cache DOM elements
+        this.dateDisplay = document.getElementById("date-display");
+        this.clockDisplay = document.getElementById("clock-display");
+        this.weatherDisplay = document.getElementById("weather-display");
+        this.endMessage = document.getElementById('end');
+        this.scheduleWrapper = document.querySelector('.schedule-wrapper');
+        this.totalTimeRemaining = document.querySelector(".total-time-remaining");
+        this.totalTimeLeftContainer = document.querySelector(".total-time-left");
+
+        this.trackerItems = Array.from(document.querySelectorAll('.tracker-item')).map(item => ({
+            container: item,
+            title: item.querySelector('.period'),
+            bar: item.querySelector('.progress_bar'),
+            time: item.querySelector('.progress_time')
+        }));
     }
 
     async init() {
@@ -36,18 +52,16 @@ class ScheduleTracker {
         end.setHours(endH, endM, 0, 0);
 
         const diff = end - now;
-        const element = document.querySelector(".total-time-remaining");
-        const container = document.querySelector(".total-time-left");
 
-        if (element && container) {
+        if (this.totalTimeRemaining && this.totalTimeLeftContainer) {
             if (diff <= 0) {
-                container.style.display = 'none';
+                this.totalTimeLeftContainer.style.display = 'none';
             } else {
-                container.style.display = 'block';
+                this.totalTimeLeftContainer.style.display = 'block';
                 const totalMinutes = Math.ceil(diff / 60000);
                 const h = Math.floor(totalMinutes / 60);
                 const m = totalMinutes % 60;
-                element.textContent = `${h}h ${m}m`;
+                this.totalTimeRemaining.textContent = `${h}h ${m}m`;
             }
         }
     }
@@ -159,20 +173,18 @@ class ScheduleTracker {
         }
 
         // Date: MMM DD
-        const dateDisplay = document.getElementById("date-display");
-        if (dateDisplay) {
-            dateDisplay.textContent = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        if (this.dateDisplay) {
+            this.dateDisplay.textContent = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         }
 
         // Time: HH:MM:SS (12h)
-        const clockDisplay = document.getElementById("clock-display");
-        if (clockDisplay) {
+        if (this.clockDisplay) {
             let h = now.getHours();
             const m = String(now.getMinutes()).padStart(2, '0');
             const s = String(now.getSeconds()).padStart(2, '0');
             h = h % 12 || 12;
             // Ensure no spaces around colons
-            clockDisplay.textContent = `${String(h).padStart(2, '0')}:${m}:${s}`;
+            this.clockDisplay.textContent = `${String(h).padStart(2, '0')}:${m}:${s}`;
         }
 
         // 2. Synchronized Total Time Remaining
@@ -182,12 +194,13 @@ class ScheduleTracker {
         let anyVisible = false;
 
         this.schedules.forEach((periods, idx) => {
-            const container = document.querySelectorAll('.tracker-item')[idx];
-            if (!container) return;
+            const item = this.trackerItems[idx];
+            if (!item) return;
 
-            const titleEl = container.querySelector('.period');
-            const barEl = container.querySelector('.progress_bar');
-            const timeEl = container.querySelector('.progress_time');
+            const container = item.container;
+            const titleEl = item.title;
+            const barEl = item.bar;
+            const timeEl = item.time;
 
             if (periods.length === 0) {
                 container.style.display = 'none';
@@ -247,13 +260,12 @@ class ScheduleTracker {
             }
         });
 
-        const endEl = document.getElementById('end');
         if (!anyVisible) {
-            endEl.style.display = 'block';
-            document.querySelector('.schedule-wrapper').style.display = 'none';
+            if (this.endMessage) this.endMessage.style.display = 'block';
+            if (this.scheduleWrapper) this.scheduleWrapper.style.display = 'none';
         } else {
-            endEl.style.display = 'none';
-            document.querySelector('.schedule-wrapper').style.display = 'flex';
+            if (this.endMessage) this.endMessage.style.display = 'none';
+            if (this.scheduleWrapper) this.scheduleWrapper.style.display = 'flex';
         }
     }
 }

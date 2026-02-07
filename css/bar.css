@@ -40,9 +40,10 @@ body {
 .top-bar-item:nth-child(1) { text-align: left; }
 .top-bar-item:nth-child(2) {
     text-align: center;
-    font-family: 'Azeret Mono', monospace;
+    font-family: 'Google Sans Flex', sans-serif;
     font-size: 8vmin;
-    font-weight: 500;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
     -webkit-font-smoothing: antialiased;
     text-shadow: none !important;
 }
@@ -83,30 +84,21 @@ body {
     height: 10vh;
     background: var(--bar-bg);
     border-radius: 5vh;
-    overflow: hidden; /* Ensures liquid effect is contained within the track */
-}
-
-.liquid_well {
-    position: absolute;
-    top: -2vh; /* Oversize vertically to compensate for goo filter blur */
-    left: 0;
-    width: 100%;
-    height: 14vh;
-    filter: url('#goo'); /* Applying the liquid effect only to the bar and its blobs */
+    overflow: hidden;
 }
 
 .progress_bar {
     position: absolute;
     left: 0;
     top: 0;
-    height: 100%; /* Fills the 14vh liquid_well */
+    height: 100%;
     background: var(--gold);
-    border-radius: 0 7vh 7vh 0; /* Rounded end, oversize height handles flush sides */
+    border-radius: 5vh;
     width: 0%;
-    transition: width 0.3s ease-out;
+    /* Transition removed for requestAnimationFrame smoothness */
 }
 
-/* Bubbles inside the bar - Lava Lamp effect */
+/* Bubbles inside the bar - Dynamic Lava effect */
 .progress_bar::before {
     content: '';
     position: absolute;
@@ -116,76 +108,38 @@ body {
     bottom: 0;
     background:
         radial-gradient(circle at 10% 50%, rgba(255,255,255,0.4) 0%, transparent 15%),
-        radial-gradient(circle at 30% 20%, rgba(255,255,255,0.3) 0%, transparent 12%),
-        radial-gradient(circle at 50% 80%, rgba(255,255,255,0.4) 0%, transparent 18%),
-        radial-gradient(circle at 70% 30%, rgba(255,255,255,0.3) 0%, transparent 14%),
-        radial-gradient(circle at 90% 60%, rgba(255,255,255,0.4) 0%, transparent 16%);
+        radial-gradient(circle at 35% 25%, rgba(255,255,255,0.3) 0%, transparent 12%),
+        radial-gradient(circle at 55% 75%, rgba(255,255,255,0.4) 0%, transparent 18%),
+        radial-gradient(circle at 80% 40%, rgba(255,255,255,0.3) 0%, transparent 14%);
     background-size: 200% 100%;
-    animation: bubbleFlow 12s linear infinite;
+    animation: bubbleFlow 20s linear infinite;
     opacity: 0.6;
+    border-radius: 5vh;
+    z-index: 1;
+}
+
+/* Second bubble layer for depth */
+.progress_bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+        radial-gradient(circle at 20% 80%, rgba(255,255,255,0.3) 0%, transparent 10%),
+        radial-gradient(circle at 45% 45%, rgba(255,255,255,0.2) 0%, transparent 15%),
+        radial-gradient(circle at 75% 20%, rgba(255,255,255,0.3) 0%, transparent 12%);
+    background-size: 150% 100%;
+    animation: bubbleFlow 12s linear infinite reverse;
+    opacity: 0.4;
+    border-radius: 5vh;
+    z-index: 2;
 }
 
 @keyframes bubbleFlow {
     0% { background-position: 0% 0; }
     100% { background-position: -200% 0; }
-}
-
-/* Gooey Leading Edge Blobs */
-.liquid-blob {
-    position: absolute;
-    right: -5vh;
-    top: 50%;
-    width: 10vh;
-    height: 100%;
-    background: var(--gold);
-    border-radius: 50%;
-    transform: translateY(-50%);
-}
-
-.liquid-blob:nth-child(1) {
-    width: 12vh;
-    height: 12vh;
-    right: -7vh;
-    animation: wobble 4s ease-in-out infinite;
-}
-
-.liquid-blob:nth-child(2) {
-    width: 9vh;
-    height: 9vh;
-    right: -4vh;
-    animation: wobble 3s ease-in-out infinite reverse;
-}
-
-.liquid-blob:nth-child(3) {
-    width: 11vh;
-    height: 11vh;
-    right: -6vh;
-    animation: wobble 5s ease-in-out infinite 1s;
-}
-
-@keyframes wobble {
-    0%, 100% { transform: translateY(-50%) scale(1) translate(0, 0); border-radius: 42% 58% 70% 30% / 45% 45% 55% 55%; }
-    33% { transform: translateY(-50%) scale(1.1, 0.9) translate(5px, -5px); border-radius: 70% 30% 46% 54% / 30% 29% 71% 70%; }
-    66% { transform: translateY(-50%) scale(0.9, 1.1) translate(-5px, 5px); border-radius: 30% 70% 70% 30% / 50% 60% 34% 40%; }
-}
-
-/* Lava Bubbles */
-.lava-bubble {
-    position: absolute;
-    background: rgba(255, 255, 255, 0.4);
-    border-radius: 50%;
-    pointer-events: none;
-}
-
-.lava-bubble:nth-child(4) { width: 4vh; height: 4vh; left: 15%; top: 30%; animation: lava 8s ease-in-out infinite; }
-.lava-bubble:nth-child(5) { width: 3vh; height: 3vh; left: 45%; top: 60%; animation: lava 12s ease-in-out infinite 1s; }
-.lava-bubble:nth-child(6) { width: 5vh; height: 5vh; left: 75%; top: 40%; animation: lava 10s ease-in-out infinite 2s; }
-.lava-bubble:nth-child(7) { width: 3.5vh; height: 3.5vh; left: 90%; top: 55%; animation: lava 15s ease-in-out infinite 0.5s; }
-
-@keyframes lava {
-    0%, 100% { transform: translate(0, 0) scale(1); border-radius: 50%; }
-    33% { transform: translate(2vw, -2vh) scale(1.2); border-radius: 40% 60% 50% 50%; }
-    66% { transform: translate(-1vw, 1vh) scale(0.8); border-radius: 60% 40% 60% 40%; }
 }
 
 .progress_time {
