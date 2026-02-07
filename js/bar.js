@@ -44,8 +44,9 @@ class ScheduleTracker {
                 container.style.display = 'none';
             } else {
                 container.style.display = 'block';
-                const h = Math.floor(diff / 3600000);
-                const m = Math.floor((diff % 3600000) / 60000);
+                const totalMinutes = Math.ceil(diff / 60000);
+                const h = Math.floor(totalMinutes / 60);
+                const m = totalMinutes % 60;
                 element.textContent = `${h}h ${m}m`;
             }
         }
@@ -225,7 +226,7 @@ class ScheduleTracker {
                     const percent = Math.min(100, (elapsed / total) * 100);
                     barEl.style.width = `${percent}%`;
 
-                    const remaining = Math.max(0, Math.floor((end - now) / 1000));
+                    const remaining = Math.max(0, Math.ceil((end - now) / 1000));
                     const rm = Math.floor(remaining / 60);
                     const rs = remaining % 60;
                     timeEl.textContent = rm > 0 ? `${rm}m ${rs}s` : `${rs}s`;
