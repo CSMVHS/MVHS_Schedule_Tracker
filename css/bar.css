@@ -182,6 +182,9 @@ body {
     bottom: 4vh;
     left: 4vw;
     z-index: 100;
+    display: flex;
+    align-items: flex-end; /* Align text to bottom of the pill */
+    gap: 1.5vw;
 }
 
 .total-time-remaining {
@@ -193,4 +196,12 @@ body {
     border-radius: 2.5vh;
     backdrop-filter: blur(10px);
     text-shadow: none !important;
+}
+
+.credits {
+    color: #008c41;
+    font-size: 2vmin;
+    font-weight: 400;
+    margin-bottom: 0.5vh; /* Slight lift to look centered with the text of the pill */
+    white-space: nowrap;
 }
