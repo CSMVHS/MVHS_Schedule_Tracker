@@ -140,14 +140,14 @@ body {
     top: 50%;
     transform: translateY(-50%);
     font-family: 'Azeret Mono', monospace;
-    font-size: 7vmin;
+    font-size: 5.5vmin;
     font-weight: 700;
     color: #ffffff;
-    background: #000000;
-    padding: 1vh 3vw;
-    border-radius: 6vh;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 0.5vh 2.5vw;
+    border-radius: 4vh;
     box-shadow: 0 0.5vh 1.5vh rgba(0,0,0,0.5);
-    border: 0.3vh solid rgba(255, 255, 255, 0.3);
+    border: 0.2vh solid rgba(255, 255, 255, 0.3);
     z-index: 20;
 }
 
