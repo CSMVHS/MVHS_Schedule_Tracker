@@ -95,51 +95,52 @@ body {
     background: var(--gold);
     border-radius: 5vh;
     width: 0%;
-    /* Transition removed for requestAnimationFrame smoothness */
+    overflow: hidden; /* Keep the blurred edges inside the bar */
 }
 
-/* Bubbles inside the bar - Dynamic Lava effect */
-.progress_bar::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background:
-        radial-gradient(circle at 10% 50%, rgba(255,255,255,0.4) 0%, transparent 15%),
-        radial-gradient(circle at 35% 25%, rgba(255,255,255,0.3) 0%, transparent 12%),
-        radial-gradient(circle at 55% 75%, rgba(255,255,255,0.4) 0%, transparent 18%),
-        radial-gradient(circle at 80% 40%, rgba(255,255,255,0.3) 0%, transparent 14%);
-    background-size: 200% 100%;
-    animation: bubbleFlow 20s linear infinite;
-    opacity: 0.6;
-    border-radius: 5vh;
-    z-index: 1;
-}
-
-/* Second bubble layer for depth */
+/* Bubbles inside the bar - Dynamic Liquid effect */
+.progress_bar::before,
 .progress_bar::after {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background:
-        radial-gradient(circle at 20% 80%, rgba(255,255,255,0.3) 0%, transparent 10%),
-        radial-gradient(circle at 45% 45%, rgba(255,255,255,0.2) 0%, transparent 15%),
-        radial-gradient(circle at 75% 20%, rgba(255,255,255,0.3) 0%, transparent 12%);
-    background-size: 150% 100%;
-    animation: bubbleFlow 12s linear infinite reverse;
-    opacity: 0.4;
+    top: -5vh;
+    left: -5vh;
+    right: -5vh;
+    bottom: -5vh;
+    filter: blur(2vh);
     border-radius: 5vh;
+}
+
+.progress_bar::before {
+    background:
+        radial-gradient(circle at 20% 35%, rgba(255, 255, 255, 0.5) 0%, transparent 40%),
+        radial-gradient(circle at 70% 65%, rgba(255, 255, 255, 0.4) 0%, transparent 45%);
+    background-size: 100vh 100%;
+    background-repeat: repeat-x;
+    animation: liquidFlow1 20s linear infinite;
+    opacity: 0.5;
+    z-index: 1;
+}
+
+.progress_bar::after {
+    background:
+        radial-gradient(circle at 40% 70%, rgba(255, 255, 255, 0.3) 0%, transparent 40%),
+        radial-gradient(circle at 80% 30%, rgba(255, 255, 255, 0.4) 0%, transparent 50%);
+    background-size: 85vh 100%;
+    background-repeat: repeat-x;
+    animation: liquidFlow2 15s linear infinite reverse;
+    opacity: 0.4;
     z-index: 2;
 }
 
-@keyframes bubbleFlow {
-    0% { background-position: 0% 0; }
-    100% { background-position: -200% 0; }
+@keyframes liquidFlow1 {
+    from { background-position: 0 0; }
+    to { background-position: 100vh 0; }
+}
+
+@keyframes liquidFlow2 {
+    from { background-position: 0 0; }
+    to { background-position: 85vh 0; }
 }
 
 .progress_time {
