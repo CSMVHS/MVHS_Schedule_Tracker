@@ -198,12 +198,15 @@ body {
 }
 
 .credits {
-    color: #004d24; /* Darkened for lower contrast against #00401e */
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    color: var(--text-color);
+    opacity: 0.2;
     font-size: 2vmin;
     font-weight: 400;
-    margin-bottom: 0.5vh; /* Slight lift to look centered with the text of the pill */
-    margin-left: 20px;
     white-space: nowrap;
+    z-index: 1000;
 }
 
 /* Remote Override Overlay */
