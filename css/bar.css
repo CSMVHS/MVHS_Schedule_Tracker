@@ -1,308 +1,179 @@
-/* FONTS */
-/* Default font */
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
-/* Slab font (good for ancient things) */
-@import url('https://fonts.googleapis.com/css2?family=Zilla+Slab:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap');
-/* Default number font */
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&display=swap');
-/* Playful font */
-@import url('https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap');
-/* Old font (serif as can be) */
-@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&display=swap');
-/* Halloween font */
-@import url('https://fonts.googleapis.com/css2?family=Jolly+Lodger&display=swap');
-/* Smooth bolder rounded (slice A) */
-@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap');
-/* Hawaiian font (Wish Week 2025) */
-@import url('https://fonts.googleapis.com/css2?family=Short+Stack&display=swap');
-
-/* ONLY EDIT ABOVE THIS LINE TO ADD FONTS - EDIT BELOW THIS LINE TO UPDATE VARIABLES/STYLES */
-
 :root {
+    --bg-color: #002e17;
     --text-color: #ffffff;
-
-    --font-family: 'DM Sans', sans-serif;
-
-    --clock-font-family: 'DM Mono', sans-serif;
-    /* This font should always remain DM Mono or another font that is very easy to read numbers in. */
-
-    --background: linear-gradient(70deg, #01401E, #B19539);
-
-    --text-background: rgba(0, 0, 0, 0.5);
-
-    --progress-bar-animation-length: 10s;
-
-    --progress-bar-angle: to right;
-
-    --progress-bar-color-1: #007d3b;
-
-    --progress-bar-color-2: #d2b246;
-
-    --progress-bar-text-color: white;
-
-    --progress-bar-background: rgba(0, 0, 0, 0.5);
-
-    --progress-bar-border: #FFFFFF;
-
-    --names-color: rgb(255, 255, 255);
+    --bar-bg: rgba(255, 255, 255, 0.1);
+    --bar-fill: #ffffff;
+    --accent-color: #00ff88;
 }
 
-
-/* DO NOT EDIT BELOW THIS TEXT (UNLESS YOU KNOW WHAT YOU'RE DOING) */
-
-
-/**/
-/**/
-/**/
-
 * {
-    transition: all 0.3s ease;
-	font-family: 'DM Sans', sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 body {
-    background: var(--background);
-    font-family: var(--font-family);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Google Sans Flex', sans-serif;
+    overflow: hidden;
     height: 100vh;
     width: 100vw;
-    background-size: cover;
-    background-repeat: no-repeat;
-    box-sizing: border-box;
-    background-position: center center;
-    overflow: hidden;
-    margin: 0;
+}
+
+.background_container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 2rem;
 }
 
 .title_container {
-    position: relative;
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
     align-items: center;
-    justify-content: center; /* Centers the clock horizontally */
-    margin-bottom: 6vh;
-    background: var(--text-background);
-    font-family: var(--font-family);
-    font-size: 3vw;
+    margin-bottom: 2rem;
+    font-size: 3rem;
+    font-weight: 700;
 }
 
-.footer_container {
-    background: var(--text-background);
-    color: var(--text-color);
-    font-family: var(--font-family);
+.top-bar-item:nth-child(1) { text-align: left; }
+.top-bar-item:nth-child(2) {
     text-align: center;
+    font-family: 'Azeret Mono', monospace;
+    font-size: 5rem;
+}
+.top-bar-item:nth-child(3) { text-align: right; }
+
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4rem;
 }
 
-.footer_container p {
-    font-size: 1.6vw;
+.schedule-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 4rem;
 }
 
-.footer_container h4 {
-    font-size: 2.8vw;
+.tracker-item {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
 
-
-.title{
-    color: var(--text-color);
-   /* color: #FFAB0D;*/
-    text-align: center;
-    width: 100vw;
-    margin: 0;
+.text_container {
+    padding-left: 20px;
 }
 
-.end{
-   color: var(--text-color);
-   background: var(--text-background);
-   font-family: var(--font-family);
-     /*background: rgba(117, 24,7,0.75);
-    color: #FFAB0D;*/
-    border-radius: 1000px;
-    box-shadow: 0px 0px 15px -3px black;
-    text-align: center;
-    font-size: 5vw;
-    font-weight: bold;
-    display: table;
-    margin: 0 auto;
-    width: 60vw;
-    display: none;
-	padding-bottom: 10px;
-}
-
-.end_container{
-    margin-top: 11vh;
-}
-
-.text_container{
-    font-weight: bold;
-    font-size: 3vw;
-    padding-bottom: 3vw;
-}
-
-
-.date{
-    color: var(--text-color);
-    background: var(--text-background);
-    font-family: var(--font-family);
-    border-radius: 20px;
-    text-align: center;
-    padding: 10px;
-    margin-left: 40px;
-}
-.period{
-    color: var(--text-color);
-    font-family: var(--font-family);
-    float: right;
-    margin-right: 40px;
-    background: var(--text-background);
-    padding: 0px 20px 0px 20px;
-    border-radius: 20px;
-    text-align: center;
-    padding: 10px;
-}
-
-.bar-placeholder{
-    padding: 10px;
-}
-
-.names{
-	color: var(--names-color);
-	position: absolute;
-	bottom: 0;
-    font-family: var(--font-family);
-	right: 0;
-    margin: 1px;
-    font-size: 16px;
+.period {
+    font-size: 5rem;
+    font-weight: 700;
 }
 
 .progress_container {
-    width: 75%;
-    margin: auto;
-    height: 5.5vw;
-    overflow: hidden;
-    background-color: var(--progress-bar-background);
-    font-family: var(--font-family);
-    border-radius: 30px;
     position: relative;
-    border: 4px solid var(--progress-bar-border);
-	box-shadow: 0px 0px 20px -5px var(--progress-bar-border);
-
+    height: 100px;
+    background: var(--bar-bg);
+    border-radius: 50px;
+    overflow: hidden;
+    filter: url('#goo'); /* Applying the liquid effect */
 }
 
 .progress_bar {
-    width: 50%;
-transition: width 0.3s ease;
+    position: absolute;
+    left: 0;
+    top: 0;
     height: 100%;
-    color: var(--progress-bar-text-color);
-    font-family: var(--font-family);
-    background: repeating-linear-gradient(90deg, var(--progress-bar-color-1), var(--progress-bar-color-2), var(--progress-bar-color-1));
-    background-size: 200% auto;
-    background-position: 0 100%;
-    animation: gradient var(--progress-bar-animation-length) infinite;
-    animation-fill-mode: forwards;
-    animation-timing-function: linear;
+    background: var(--bar-fill);
+    border-radius: 50px;
+    width: 0%;
+    transition: width 0.3s ease-out;
+}
+
+/* Bubbles inside the bar */
+.progress_bar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.4) 0%, transparent 10%),
+                radial-gradient(circle at 40% 30%, rgba(255,255,255,0.4) 0%, transparent 8%),
+                radial-gradient(circle at 60% 70%, rgba(255,255,255,0.4) 0%, transparent 12%),
+                radial-gradient(circle at 80% 40%, rgba(255,255,255,0.4) 0%, transparent 10%);
+    background-size: 200% 100%;
+    animation: bubbleFlow 10s linear infinite;
+}
+
+/* Liquidy Wave at the end of the bar */
+.progress_bar::after {
+    content: '';
+    position: absolute;
+    right: -20px;
+    top: -25%;
+    width: 80px;
+    height: 150%;
+    background: var(--bar-fill);
+    border-radius: 40%;
+    animation: liquidRotate 4s infinite linear;
+}
+
+@keyframes bubbleFlow {
+    0% { background-position: 0% 0; }
+    100% { background-position: -200% 0; }
+}
+
+@keyframes liquidRotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 .progress_time {
     position: absolute;
+    right: 20px;
     top: 50%;
     transform: translateY(-50%);
-    right: 10px;
-    color: var(--progress-bar-text-color);
-    font-family: var(--font-family);
-    font-weight: bold;
-    font-size: 4vw;
-	   text-shadow: 0px 0px 15px black;
-
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #ffffff;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 0.5rem 1.5rem;
+    border-radius: 30px;
+    backdrop-filter: blur(5px);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    z-index: 20;
 }
 
-#clock {
-    color: var(--text-color);
-    font-family: var(--clock-font-family) !important;
-    font-size: 5vw;
-    margin: 0;
+.end-message {
+    display: none;
+    text-align: center;
+    font-size: 10rem;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 4rem;
+    border-radius: 100px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
 }
 
-@keyframes gradient { 
-  0%   { background-position: 0 0; }
-  100% { background-position: -200% 0; }
+.total-time-left {
+    position: fixed;
+    bottom: 40px;
+    left: 40px;
+    z-index: 100;
 }
 
-@keyframes gradient2 {
-	0% { background-position: 0% 50%}
-	50% { background-position: 100% 50%}
-	100% { background-position: 0% 50%}
-}
-
-
-#mvhs-logo {
-    height: 5vw; /* Adjust this value to match the size of the clock */
-}
-
-#img {
-    height: 5vw;
-}
-
-.logo_container {
-    position: absolute;
-    left: 15px;
-    display: flex;
-    align-items: center;
-    height: 100%;
-}
-
-.img_container {
-    position: absolute;
-    right: 15px;
-    display: flex;
-    align-items: center;
-    height: 100%;
-}
-
-.qrcode {
-    height: 142px;
-    width: 142px;
-    border-radius: 4px;
-    opacity: 0.95;
-    padding: 5px;
-    position: absolute;
-    left: 50px;
-    bottom: 50px;
-    margin: 5px;
-    z-index: 10;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: linear-gradient(to top right, var(--wwpink), var(--wwblue), var(--wwyellow));
-    padding: 5px;
-    border-radius: 6px;
-    opacity: 0.85;
-    cursor: pointer;
-}
-
-div.id-wrap {
-    height: 100vh;
-    width: 100vw;
-    display: flex;
-    align-items: center;
-	justify-content: center;
-    background: rgba(0, 0, 0, 0.85);
-	display: none;
-	position: fixed;
-	top: 0;
-	left: 0;
-}
-
-p#identification {
-	font-size: clamp(50px, 5vw, 200px);
-	color: white;
-	font-family: 'DM Mono', monospace;
-}
-
-
-p.total-time-remaining {
-	position: fixed;
-	bottom: 0;
-	left: 0;
-	margin: 2px;
-	font-size: 26px;
-	color: white;
-	font-family: 'DM Sans', sans-serif;
+.total-time-remaining {
+    font-size: 3rem;
+    font-weight: 700;
+    background: rgba(0, 0, 0, 0.6);
+    color: #ffffff;
+    padding: 1rem 2rem;
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.1);
 }
