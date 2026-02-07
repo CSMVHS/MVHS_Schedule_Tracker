@@ -171,6 +171,7 @@ class ScheduleTracker {
             const m = String(now.getMinutes()).padStart(2, '0');
             const s = String(now.getSeconds()).padStart(2, '0');
             h = h % 12 || 12;
+            // Ensure no spaces around colons
             clockDisplay.textContent = `${String(h).padStart(2, '0')}:${m}:${s}`;
         }
 
