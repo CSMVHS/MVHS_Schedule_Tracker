@@ -15,48 +15,13 @@ class ScheduleTracker {
     constructor() {
         this.schedules = [];
         this.weatherInterval = null;
+        this.lastDay = new Date().getDay();
     }
 
     async init() {
-        this.setupClock();
         this.setupWeather();
         await this.loadSchedules();
         this.startUpdateLoop();
-    }
-
-    setupClock() {
-        let lastDay = new Date().getDay();
-        const update = () => {
-            const now = new Date();
-
-            // Reload schedules if the day changes
-            if (now.getDay() !== lastDay) {
-                lastDay = now.getDay();
-                this.loadSchedules();
-            }
-
-            // Date: MMM DD
-            const dateDisplay = document.getElementById("date-display");
-            if (dateDisplay) {
-                dateDisplay.textContent = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            }
-
-            // Time: HH:MM:SS (12h)
-            const clockDisplay = document.getElementById("clock-display");
-            if (clockDisplay) {
-                let h = now.getHours();
-                const m = String(now.getMinutes()).padStart(2, '0');
-                const s = String(now.getSeconds()).padStart(2, '0');
-                h = h % 12 || 12;
-                clockDisplay.textContent = `${String(h).padStart(2, '0')}:${m}:${s}`;
-            }
-
-            // Total time remaining
-            this.updateTotalTimeRemaining(now);
-        };
-
-        update();
-        setInterval(update, 1000);
     }
 
     updateTotalTimeRemaining(now) {
@@ -184,6 +149,34 @@ class ScheduleTracker {
 
     updateUI() {
         const now = new Date();
+
+        // 1. Synchronized Header Updates (Clock & Date)
+        // Reload schedules if the day changes
+        if (now.getDay() !== this.lastDay) {
+            this.lastDay = now.getDay();
+            this.loadSchedules();
+        }
+
+        // Date: MMM DD
+        const dateDisplay = document.getElementById("date-display");
+        if (dateDisplay) {
+            dateDisplay.textContent = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        // Time: HH:MM:SS (12h)
+        const clockDisplay = document.getElementById("clock-display");
+        if (clockDisplay) {
+            let h = now.getHours();
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+            h = h % 12 || 12;
+            clockDisplay.textContent = `${String(h).padStart(2, '0')}:${m}:${s}`;
+        }
+
+        // 2. Synchronized Total Time Remaining
+        this.updateTotalTimeRemaining(now);
+
+        // 3. Synchronized Period Updates
         let anyVisible = false;
 
         this.schedules.forEach((periods, idx) => {
