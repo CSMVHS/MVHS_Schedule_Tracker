@@ -25,15 +25,15 @@ body {
     display: flex;
     flex-direction: column;
     height: 100vh;
-    padding: 1rem 2rem 2rem 2rem;
+    padding: 1.5vh 3vw 3vh 3vw;
 }
 
 .title_container {
     display: grid;
     grid-template-columns: 1fr 2fr 1fr;
     align-items: center;
-    margin-bottom: 2rem;
-    font-size: 3rem;
+    margin-bottom: 1vh;
+    font-size: 4vmin;
     font-weight: 700;
 }
 
@@ -41,7 +41,7 @@ body {
 .top-bar-item:nth-child(2) {
     text-align: center;
     font-family: 'Azeret Mono', monospace;
-    font-size: 5rem;
+    font-size: 7.5vmin;
 }
 .top-bar-item:nth-child(3) { text-align: right; }
 
@@ -49,36 +49,37 @@ body {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    gap: 4rem;
+    justify-content: flex-start;
+    padding-top: 4vh;
+    gap: 6vh;
 }
 
 .schedule-wrapper {
     display: flex;
     flex-direction: column;
-    gap: 4rem;
+    gap: 6vh;
 }
 
 .tracker-item {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 1.5vh;
 }
 
 .text_container {
-    padding-left: 20px;
+    padding-left: 2vw;
 }
 
 .period {
-    font-size: 5rem;
+    font-size: 8vmin;
     font-weight: 700;
 }
 
 .progress_container {
     position: relative;
-    height: 100px;
+    height: 10vh;
     background: var(--bar-bg);
-    border-radius: 50px;
+    border-radius: 5vh;
     overflow: hidden;
     filter: url('#goo'); /* Applying the liquid effect */
 }
@@ -135,46 +136,47 @@ body {
 
 .progress_time {
     position: absolute;
-    right: 20px;
+    right: 2vw;
     top: 50%;
     transform: translateY(-50%);
     font-family: 'Azeret Mono', monospace;
-    font-size: 2.5rem;
+    font-size: 4vmin;
     font-weight: 700;
     color: #ffffff;
     background: rgba(0, 0, 0, 0.6);
-    padding: 0.5rem 1.5rem;
-    border-radius: 30px;
+    padding: 1vh 2vw;
+    border-radius: 4vh;
     backdrop-filter: blur(5px);
-    border: 2px solid rgba(255, 255, 255, 0.2);
+    border: 0.2vh solid rgba(255, 255, 255, 0.2);
     z-index: 20;
 }
 
 .end-message {
     display: none;
     text-align: center;
-    font-size: 10rem;
+    font-size: 15vmin;
     font-weight: 700;
     background: rgba(255, 255, 255, 0.05);
-    padding: 4rem;
-    border-radius: 100px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    padding: 8vh 5vw;
+    border-radius: 10vh;
+    box-shadow: 0 2vh 5vh rgba(0,0,0,0.3);
+    margin: auto 0; /* Center vertically when it's the only thing */
 }
 
 .total-time-left {
     position: fixed;
-    bottom: 40px;
-    left: 40px;
+    bottom: 4vh;
+    left: 4vw;
     z-index: 100;
 }
 
 .total-time-remaining {
-    font-size: 3rem;
+    font-size: 4.5vmin;
     font-weight: 700;
     background: rgba(0, 0, 0, 0.6);
     color: #ffffff;
-    padding: 1rem 2rem;
-    border-radius: 20px;
+    padding: 1.5vh 2.5vw;
+    border-radius: 2.5vh;
     backdrop-filter: blur(10px);
-    border: 2px solid rgba(255, 255, 255, 0.1);
+    border: 0.2vh solid rgba(255, 255, 255, 0.1);
 }
