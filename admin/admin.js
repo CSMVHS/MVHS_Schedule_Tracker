@@ -21,7 +21,7 @@ const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 
 // Admin Config
-const ADMIN_PASSWORD = "change_me"; // The shared password
+const ADMIN_PASSWORD = "0000"; // The shared password
 
 let currentDeviceId = null;
 let devicesData = {};
