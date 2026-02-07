@@ -216,6 +216,36 @@ button:hover {
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
+    align-items: center;
+}
+
+.global-setting-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-left: 1rem;
+    padding-left: 1rem;
+    border-left: 2px solid var(--bg);
+}
+
+.global-setting-item label {
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.metadata-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    font-size: 0.85rem;
+}
+
+.metadata-grid p span {
+    display: block;
+    font-weight: 700;
+    color: #666;
+    font-size: 0.75rem;
+    text-transform: uppercase;
 }
 
 .error {

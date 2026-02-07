@@ -30,6 +30,11 @@
                 <h2>Global Actions</h2>
                 <div class="btn-group">
                     <button id="refresh-all-btn" class="btn-warning">Refresh All Displays</button>
+                    <div class="global-setting-item">
+                        <label>Set Global Theme:</label>
+                        <input type="color" id="input-global-color" value="#b1953a">
+                        <button id="save-global-theme-btn">Apply to All</button>
+                    </div>
                 </div>
             </section>
 
@@ -83,6 +88,18 @@
                     <label for="input-override-active">Activate Full Screen Override</label>
                 </div>
                 <button id="save-override-btn">Update Override</button>
+            </div>
+
+            <hr>
+
+            <div class="control-section">
+                <h3>Metadata</h3>
+                <div class="metadata-grid">
+                    <p><span>IP Address:</span> <span id="modal-ip">---</span></p>
+                    <p><span>Browser:</span> <span id="modal-browser">---</span></p>
+                    <p><span>First Seen:</span> <span id="modal-first-seen">---</span></p>
+                    <p><span>Uptime:</span> <span id="modal-uptime">---</span></p>
+                </div>
             </div>
 
             <hr>
