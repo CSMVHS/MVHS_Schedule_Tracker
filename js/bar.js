@@ -8,14 +8,123 @@ const CONFIG = {
     CITY: "Highlands Ranch, CO",
     LAT: 39.5481,
     LON: -104.9739,
-    SCHOOL_END_TIME: "14:50"
+    SCHOOL_END_TIME: "14:50",
+    FIREBASE: {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+        databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_PROJECT_ID.appspot.com",
+        messagingSenderId: "YOUR_SENDER_ID",
+        appId: "YOUR_APP_ID"
+    }
 };
+
+class RemoteManager {
+    constructor(tracker) {
+        this.tracker = tracker;
+        this.id = this.getOrCreateId();
+        this.db = null;
+        this.deviceRef = null;
+        this.connected = false;
+
+        // Initialize Firebase
+        if (CONFIG.FIREBASE.apiKey !== "YOUR_API_KEY") {
+            firebase.initializeApp(CONFIG.FIREBASE);
+            this.db = firebase.database();
+            this.deviceRef = this.db.ref(`devices/${this.id}`);
+            this.setupSync();
+        } else {
+            console.warn("Firebase not configured. Remote management disabled.");
+        }
+    }
+
+    getOrCreateId() {
+        let id = localStorage.getItem('mvhs_device_id');
+        if (!id) {
+            id = Math.random().toString(36).substring(2, 8).toUpperCase();
+            localStorage.setItem('mvhs_device_id', id);
+        }
+        return id;
+    }
+
+    setupSync() {
+        // Handle connections/disconnections
+        const connectedRef = this.db.ref(".info/connected");
+        connectedRef.on("value", (snap) => {
+            if (snap.val() === true) {
+                this.connected = true;
+                // Set online status and onDisconnect hook
+                this.deviceRef.child('status/isOnline').set(true);
+                this.deviceRef.child('status/isOnline').onDisconnect().set(false);
+                this.deviceRef.child('status/lastSeen').onDisconnect().set(firebase.database.ServerValue.TIMESTAMP);
+            } else {
+                this.connected = false;
+            }
+        });
+
+        // Listen for settings and commands
+        this.deviceRef.on('value', (snap) => {
+            const data = snap.val();
+            if (!data) return;
+
+            // Apply Name (just for display in admin, but we keep track of it)
+            if (data.settings && data.settings.name) {
+                document.title = `${data.settings.name} | MVHS Schedule`;
+            }
+
+            // Apply Theme
+            if (data.settings && data.settings.themeColor) {
+                document.documentElement.style.setProperty('--gold', data.settings.themeColor);
+            } else {
+                document.documentElement.style.setProperty('--gold', '#b1953a'); // Reset to default
+            }
+
+            // Apply Time Offset
+            if (data.settings && data.settings.timeOffset !== undefined) {
+                this.tracker.timeOffset = parseInt(data.settings.timeOffset) || 0;
+            }
+
+            // Apply Override
+            if (data.settings && data.settings.overrideText) {
+                this.tracker.setOverride(data.settings.overrideText, data.settings.overrideActive);
+            } else {
+                this.tracker.setOverride(null, false);
+            }
+
+            // Handle Commands
+            if (data.command) {
+                if (data.command.type === 'REFRESH') {
+                    this.deviceRef.child('command').remove();
+                    window.location.reload();
+                }
+            }
+        });
+
+        // Periodic status update (current period)
+        setInterval(() => this.updateStatus(), 5000);
+    }
+
+    updateStatus() {
+        if (!this.connected) return;
+        this.deviceRef.child('status').update({
+            lastSeen: firebase.database.ServerValue.TIMESTAMP,
+            currentPeriod: this.tracker.currentPeriodName || "None",
+            id: this.id // Ensure ID is in the data
+        });
+    }
+}
 
 class ScheduleTracker {
     constructor() {
         this.schedules = [];
         this.weatherInterval = null;
         this.lastDay = new Date().getDay();
+        this.timeOffset = 0; // In minutes
+        this.currentPeriodName = "";
+
+        // Remote Management
+        this.remote = new RemoteManager(this);
 
         // Cache DOM elements
         this.dateDisplay = document.getElementById("date-display");
@@ -163,7 +272,10 @@ class ScheduleTracker {
     }
 
     updateUI() {
-        const now = new Date();
+        let now = new Date();
+        if (this.timeOffset !== 0) {
+            now = new Date(now.getTime() + (this.timeOffset * 60000));
+        }
 
         // 1. Synchronized Header Updates (Clock & Date)
         // Reload schedules if the day changes
@@ -233,6 +345,7 @@ class ScheduleTracker {
 
                 if (currentPeriod) {
                     titleEl.textContent = currentPeriod.name;
+                    if (idx === 0) this.currentPeriodName = currentPeriod.name;
                     const start = this.parseTime(currentPeriod.start, now);
                     const end = this.parseTime(currentPeriod.end, now);
                     const total = end - start;
@@ -267,6 +380,27 @@ class ScheduleTracker {
             if (this.endMessage) this.endMessage.style.display = 'none';
             if (this.scheduleWrapper) this.scheduleWrapper.style.display = 'flex';
         }
+    }
+
+    setOverride(text, active) {
+        const overlay = document.getElementById('override-overlay');
+        const overlayText = document.getElementById('override-text');
+        if (overlay && overlayText) {
+            if (active && text) {
+                overlayText.textContent = text;
+                overlay.style.display = 'flex';
+            } else {
+                overlay.style.display = 'none';
+            }
+        }
+    }
+
+    startUpdateLoop() {
+        const loop = () => {
+            this.updateUI();
+            requestAnimationFrame(loop);
+        };
+        requestAnimationFrame(loop);
     }
 }
 

@@ -11,6 +11,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:ital,wght@0,100..900;1,100..900&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Google+Sans+Flex:opsz,wght@6..144,1..1000&display=swap" rel="stylesheet">
 </head>
 <body>
+    <div id="override-overlay" class="override-overlay">
+        <div id="override-text" class="override-text">MESSAGE</div>
+    </div>
+
     <div class="background_container">
         <header class="title_container">
             <div id="date-display" class="top-bar-item">--- --</div>
@@ -52,6 +56,10 @@
         </footer>
     </div>
 
+
+    <!-- Firebase SDK (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <script src="js/bar.js"></script>
 </body>

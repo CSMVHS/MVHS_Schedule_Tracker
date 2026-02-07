@@ -199,10 +199,33 @@ body {
 }
 
 .credits {
-    color: #00662f;
+    color: #008c41;
     font-size: 2vmin;
     font-weight: 400;
     margin-bottom: 0.5vh; /* Slight lift to look centered with the text of the pill */
     white-space: nowrap;
-    margin-left: 20px;
+}
+
+/* Remote Override Overlay */
+.override-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #000000;
+    z-index: 9999;
+    display: none; /* Controlled by JS */
+    justify-content: center;
+    align-items: center;
+    padding: 10vw;
+    text-align: center;
+}
+
+.override-text {
+    color: #ffffff;
+    font-size: 10vmin;
+    font-weight: 700;
+    line-height: 1.2;
+    word-wrap: break-word;
 }
