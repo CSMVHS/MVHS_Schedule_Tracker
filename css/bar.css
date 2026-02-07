@@ -1,9 +1,9 @@
 :root {
-    --bg-color: #002e17;
+    --bg-color: #00401e; /* Dark green */
     --text-color: #ffffff;
-    --bar-bg: rgba(255, 255, 255, 0.1);
-    --bar-fill: #ffffff;
-    --accent-color: #00ff88;
+    --bar-bg: rgba(0, 0, 0, 0.3); /* Slightly darker track for better contrast */
+    --gold: #b1953a; /* Gold */
+    --bar-fill: #ffffff; /* We will use a gradient for the bar itself */
 }
 
 * {
@@ -100,13 +100,21 @@ body {
     left: 0;
     top: 0;
     height: 100%; /* Fills the 14vh liquid_well */
-    background: var(--bar-fill);
+    /* Moving Linear Gradient from Gold to White */
+    background: linear-gradient(90deg, var(--gold), #ffffff, var(--gold));
+    background-size: 200% 100%;
+    animation: moveGradient 3s linear infinite;
     border-radius: 0 7vh 7vh 0; /* Rounded end, oversize height handles flush sides */
     width: 0%;
     transition: width 0.3s ease-out;
 }
 
-/* Bubbles inside the bar */
+@keyframes moveGradient {
+    0% { background-position: 0% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Bubbles inside the bar - adjusted opacity for gradient */
 .progress_bar::before {
     content: '';
     position: absolute;
@@ -114,15 +122,15 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.4) 0%, transparent 10%),
-                radial-gradient(circle at 40% 30%, rgba(255,255,255,0.4) 0%, transparent 8%),
-                radial-gradient(circle at 60% 70%, rgba(255,255,255,0.4) 0%, transparent 12%),
-                radial-gradient(circle at 80% 40%, rgba(255,255,255,0.4) 0%, transparent 10%);
+    background: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.3) 0%, transparent 10%),
+                radial-gradient(circle at 40% 30%, rgba(255,255,255,0.3) 0%, transparent 8%),
+                radial-gradient(circle at 60% 70%, rgba(255,255,255,0.3) 0%, transparent 12%),
+                radial-gradient(circle at 80% 40%, rgba(255,255,255,0.3) 0%, transparent 10%);
     background-size: 200% 100%;
-    animation: bubbleFlow 10s linear infinite;
+    animation: bubbleFlow 8s linear infinite;
 }
 
-/* Liquidy Wave at the end of the bar */
+/* Liquidy Wave at the end of the bar - must match the gradient color at the tip */
 .progress_bar::after {
     content: '';
     position: absolute;
@@ -130,7 +138,7 @@ body {
     top: 0;
     width: 12vh;
     height: 100%; /* Match bar height (14vh) */
-    background: var(--bar-fill);
+    background: inherit; /* Inherits the moving gradient */
     border-radius: 42%;
     animation: liquidRotate 4s infinite linear;
 }

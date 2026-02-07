@@ -4,7 +4,7 @@
  */
 
 const CONFIG = {
-    WEATHER_API_KEY: "7a08aa9c10a1a7edae637fa85fc3ecae",
+    WEATHER_API_KEY: "YOUR_OPENWEATHERMAP_API_KEY",
     CITY: "Highlands Ranch, CO",
     LAT: 39.5481,
     LON: -104.9739,
