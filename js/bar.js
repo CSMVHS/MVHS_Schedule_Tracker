@@ -26,8 +26,18 @@ class RemoteManager {
         this.id = this.getOrCreateId();
         this.firstSeen = this.getOrCreateFirstSeen();
         this.sessionStart = Date.now();
+        this.totalUptime = parseInt(localStorage.getItem('mvhs_total_uptime') || '0');
+        this.lastTotalTick = Date.now();
         this.browserInfo = this.getBrowserInfo();
-        this.ip = "Unknown";
+        this.maxTouchPoints = navigator.maxTouchPoints || 0;
+        this.batteryInfo = "UNAVAIL";
+        this.serverOffset = 0;
+
+        // Activity tracking
+        this.totalInteractions = parseInt(localStorage.getItem('mvhs_total_interactions') || '0');
+        this.lastInteraction = parseInt(localStorage.getItem('mvhs_last_interaction') || '0');
+        this.setupActivityTracking();
+
         this.db = null;
         this.deviceRef = null;
         this.connected = false;
@@ -37,8 +47,35 @@ class RemoteManager {
         this.db = firebase.database();
         this.deviceRef = this.db.ref(`devices/${this.id}`);
 
-        this.fetchIp();
+        this.setupBatteryTracking();
         this.setupSync();
+    }
+
+    setupActivityTracking() {
+        const events = ['mousemove', 'mousedown', 'keydown', 'touchstart'];
+        const record = () => {
+            this.totalInteractions++;
+            this.lastInteraction = Date.now();
+            localStorage.setItem('mvhs_total_interactions', this.totalInteractions);
+            localStorage.setItem('mvhs_last_interaction', this.lastInteraction);
+        };
+        events.forEach(e => window.addEventListener(e, record, { passive: true }));
+    }
+
+    async setupBatteryTracking() {
+        if (navigator.getBattery) {
+            try {
+                const batt = await navigator.getBattery();
+                const update = () => {
+                    this.batteryInfo = `${Math.round(batt.level * 100)}% (${batt.charging ? 'Charging' : 'Discharging'})`;
+                };
+                batt.addEventListener('levelchange', update);
+                batt.addEventListener('chargingchange', update);
+                update();
+            } catch (e) {
+                this.batteryInfo = "UNAVAIL";
+            }
+        }
     }
 
     getOrCreateId() {
@@ -78,18 +115,6 @@ class RemoteManager {
         return `${b} on ${os}`;
     }
 
-    async fetchIp() {
-        try {
-            // Use api.ipify.org for IPv4
-            const res = await fetch('https://api.ipify.org?format=json');
-            const data = await res.json();
-            this.ip = data.ip;
-            this.updateStatus();
-        } catch (e) {
-            console.warn("Failed to fetch IP", e);
-        }
-    }
-
     getContrastColor(hex) {
         if (!hex || hex.length !== 7) return '#ffffff';
         const r = parseInt(hex.slice(1, 3), 16);
@@ -100,6 +125,11 @@ class RemoteManager {
     }
 
     setupSync() {
+        // Track time drift
+        this.db.ref(".info/serverTimeOffset").on("value", (snap) => {
+            this.serverOffset = snap.val() || 0;
+        });
+
         // Handle connections/disconnections
         const connectedRef = this.db.ref(".info/connected");
         connectedRef.on("value", (snap) => {
@@ -168,21 +198,40 @@ class RemoteManager {
             }
         });
 
-        // Periodic status update (current period)
+        // Periodic status updates
         setInterval(() => this.updateStatus(), 5000);
+        setInterval(() => this.updateTotalUptime(), 30000);
+    }
+
+    updateTotalUptime() {
+        if (!this.connected) return;
+        const now = Date.now();
+        const delta = Math.floor((now - this.lastTotalTick) / 1000);
+        this.totalUptime += delta;
+        this.lastTotalTick = now;
+
+        localStorage.setItem('mvhs_total_uptime', this.totalUptime);
+        this.deviceRef.child('status').update({
+            totalUptime: this.totalUptime
+        });
     }
 
     updateStatus() {
         if (!this.connected) return;
-        const uptimeSeconds = Math.floor((Date.now() - this.sessionStart) / 1000);
+        const currentUptime = Math.floor((Date.now() - this.sessionStart) / 1000);
         this.deviceRef.child('status').update({
             lastSeen: firebase.database.ServerValue.TIMESTAMP,
             currentPeriod: this.tracker.currentPeriodName || "None",
             id: this.id,
-            ip: this.ip,
             browser: this.browserInfo,
             firstSeen: this.firstSeen,
-            uptime: uptimeSeconds
+            currentUptime: currentUptime,
+            battery: this.batteryInfo,
+            touchPoints: this.maxTouchPoints,
+            visibility: document.visibilityState || "unknown",
+            drift: this.serverOffset,
+            totalInteractions: this.totalInteractions,
+            lastInteraction: this.lastInteraction
         });
     }
 }
@@ -419,17 +468,7 @@ class ScheduleTracker {
                     barEl.style.width = `${percent}%`;
 
                     const remaining = Math.max(0, Math.ceil((end - now) / 1000));
-                    const rh = Math.floor(remaining / 3600);
-                    const rm = Math.floor((remaining % 3600) / 60);
-                    const rs = remaining % 60;
-                    
-                    if (rh > 0) {
-                        timeEl.textContent = `${rh}h ${rm}m ${rs}s`;
-                    } else if (rm > 0) {
-                        timeEl.textContent = `${rm}m ${rs}s`;
-                    } else {
-                        timeEl.textContent = `${rs}s`;
-                    }
+                    timeEl.textContent = this.formatTimeRemaining(remaining);
                 } else {
                     // Pre-school or Passing
                     const nextPeriod = periods.find(p => this.parseTime(p.start, now) > now);
@@ -438,17 +477,7 @@ class ScheduleTracker {
                         barEl.style.width = '0%';
                         const start = this.parseTime(nextPeriod.start, now);
                         const remaining = Math.max(0, Math.floor((start - now) / 1000));
-                        const rh = Math.floor(remaining / 3600);
-                        const rm = Math.floor((remaining % 3600) / 60);
-                        const rs = remaining % 60;
-                        
-                        if (rh > 0) {
-                            timeEl.textContent = `${rh}h ${rm}m ${rs}s`;
-                        } else if (rm > 0) {
-                            timeEl.textContent = `${rm}m ${rs}s`;
-                        } else {
-                            timeEl.textContent = `${rs}s`;
-                        }
+                        timeEl.textContent = this.formatTimeRemaining(remaining);
                     }
                 }
             }
@@ -463,6 +492,20 @@ class ScheduleTracker {
         }
     }
 
+    formatTimeRemaining(seconds) {
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = seconds % 60;
+
+        let units = [{ v: h, u: 'h' }, { v: m, u: 'm' }, { v: s, u: 's' }];
+        // Remove leading zeros
+        while (units.length > 1 && units[0].v === 0) units.shift();
+        // Remove trailing zeros
+        while (units.length > 1 && units[units.length - 1].v === 0) units.pop();
+
+        return units.map(x => `${x.v}${x.u}`).join(' ');
+    }
+
     setOverride(text, active) {
         const overlay = document.getElementById('override-overlay');
         const overlayText = document.getElementById('override-text');
@@ -475,19 +518,9 @@ class ScheduleTracker {
             }
         }
     }
-
-    startUpdateLoop() {
-        const loop = () => {
-            this.updateUI();
-            requestAnimationFrame(loop);
-        };
-        requestAnimationFrame(loop);
-    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     const tracker = new ScheduleTracker();
     tracker.init();
 });
-
-

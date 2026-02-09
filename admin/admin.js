@@ -121,7 +121,6 @@ function renderDevices() {
         const isOnline = device.status?.isOnline;
         const name = device.settings?.name || "Unnamed Device";
         const lastSeen = device.status?.lastSeen ? new Date(device.status.lastSeen).toLocaleString() : "Never";
-        const ip = device.status?.ip || "?.?.?.?";
         const settings = device.settings || {};
         const isOverridden = settings.overrideActive && settings.overrideText;
         const timeOffset = parseInt(settings.timeOffset) || 0;
@@ -142,7 +141,6 @@ function renderDevices() {
 
             <div class="device-id">${id}</div>
             <div class="device-info">
-                <p><span>IP:</span> ${ip}</p>
                 <p><span>Last Seen:</span> ${lastSeen}</p>
             </div>
         `;
@@ -176,18 +174,44 @@ function updateModalData(id, updateInputs = false) {
     }
 
     // Update Metadata
-    document.getElementById('modal-ip').textContent = status.ip || "Unknown";
     document.getElementById('modal-browser').textContent = status.browser || "Unknown";
     document.getElementById('modal-first-seen').textContent = status.firstSeen ? new Date(status.firstSeen).toLocaleString() : "Unknown";
 
-    if (status.uptime !== undefined) {
-        const up = status.uptime;
+    if (status.currentUptime !== undefined) {
+        const up = status.currentUptime;
         const h = Math.floor(up / 3600);
         const m = Math.floor((up % 3600) / 60);
         const s = up % 60;
         document.getElementById('modal-uptime').textContent = `${h}h ${m}m ${s}s`;
     } else {
         document.getElementById('modal-uptime').textContent = "Unknown";
+    }
+
+    if (status.totalUptime !== undefined) {
+        const up = status.totalUptime;
+        const h = Math.floor(up / 3600);
+        const m = Math.floor((up % 3600) / 60);
+        const s = up % 60;
+        document.getElementById('modal-total-uptime').textContent = `${h}h ${m}m ${s}s`;
+    } else {
+        document.getElementById('modal-total-uptime').textContent = "Unknown";
+    }
+
+    // New Metadata
+    document.getElementById('modal-battery').textContent = status.battery || "Unknown";
+    document.getElementById('modal-touch').textContent = status.touchPoints !== undefined ? status.touchPoints : "Unknown";
+    document.getElementById('modal-visibility').textContent = status.visibility || "Unknown";
+    document.getElementById('modal-drift').textContent = status.drift !== undefined ? `${status.drift}ms` : "Unknown";
+    document.getElementById('modal-activity-total').textContent = status.totalInteractions !== undefined ? status.totalInteractions : "0";
+
+    if (status.lastInteraction) {
+        const last = status.lastInteraction;
+        document.getElementById('modal-activity-last').textContent = new Date(last).toLocaleString();
+        const diffDays = (Date.now() - last) / (1000 * 60 * 60 * 24);
+        document.getElementById('modal-activity-7d').textContent = diffDays <= 7 ? "Yes" : "No";
+    } else {
+        document.getElementById('modal-activity-last').textContent = "Never";
+        document.getElementById('modal-activity-7d').textContent = "No";
     }
 }
 
