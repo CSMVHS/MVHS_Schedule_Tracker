@@ -440,7 +440,15 @@ class ScheduleTracker {
                         const remaining = Math.max(0, Math.floor((start - now) / 1000));
                         const rh = Math.floor(remaining / 3600);
                         const rm = Math.floor((remaining % 3600) / 60);
-                        timeEl.textContent = rh > 0 ? `${rh}h ${rm}m` : `${rm}m`;
+                        const rs = remaining % 60;
+                        
+                        if (rh > 0) {
+                            timeEl.textContent = `${rh}h ${rm}m ${rs}s`;
+                        } else if (rm > 0) {
+                            timeEl.textContent = `${rm}m ${rs}s`;
+                        } else {
+                            timeEl.textContent = `${rs}s`;
+                        }
                     }
                 }
             }
@@ -481,4 +489,5 @@ document.addEventListener('DOMContentLoaded', () => {
     const tracker = new ScheduleTracker();
     tracker.init();
 });
+
 
