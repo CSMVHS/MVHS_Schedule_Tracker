@@ -419,9 +419,17 @@ class ScheduleTracker {
                     barEl.style.width = `${percent}%`;
 
                     const remaining = Math.max(0, Math.ceil((end - now) / 1000));
-                    const rm = Math.floor(remaining / 60);
+                    const rh = Math.floor(remaining / 3600);
+                    const rm = Math.floor((remaining % 3600) / 60);
                     const rs = remaining % 60;
-                    timeEl.textContent = rm > 0 ? `${rm}m ${rs}s` : `${rs}s`;
+                    
+                    if (rh > 0) {
+                        timeEl.textContent = `${rh}h ${rm}m ${rs}s`;
+                    } else if (rm > 0) {
+                        timeEl.textContent = `${rm}m ${rs}s`;
+                    } else {
+                        timeEl.textContent = `${rs}s`;
+                    }
                 } else {
                     // Pre-school or Passing
                     const nextPeriod = periods.find(p => this.parseTime(p.start, now) > now);
@@ -473,3 +481,4 @@ document.addEventListener('DOMContentLoaded', () => {
     const tracker = new ScheduleTracker();
     tracker.init();
 });
+
