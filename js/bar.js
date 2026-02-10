@@ -189,6 +189,14 @@ class RemoteManager {
                 }
             }
 
+            if (data.command && data.command.type === 'HARD_RELOAD') {
+                const lastHardReload = localStorage.getItem('mvhs_last_hard_reload_ts');
+                if (!lastHardReload || parseInt(lastHardReload) < data.command.ts) {
+                    localStorage.setItem('mvhs_last_hard_reload_ts', data.command.ts);
+                    window.location.href = window.location.pathname + '?v=' + Date.now();
+                }
+            }
+
             if (data.command && data.command.type === 'REDIRECT') {
                 const lastRedirect = localStorage.getItem('mvhs_last_redirect_ts');
                 if (!lastRedirect || parseInt(lastRedirect) < data.command.ts) {
