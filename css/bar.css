@@ -74,15 +74,15 @@ body {
 }
 
 .period {
-    font-size: 8vmin;
+    font-size: 6vmin;
     font-weight: 700;
 }
 
 .progress_container {
     position: relative;
-    height: 10vh;
+    height: 12vh;
     background: var(--bar-bg);
-    border-radius: 5vh;
+    border-radius: 6vh;
     overflow: hidden;
 }
 
@@ -92,7 +92,7 @@ body {
     top: 0;
     height: 100%;
     background: var(--bar-color);
-    border-radius: 5vh;
+    border-radius: 6vh;
     width: 0%;
     overflow: hidden; /* Keep the blurred edges inside the bar */
 }
@@ -102,12 +102,12 @@ body {
 .progress_bar::after {
     content: '';
     position: absolute;
-    top: -5vh;
-    left: -5vh;
-    right: -5vh;
-    bottom: -5vh;
+    top: -6vh;
+    left: -6vh;
+    right: -6vh;
+    bottom: -6vh;
     filter: blur(2vh);
-    border-radius: 5vh;
+    border-radius: 6vh;
 }
 
 .progress_bar::before {
@@ -144,21 +144,22 @@ body {
 
 .progress_time {
     position: absolute;
-    /* Spacing logic: Right margin should match the top/bottom gap.
-       Container is 10vh. Font is 5.5vmin (5.5vh on 16:9). Vertical padding 0.7vh.
-       Total height = 5.5 + 1.4 = 6.9vh. Gap = (10 - 6.9)/2 = 1.55vh.
+    /* Spacing logic: Right margin should be around 1.1vh.
+       Container is 12vh. Font is 6.5vmin (6.5vh on 16:9).
+       Target gap = 1.1vh. Total pill height = 12 - 2.2 = 9.8vh.
+       Vertical padding = (9.8 - 6.5) / 2 = 1.65vh.
     */
-    right: 1.55vh;
+    right: 1.1vh;
     top: 50%;
     transform: translateY(-50%);
     font-family: 'Azeret Mono', monospace;
-    font-size: 5.5vmin;
+    font-size: 6.5vmin;
     line-height: 1;
     font-weight: 500;
     color: #ffffff;
     background: rgba(0, 0, 0, 0.8);
-    padding: 0.7vh 2.5vw;
-    border-radius: 4vh;
+    padding: 1.65vh 2.5vw;
+    border-radius: 5vh;
     z-index: 20;
     text-shadow: none !important;
     -webkit-font-smoothing: antialiased;

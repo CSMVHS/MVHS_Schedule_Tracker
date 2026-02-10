@@ -91,6 +91,10 @@ h1, h2, h3 {
     border-top-color: #4caf50;
 }
 
+.device-card.online-inactive {
+    border-top-color: #ffc107;
+}
+
 .device-card.offline {
     border-top-color: var(--danger);
     opacity: 0.8;
@@ -108,6 +112,7 @@ h1, h2, h3 {
 }
 
 .online .status-badge { background: #e8f5e9; color: #2e7d32; }
+.online-inactive .status-badge { background: #fff8e1; color: #ffa000; }
 .offline .status-badge { background: #ffebee; color: #c62828; }
 
 .device-name {
@@ -338,6 +343,38 @@ button:hover {
     font-weight: 800;
     color: var(--danger);
     letter-spacing: 0.5px;
+}
+
+/* CSS Icons */
+.battery-icon {
+    width: 16px;
+    height: 9px;
+    border: 1.5px solid #666;
+    border-radius: 2px;
+    position: relative;
+    display: inline-block;
+}
+
+.battery-icon::after {
+    content: '';
+    position: absolute;
+    right: -4px;
+    top: 1.5px;
+    width: 2px;
+    height: 3px;
+    background: #666;
+    border-radius: 0 1px 1px 0;
+}
+
+.hand-icon {
+    width: 14px;
+    height: 14px;
+    display: inline-block;
+    background-color: #666;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M18 11V7h-2v4h-2V5h-2v6h-2V8h-2v8h-1.5c-.84 0-1.5.67-1.5 1.5 0 .43.17.83.45 1.12L9 21v1h8l.36-.21C19.18 20.06 20 18.85 20 17.4V11z'/%3E%3C/svg%3E") no-repeat center;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M18 11V7h-2v4h-2V5h-2v6h-2V8h-2v8h-1.5c-.84 0-1.5.67-1.5 1.5 0 .43.17.83.45 1.12L9 21v1h8l.36-.21C19.18 20.06 20 18.85 20 17.4V11z'/%3E%3C/svg%3E") no-repeat center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
 }
 
 .metadata-grid {

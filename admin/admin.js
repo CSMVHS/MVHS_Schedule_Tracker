@@ -61,6 +61,14 @@ function initDashboard() {
         }
     });
 
+    document.getElementById('hard-reload-all-btn').addEventListener('click', () => {
+        if (confirm("Hard Reload ALL connected displays?")) {
+            Object.keys(devicesData).forEach(id => {
+                db.ref(`devices/${id}/command`).set({ type: 'HARD_RELOAD', ts: Date.now() });
+            });
+        }
+    });
+
     document.getElementById('save-global-theme-btn').addEventListener('click', () => {
         const bg = document.getElementById('input-global-bg').value;
         const bar = document.getElementById('input-global-bar').value;
@@ -106,43 +114,90 @@ function renderDevices() {
         return;
     }
 
-    // Sort: Online first, then by name
+    // Sort: Online/Active, then Online/Inactive, then Offline, then by ID
     ids.sort((a, b) => {
-        const aOnline = devicesData[a].status?.isOnline;
-        const bOnline = devicesData[b].status?.isOnline;
-        if (aOnline !== bOnline) return aOnline ? -1 : 1;
-        const aName = devicesData[a].settings?.name || a;
-        const bName = devicesData[b].settings?.name || b;
-        return aName.localeCompare(bName);
+        const devA = devicesData[a];
+        const devB = devicesData[b];
+        const now = Date.now();
+        const weekMs = 7 * 24 * 60 * 60 * 1000;
+
+        const isOnlineA = devA.status?.isOnline;
+        const isOnlineB = devB.status?.isOnline;
+        const isActiveA = devA.status?.lastInteraction && (now - devA.status.lastInteraction < weekMs);
+        const isActiveB = devB.status?.lastInteraction && (now - devB.status.lastInteraction < weekMs);
+
+        const getRank = (online, active) => {
+            if (online && active) return 0;
+            if (online) return 1;
+            return 2;
+        };
+
+        const rankA = getRank(isOnlineA, isActiveA);
+        const rankB = getRank(isOnlineB, isActiveB);
+
+        if (rankA !== rankB) return rankA - rankB;
+        return a.localeCompare(b);
     });
 
     ids.forEach(id => {
         const device = devicesData[id];
+        const now = Date.now();
+        const weekMs = 7 * 24 * 60 * 60 * 1000;
+
         const isOnline = device.status?.isOnline;
+        const lastInteraction = device.status?.lastInteraction || 0;
+        const isActive = lastInteraction && (now - lastInteraction < weekMs);
+
+        let statusClass = 'offline';
+        let statusText = 'Offline';
+        if (isOnline) {
+            if (isActive) {
+                statusClass = 'online';
+                statusText = 'Online';
+            } else {
+                statusClass = 'online-inactive';
+                statusText = 'Inactive';
+            }
+        }
+
         const name = device.settings?.name || "Unnamed Device";
-        const lastSeen = device.status?.lastSeen ? new Date(device.status.lastSeen).toLocaleString() : "Never";
-        const ip = device.status?.ip || "?.?.?.?";
+        const lastSeenTs = device.status?.lastSeen || 0;
+        const lastSeen = lastSeenTs ? new Date(lastSeenTs).toLocaleString() : "Never";
+        const firstSeenTs = device.status?.firstSeen || 0;
+
+        let totalTimeStr = "---";
+        if (lastSeenTs && firstSeenTs) {
+            const diffMs = lastSeenTs - firstSeenTs;
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const d = Math.floor(diffHours / 24);
+            const h = diffHours % 24;
+            totalTimeStr = `${d}d ${h}h`;
+        }
+
+        const hasBattery = device.status?.battery && device.status.battery !== "UNAVAIL";
         const settings = device.settings || {};
         const isOverridden = settings.overrideActive && settings.overrideText;
         const timeOffset = parseInt(settings.timeOffset) || 0;
         const offsetClass = timeOffset !== 0 ? 'active' : '';
 
         const card = document.createElement('div');
-        card.className = `device-card ${isOnline ? 'online' : 'offline'}`;
+        card.className = `device-card ${statusClass}`;
         card.innerHTML = `
-            <div class="status-badge">${isOnline ? 'Online' : 'Offline'}</div>
+            <div class="status-badge">${statusText}</div>
             <div class="device-name">${name}</div>
 
             <div class="device-previews">
-                <div class="color-preview" style="background-color: ${settings.bgColor || '#00401e'}"></div>
-                <div class="color-preview" style="background-color: ${settings.barColor || '#b1953a'}"></div>
-                <div class="offset-preview ${offsetClass}">${timeOffset >= 0 ? '+' : ''}${timeOffset}m</div>
+                <div class="color-preview" style="background-color: ${settings.bgColor || '#00401e'}" title="BG Color"></div>
+                <div class="color-preview" style="background-color: ${settings.barColor || '#b1953a'}" title="Bar Color"></div>
+                <div class="offset-preview ${offsetClass}" title="Time Offset">${timeOffset >= 0 ? '+' : ''}${timeOffset}m</div>
+                ${hasBattery ? `<div class="battery-icon" title="Battery: ${device.status.battery}"></div>` : ''}
+                ${isActive ? `<div class="hand-icon" title="Active in last 7 days"></div>` : ''}
                 ${isOverridden ? '<div class="overridden-badge">OVERRIDDEN</div>' : ''}
             </div>
 
             <div class="device-id">${id}</div>
             <div class="device-info">
-                <p><span>IP:</span> ${ip}</p>
+                <p><span>Total Time:</span> ${totalTimeStr}</p>
                 <p><span>Last Seen:</span> ${lastSeen}</p>
             </div>
         `;
@@ -176,18 +231,44 @@ function updateModalData(id, updateInputs = false) {
     }
 
     // Update Metadata
-    document.getElementById('modal-ip').textContent = status.ip || "Unknown";
     document.getElementById('modal-browser').textContent = status.browser || "Unknown";
     document.getElementById('modal-first-seen').textContent = status.firstSeen ? new Date(status.firstSeen).toLocaleString() : "Unknown";
 
-    if (status.uptime !== undefined) {
-        const up = status.uptime;
+    if (status.currentUptime !== undefined) {
+        const up = status.currentUptime;
         const h = Math.floor(up / 3600);
         const m = Math.floor((up % 3600) / 60);
         const s = up % 60;
         document.getElementById('modal-uptime').textContent = `${h}h ${m}m ${s}s`;
     } else {
         document.getElementById('modal-uptime').textContent = "Unknown";
+    }
+
+    if (status.totalUptime !== undefined) {
+        const up = status.totalUptime;
+        const h = Math.floor(up / 3600);
+        const m = Math.floor((up % 3600) / 60);
+        const s = up % 60;
+        document.getElementById('modal-total-uptime').textContent = `${h}h ${m}m ${s}s`;
+    } else {
+        document.getElementById('modal-total-uptime').textContent = "Unknown";
+    }
+
+    // New Metadata
+    document.getElementById('modal-battery').textContent = status.battery || "Unknown";
+    document.getElementById('modal-touch').textContent = status.touchPoints !== undefined ? status.touchPoints : "Unknown";
+    document.getElementById('modal-visibility').textContent = status.visibility || "Unknown";
+    document.getElementById('modal-drift').textContent = status.drift !== undefined ? `${status.drift}ms` : "Unknown";
+    document.getElementById('modal-activity-total').textContent = status.totalInteractions !== undefined ? status.totalInteractions : "0";
+
+    if (status.lastInteraction) {
+        const last = status.lastInteraction;
+        document.getElementById('modal-activity-last').textContent = new Date(last).toLocaleString();
+        const diffDays = (Date.now() - last) / (1000 * 60 * 60 * 24);
+        document.getElementById('modal-activity-7d').textContent = diffDays <= 7 ? "Yes" : "No";
+    } else {
+        document.getElementById('modal-activity-last').textContent = "Never";
+        document.getElementById('modal-activity-7d').textContent = "No";
     }
 }
 
@@ -231,6 +312,15 @@ document.getElementById('refresh-device-btn').onclick = () => {
         ts: Date.now()
     })
     .then(() => alert("Refresh command sent!"))
+    .catch(e => alert("Error: " + e.message));
+};
+
+document.getElementById('hard-reload-device-btn').onclick = () => {
+    firebase.database().ref('devices').child(currentDeviceId).child('command').set({
+        type: 'HARD_RELOAD',
+        ts: Date.now()
+    })
+    .then(() => alert("Hard reload command sent!"))
     .catch(e => alert("Error: " + e.message));
 };
 
