@@ -191,6 +191,7 @@ function renderDevices() {
                 <div class="color-preview" style="background-color: ${settings.barColor || '#b1953a'}" title="Bar Color"></div>
                 <div class="offset-preview ${offsetClass}" title="Time Offset">${timeOffset >= 0 ? '+' : ''}${timeOffset}m</div>
                 ${hasBattery ? `<div class="battery-icon" title="Battery: ${device.status.battery}"></div>` : ''}
+                ${settings.lowPerf ? `<div class="bolt-icon" title="Low Performance Mode Enabled"></div>` : ''}
                 ${isActive ? `<div class="hand-icon" title="Active in last 7 days"></div>` : ''}
                 ${isOverridden ? '<div class="overridden-badge">OVERRIDDEN</div>' : ''}
             </div>
@@ -226,6 +227,7 @@ function updateModalData(id, updateInputs = false) {
         document.getElementById('input-bg-color').value = settings.bgColor || "#00401e";
         document.getElementById('input-bar-color').value = settings.barColor || "#b1953a";
         document.getElementById('input-offset').value = settings.timeOffset || 0;
+        document.getElementById('input-low-perf').checked = settings.lowPerf || false;
         document.getElementById('input-override-text').value = settings.overrideText || "";
         document.getElementById('input-override-active').checked = settings.overrideActive || false;
     }
@@ -286,10 +288,12 @@ document.getElementById('save-settings-btn').onclick = () => {
     const bg = document.getElementById('input-bg-color').value;
     const bar = document.getElementById('input-bar-color').value;
     const offset = document.getElementById('input-offset').value;
+    const lowPerf = document.getElementById('input-low-perf').checked;
     firebase.database().ref('devices').child(currentDeviceId).child('settings').update({
         bgColor: bg,
         barColor: bar,
-        timeOffset: offset
+        timeOffset: offset,
+        lowPerf: lowPerf
     })
     .then(() => alert("Settings updated!"))
     .catch(e => alert("Error: " + e.message));

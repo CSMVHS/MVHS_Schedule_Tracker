@@ -97,6 +97,20 @@ body {
     overflow: hidden; /* Keep the blurred edges inside the bar */
 }
 
+.progress_bar.low-perf {
+    background-color: var(--bar-color) !important;
+    background-image: linear-gradient(to bottom,
+        rgba(255, 255, 255, 0.4) 0%,
+        transparent 50%,
+        rgba(0, 0, 0, 0.2) 100%
+    ) !important;
+}
+
+.progress_bar.low-perf::before,
+.progress_bar.low-perf::after {
+    display: none !important;
+}
+
 /* Bubbles inside the bar - Dynamic Liquid effect */
 .progress_bar::before,
 .progress_bar::after {

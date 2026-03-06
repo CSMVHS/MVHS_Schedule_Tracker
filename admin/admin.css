@@ -366,6 +366,17 @@ button:hover {
     border-radius: 0 1px 1px 0;
 }
 
+.bolt-icon {
+    width: 14px;
+    height: 14px;
+    display: inline-block;
+    background-color: var(--warning);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 2v11h3v9l7-12h-4l4-8z'/%3E%3C/svg%3E") no-repeat center;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 2v11h3v9l7-12h-4l4-8z'/%3E%3C/svg%3E") no-repeat center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+}
+
 .hand-icon {
     width: 14px;
     height: 14px;

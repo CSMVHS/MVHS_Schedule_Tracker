@@ -32,6 +32,9 @@ class RemoteManager {
         this.maxTouchPoints = navigator.maxTouchPoints || 0;
         this.batteryInfo = "UNAVAIL";
         this.serverOffset = 0;
+        this.lowPerf = false;
+        this.statusInterval = null;
+        this.uptimeInterval = null;
 
         // Activity tracking
         this.totalInteractions = parseInt(localStorage.getItem('mvhs_total_interactions') || '0');
@@ -180,6 +183,14 @@ class RemoteManager {
                 this.tracker.setOverride(null, false);
             }
 
+            // Apply Low Perf Mode
+            const newLowPerf = !!settings.lowPerf;
+            if (this.lowPerf !== newLowPerf) {
+                this.lowPerf = newLowPerf;
+                this.setupIntervals();
+                this.tracker.setLowPerf(this.lowPerf);
+            }
+
             // Handle Commands
             if (data.command && data.command.type === 'REFRESH') {
                 const lastRefresh = localStorage.getItem('mvhs_last_refresh_ts');
@@ -207,8 +218,18 @@ class RemoteManager {
         });
 
         // Periodic status updates
-        setInterval(() => this.updateStatus(), 5000);
-        setInterval(() => this.updateTotalUptime(), 30000);
+        this.setupIntervals();
+    }
+
+    setupIntervals() {
+        if (this.statusInterval) clearInterval(this.statusInterval);
+        if (this.uptimeInterval) clearInterval(this.uptimeInterval);
+
+        const statusTime = this.lowPerf ? 10000 : 5000;
+        const uptimeTime = this.lowPerf ? 120000 : 30000;
+
+        this.statusInterval = setInterval(() => this.updateStatus(), statusTime);
+        this.uptimeInterval = setInterval(() => this.updateTotalUptime(), uptimeTime);
     }
 
     updateTotalUptime() {
@@ -505,13 +526,13 @@ class ScheduleTracker {
         const m = Math.floor((seconds % 3600) / 60);
         const s = seconds % 60;
 
-        let units = [{ v: h, u: 'h' }, { v: m, u: 'm' }, { v: s, u: 's' }];
-        // Remove leading zeros
-        while (units.length > 1 && units[0].v === 0) units.shift();
-        // Remove trailing zeros
-        while (units.length > 1 && units[units.length - 1].v === 0) units.pop();
-
-        return units.map(x => `${x.v}${x.u}`).join(' ');
+        if (h >= 1) {
+            return `${h}h ${m}m ${s}s`;
+        } else if (m >= 1) {
+            return `${m}m ${s}s`;
+        } else {
+            return `${s}s`;
+        }
     }
 
     setOverride(text, active) {
@@ -525,6 +546,16 @@ class ScheduleTracker {
                 overlay.style.display = 'none';
             }
         }
+    }
+
+    setLowPerf(active) {
+        this.trackerItems.forEach(item => {
+            if (active) {
+                item.bar.classList.add('low-perf');
+            } else {
+                item.bar.classList.remove('low-perf');
+            }
+        });
     }
 }
 
