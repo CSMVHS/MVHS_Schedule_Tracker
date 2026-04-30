@@ -381,8 +381,8 @@ class ScheduleTracker {
                 s2 = `10:56;Passing Period;11:01,11:01;Period 6;12:35,12:35;B Lunch;13:11`;
                 break;
             case 5: // Friday
-                 s1 = "7:00; Professional Development Day!!!;14:50";
-                 s2 = "7:00;...;7:01";
+                 s1 = "7:00;Happy Friday!;7:30,7:30;Teacher Office Hours;7:45,7:45;Period 1;8:36,8:36;Passing Period;8:41,8:41;Period 2;9:32,9:32;Passing Period;9:37,9:37;Period 3;10:28,10:28;Passing Period;10:33,10:33;Period 4;11:24,11:24;A Lunch;12:02,12:02;Passing Period;12:07,12:07;Period 5;12:58,12:58;Passing Period;13:03,13:03;Period 6;13:54,13:54;Passing Period;13:59,13:59;Period 7;14:50";
+                 s2 = "11:24;Passing Period;11:29,11:29;Period 5;12:20,12:20;B Lunch;12:58";
                  break;
             default:
                 s1 = "0:00;It's the weekend!;23:59";
