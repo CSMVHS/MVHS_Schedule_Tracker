@@ -1,7 +1,3 @@
-/**
- * MVHS Schedule Tracker
- * Optimized & Refactored for Hallway TV Display
- */
 
 const CONFIG = {
     WEATHER_API_KEY: "7a08aa9c10a1a7edae637fa85fc3ecae",
