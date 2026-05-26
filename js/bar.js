@@ -368,8 +368,8 @@ class ScheduleTracker {
 
         switch (day) {
             case 1: case 3: case 5: // Monday & Wednesday
-                s1 = "7:00;Good Morning!;7:30,7:30;Teacher Office Hours;7:45,7:45;Period 1;9:19,9:19;Passing Period;9:24,9:24;Period 2;10:58,10:58;A Lunch;11:32,11:32;Passing Period;11:37,11:37;Period 3;13:11,13:11;Passing Period;13:16,13:16;Period 4;14:50";
-                s2 = "10:58;Passing Period;11:03,11:03;Period 3;12:37,12:37;B Lunch;13:11";
+                s1 = "7:00;Good Luck;7:45,7:45;Period 1;9:15,9:15;Passing Period;9:20,9:20;Period 2;10:50,10:50;Homeroom;14:50";
+                s2 = "7:00;...;7:01";
                 break;
             case 2: case 4: // Tuesday / Thursday
                 const et = day === 2 ? "S.A.S." : "Eagle Time";
