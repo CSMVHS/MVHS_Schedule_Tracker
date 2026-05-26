@@ -367,7 +367,7 @@ class ScheduleTracker {
         let s1 = "", s2 = "";
 
         switch (day) {
-            case 1: case 3: case 5: // Monday & Wednesday
+            case 2: // Monday & Wednesday
                 s1 = "7:00;Good Luck;7:45,7:45;Period 1;9:15,9:15;Passing Period;9:20,9:20;Period 2;10:50,10:50;Homeroom;14:50";
                 s2 = "7:00;...;7:01";
                 break;
