@@ -367,24 +367,24 @@ class ScheduleTracker {
         let s1 = "", s2 = "";
 
         switch (day) {
-            case 1: // Monday (May 25th)
-                s1 = "0:00;No School - Holiday;23:59";
+            case 1: // Monday
+                s1 = "7:00;Good Morning!;7:50,7:50;Period 1;9:25,9:25;Passing Period;9:30,9:30;Period 2;11:05,11:05;A Lunch;11:35,11:40;Period 3;13:15,13:15;Passing Period;13:20,13:20;Period 4;14:55";
                 s2 = "";
                 break;
-            case 2: // Tuesday (May 26th)
-                s1 = "7:00;Good Morning!;7:30,7:30;Teacher Office Hours;7:45,7:45;Period 1;9:15,9:15;Passing Period;9:20,9:20;Period 2;10:50,10:50;Homeroom;12:30,12:30;Lunch;13:00,13:00;Homeroom;14:50";
+            case 2: // Tuesday
+                s1 = "7:00;Good Morning!;7:50,7:50;Period 5;9:25,9:25;Homeroom / Structured Academic Support / Eagle Time;11:00,11:05;A Lunch;11:35,11:40;Period 6;13:15,13:20;Period 7;14:55";
                 s2 = "";
                 break;
-            case 3: // Wednesday (May 27th)
-                s1 = "7:00;Good Morning!;7:30,7:30;Teacher Office Hours;7:45,7:45;Period 3;9:15,9:15;Passing Period;9:20,9:20;Period 4;10:50,10:50;Homeroom;12:30,12:30;Lunch;13:00,13:00;Homeroom;14:50";
+            case 3: // Wednesday
+                s1 = "7:00;Good Morning!;7:50,7:50;Period 1;9:25,9:25;Passing Period;9:30,9:30;Period 2;11:05,11:05;A Lunch;11:35,11:40;Period 3;13:15,13:15;Passing Period;13:20,13:20;Period 4;14:55";
                 s2 = "";
                 break;
-            case 4: // Thursday (May 28th)
-                s1 = "7:00;Good Morning!;7:30,7:30;Teacher Office Hours;7:45,7:45;Period 5;9:15,9:15;Passing Period;9:20,9:20;Period 6;10:50,10:50;Homeroom;12:30,12:30;Lunch;13:00,13:00;Homeroom;14:50";
+            case 4: // Thursday
+                s1 = "7:00;Good Morning!;7:50,7:50;Period 5;9:25,9:25;Homeroom / Structured Academic Support / Eagle Time;11:00,11:05;A Lunch;11:35,11:40;Period 6;13:15,13:20;Period 7;14:55";
                 s2 = "";
                 break;
-            case 5: // Friday (May 29th)
-                s1 = "7:00;Happy Friday!;7:30,7:30;Teacher Office Hours;7:45,7:45;Period 7;9:15,9:15;Passing Period;9:20,9:20;Homeroom / Make Up Finals / Locker Cleanout;14:50";
+            case 5: // Friday
+                s1 = "7:00;Happy Friday!;7:35,7:35;PLC;8:35,8:35;Period 1;9:20,9:25;Period 2;10:10,10:15;Period 3;11:00,11:05;A Lunch;11:35,11:40;Period 4;12:25,12:30;Period 5;13:15,13:20;Period 6;14:05,14:10;Period 7;14:55";
                 s2 = "";
                 break;
             default:
