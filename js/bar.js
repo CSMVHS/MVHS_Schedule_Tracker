@@ -380,12 +380,12 @@ class ScheduleTracker {
                 s2 = "";
                 break;
             case 4: // Thursday
-                s1 = "7:00;Good Morning!;7:50,7:50;Period 5;9:25,9:25;Homeroom / Structured Academic Support / Eagle Time;11:00,11:05;A Lunch;11:35,11:40;Period 6;13:15,13:20;Period 7;14:55";
-                s2 = "";
+                s1 = "7:00;Good Morning!;7:50,7:50;Period 1;8:41,8:46;Period 2;9:37,9:42;Period 3;10:33,10:38;Period 4;11:29,11:29;A Lunch;12:07,12:12;Period 5;13:03,13:08;Period 6;13:59,14:04;Period 7;14:55";
+                s2 = "11:29,11:34;Period 5;12:25,12:25;B Lunch;13:03";
                 break;
             case 5: // Friday
-                s1 = "7:00;Happy Friday!;7:35,7:35;PLC;8:35,8:35;Period 1;9:20,9:25;Period 2;10:10,10:15;Period 3;11:00,11:05;A Lunch;11:35,11:40;Period 4;12:25,12:30;Period 5;13:15,13:20;Period 6;14:05,14:10;Period 7;14:55";
-                s2 = "";
+                s1 = "7:00;Happy Friday!;7:50,7:50;Period 1;8:41,8:46;Period 2;9:37,9:42;Period 3;10:33,10:38;Period 4;11:29,11:29;A Lunch;12:07,12:12;Period 5;13:03,13:08;Period 6;13:59,14:04;Period 7;14:55";
+                s2 = "11:29,11:34;Period 5;12:25,12:25;B Lunch;13:03";
                 break;
             default:
                 s1 = "0:00;It's the weekend!;23:59";
