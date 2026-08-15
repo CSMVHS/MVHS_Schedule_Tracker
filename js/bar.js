@@ -368,28 +368,28 @@ class ScheduleTracker {
 
         switch (day) {
             case 1: // Monday
-                s1 = "7:00;Good Morning!;7:50,7:50;Period 1;9:25,9:25;Passing Period;9:30,9:30;Period 2;11:05,11:05;A Lunch;11:35,11:40;Period 3;13:15,13:15;Passing Period;13:20,13:20;Period 4;14:55";
-                s2 = "";
+                s1 = "7:00;Good Morning!;7:50,7:50;Period 1;9:25,9:25;Passing Period;9:30,9:30;Period 2;11:05,11:05;A Lunch;11:35,11:35;Passing Period;11:40,11:40;Period 3;13:15,13:15;Passing Period;13:20,13:20;Period 4;14:55";
+                s2 = "11:05;Period 3;12:40,12:40;Passing Period;12:45,12:45;B Lunch;13:15";
                 break;
             case 2: // Tuesday
-                s1 = "7:00;Good Morning!;7:50,7:50;Period 5;9:25,9:25;Homeroom / Structured Academic Support / Eagle Time;11:00,11:05;A Lunch;11:35,11:40;Period 6;13:15,13:20;Period 7;14:55";
-                s2 = "";
+                s1 = "7:00;Good Morning!;7:50,7:50;Period 5;9:25,9:25;Homeroom;9:35,9:35;SAS & Eagle Time;10:05,10:05;Eagle Time;11:00,11:00;Passing Period;11:05,11:05;A Lunch;11:35,11:35;Passing Period;11:40,11:40;Period 6;13:15,13:15;Passing Period;13:20,13:20;Period 7;14:55";
+                s2 = "11:05;Period 6;12:40,12:40;Passing Period;12:45,12:45;B Lunch;13:15";
                 break;
             case 3: // Wednesday
-                s1 = "7:00;Good Morning!;7:50,7:50;Period 1;9:25,9:25;Passing Period;9:30,9:30;Period 2;11:05,11:05;A Lunch;11:35,11:40;Period 3;13:15,13:15;Passing Period;13:20,13:20;Period 4;14:55";
-                s2 = "";
+                s1 = "7:00;Good Morning!;7:50,7:50;Period 1;9:25,9:25;Passing Period;9:30,9:30;Period 2;11:05,11:05;A Lunch;11:35,11:35;Passing Period;11:40,11:40;Period 3;13:15,13:15;Passing Period;13:20,13:20;Period 4;14:55";
+                s2 = "11:05;Period 3;12:40,12:40;Passing Period;12:45,12:45;B Lunch;13:15";
                 break;
             case 4: // Thursday
-                s1 = "7:00;Good Morning!;7:50,7:50;Period 1;8:41,8:46;Period 2;9:37,9:42;Period 3;10:33,10:38;Period 4;11:29,11:29;A Lunch;12:07,12:12;Period 5;13:03,13:08;Period 6;13:59,14:04;Period 7;14:55";
-                s2 = "11:29,11:34;Period 5;12:25,12:25;B Lunch;13:03";
+                s1 = "7:00;Good Morning!;7:50,7:50;Period 5;9:25,9:25;Homeroom;9:35,9:35;SAS & Eagle Time;10:05,10:05;Eagle Time;11:00,11:00;Passing Period;11:05,11:05;A Lunch;11:35,11:35;Passing Period;11:40,11:40;Period 6;13:15,13:15;Passing Period;13:20,13:20;Period 7;14:55";
+                s2 = "11:05;Period 6;12:40,12:40;Passing Period;12:45,12:45;B Lunch;13:15";
                 break;
             case 5: // Friday
-                s1 = "7:00;Happy Friday!;7:50,7:50;Period 1;8:41,8:46;Period 2;9:37,9:42;Period 3;10:33,10:38;Period 4;11:29,11:29;A Lunch;12:07,12:12;Period 5;13:03,13:08;Period 6;13:59,14:04;Period 7;14:55";
-                s2 = "11:29,11:34;Period 5;12:25,12:25;B Lunch;13:03";
+                s1 = "7:00;Happy Friday!;7:35,7:35;PLC;8:35,8:35;Period 1;9:20,9:20;Passing Period;9:25,9:25;Period 2;10:10,10:10;Passing Period;10:15,10:15;Period 3;11:00,11:00;Passing Period;11:05,11:05;A Lunch;11:35,11:35;Passing Period;11:40,11:40;Period 4;12:25,12:25;Passing Period;12:30,12:30;Period 5;13:15,13:15;Passing Period;13:20,13:20;Period 6;14:05,14:05;Passing Period;14:10,14:10;Period 7;14:55";
+                s2 = "11:05;Period 4;11:50,11:50;Passing Period;11:55,11:55;B Lunch;12:25";
                 break;
             default:
                 s1 = "0:00;It's the weekend!;23:59";
-                s2 = "";
+                s2 = "12:00;well hello there;12:01";
         }
         return [this.parseScheduleString(s1), this.parseScheduleString(s2)];
     }
