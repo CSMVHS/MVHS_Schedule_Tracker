@@ -405,7 +405,7 @@ class ScheduleTracker {
     updateCredits() {
         const creditsEl = document.querySelector('.credits');
         if (creditsEl) {
-            creditsEl.textContent = `Created by Austin Strong • Version 3.2.0 • ${this.remote.id}`;
+            creditsEl.textContent = `Created by Austin Strong • Version 3.4.2 Hotfix 4 • ${this.remote.id}`;
         }
     }
 
