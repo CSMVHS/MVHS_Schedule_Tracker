@@ -8,51 +8,115 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,1..1000&family=Azeret+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
     <div id="login-container" class="center-container">
-        <div class="card">
+        <div class="card login-card">
+            <div class="card-header-icon">
+                <i data-lucide="shield-check"></i>
+            </div>
             <h1>Admin Login</h1>
             <input type="email" id="admin-email" placeholder="Enter Admin Email">
             <input type="password" id="admin-password" placeholder="Enter Password">
-            <button id="login-btn">Login</button>
+            <button id="login-btn"><i data-lucide="log-in"></i> Login</button>
             <p id="login-error" class="error"></p>
         </div>
     </div>
 
     <div id="admin-dashboard" class="dashboard-container" style="display: none;">
         <header>
-            <h1>Schedule Tracker Admin</h1>
-            <button id="logout-btn">Logout</button>
+            <div class="header-title">
+                <i data-lucide="layout-dashboard"></i>
+                <h1>Schedule Tracker Admin</h1>
+            </div>
+            <button id="logout-btn"><i data-lucide="log-out"></i> Logout</button>
         </header>
 
         <main>
             <section class="global-controls card">
-                <h2>Global Actions</h2>
-                <div class="btn-group">
-                    <button id="refresh-all-btn" class="btn-warning">Refresh All</button>
-                    <button id="hard-reload-all-btn" class="btn-warning">Hard Reload All</button>
+                <h2><i data-lucide="sliders"></i> Global Controls & Theme</h2>
+                <div class="global-actions-layout">
+                    <div class="btn-group">
+                        <button id="refresh-all-btn" class="btn-warning"><i data-lucide="refresh-cw"></i> Refresh All</button>
+                        <button id="hard-reload-all-btn" class="btn-warning"><i data-lucide="rotate-ccw"></i> Hard Reload All</button>
+                    </div>
+
                     <div class="global-setting-item">
-                        <label>Global Theme:</label>
-                        <div class="color-pickers">
+                        <div class="setting-row">
+                            <label><i data-lucide="palette"></i> Background Mode:</label>
+                            <select id="global-bg-mode">
+                                <option value="color">Solid Color</option>
+                                <option value="gradient">Gradient</option>
+                                <option value="image">Image Link</option>
+                            </select>
+                        </div>
+
+                        <!-- Solid Color Inputs -->
+                        <div id="global-bg-color-group" class="bg-mode-group">
                             <div class="picker-group">
-                                <span>BG</span>
-                                <input type="color" id="input-global-bg" value="#00401e">
-                                <button class="btn-reset" data-target="input-global-bg" data-default="#00401e">Reset</button>
-                            </div>
-                            <div class="picker-group">
-                                <span>Bar</span>
-                                <input type="color" id="input-global-bar" value="#b1953a">
-                                <button class="btn-reset" data-target="input-global-bar" data-default="#b1953a">Reset</button>
+                                <span>Background Color</span>
+                                <div class="input-with-reset">
+                                    <input type="color" id="input-global-bg" value="#00401e">
+                                    <button class="btn-reset" data-target="input-global-bg" data-default="#00401e">Reset</button>
+                                </div>
                             </div>
                         </div>
-                        <button id="save-global-theme-btn">Apply to All</button>
+
+                        <!-- Gradient Inputs -->
+                        <div id="global-bg-gradient-group" class="bg-mode-group" style="display: none;">
+                            <div class="picker-group">
+                                <span>Gradient Color 1</span>
+                                <input type="color" id="input-global-grad1" value="#00401e">
+                            </div>
+                            <div class="picker-group">
+                                <span>Gradient Color 2</span>
+                                <input type="color" id="input-global-grad2" value="#001a0c">
+                            </div>
+                            <div class="picker-group">
+                                <span>Direction (Degrees)</span>
+                                <input type="number" id="input-global-grad-deg" value="135" min="0" max="360" placeholder="135">
+                            </div>
+                        </div>
+
+                        <!-- Image Link Inputs -->
+                        <div id="global-bg-image-group" class="bg-mode-group" style="display: none;">
+                            <div class="picker-group full-width">
+                                <span>Image URL</span>
+                                <input type="text" id="input-global-bg-image" placeholder="https://example.com/background.jpg">
+                            </div>
+                        </div>
+
+                        <div class="setting-row">
+                            <div class="picker-group">
+                                <span>Bar Color</span>
+                                <div class="input-with-reset">
+                                    <input type="color" id="input-global-bar" value="#b1953a">
+                                    <button class="btn-reset" data-target="input-global-bar" data-default="#b1953a">Reset</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button id="save-global-theme-btn"><i data-lucide="check-circle-2"></i> Apply Theme to All</button>
                     </div>
                 </div>
             </section>
 
             <section class="device-list-container">
-                <h2>Connected Devices (<span id="device-count">0</span>)</h2>
+                <div class="list-header">
+                    <h2><i data-lucide="monitor"></i> Connected Devices (<span id="device-count">0</span>)</h2>
+
+                    <div class="search-bar-container">
+                        <div class="search-input-wrapper">
+                            <i data-lucide="search" class="search-icon"></i>
+                            <input type="text" id="search-input" placeholder="Search devices by name, ID, status, OS...">
+                        </div>
+                        <button id="search-btn"><i data-lucide="search"></i> Search</button>
+                        <button id="clear-search-btn" class="btn-secondary" style="display: none;"><i data-lucide="x"></i> Clear</button>
+                    </div>
+                </div>
+
                 <div id="device-list" class="device-grid">
                     <!-- Devices will be injected here -->
                     <p class="empty-msg">Waiting for devices to connect...</p>
@@ -65,27 +129,66 @@
     <div id="control-modal" class="modal" style="display: none;">
         <div class="modal-content card">
             <span class="close-btn">&times;</span>
-            <h2 id="modal-device-name">Device Name</h2>
-            <p class="device-id-sub">ID: <span id="modal-device-id">XXXXXX</span></p>
+            <div class="modal-header">
+                <h2 id="modal-device-name">Device Name</h2>
+                <p class="device-id-sub">ID: <span id="modal-device-id">XXXXXX</span></p>
+            </div>
 
             <div class="control-section">
-                <h3>General</h3>
+                <h3><i data-lucide="edit-3"></i> General</h3>
                 <label>Display Name:</label>
                 <input type="text" id="input-name" placeholder="Hallway TV 1">
-                <button id="save-name-btn">Save Name</button>
+                <button id="save-name-btn"><i data-lucide="save"></i> Save Name</button>
             </div>
 
             <hr>
 
             <div class="control-section">
-                <h3>Settings</h3>
+                <h3><i data-lucide="palette"></i> Settings & Background</h3>
                 <div class="setting-item">
-                    <label>Background Color:</label>
-                    <div class="input-with-reset">
-                        <input type="color" id="input-bg-color" value="#00401e">
-                        <button class="btn-reset" data-target="input-bg-color" data-default="#00401e">Reset</button>
+                    <label>Background Mode:</label>
+                    <select id="modal-bg-mode">
+                        <option value="color">Solid Color</option>
+                        <option value="gradient">Gradient</option>
+                        <option value="image">Image Link</option>
+                    </select>
+                </div>
+
+                <!-- Color Option -->
+                <div id="modal-bg-color-group" class="bg-mode-group">
+                    <div class="setting-item">
+                        <label>Background Color:</label>
+                        <div class="input-with-reset">
+                            <input type="color" id="input-bg-color" value="#00401e">
+                            <button class="btn-reset" data-target="input-bg-color" data-default="#00401e">Reset</button>
+                        </div>
                     </div>
                 </div>
+
+                <!-- Gradient Option -->
+                <div id="modal-bg-gradient-group" class="bg-mode-group" style="display: none;">
+                    <div class="setting-item">
+                        <label>Gradient Color 1:</label>
+                        <input type="color" id="input-bg-grad1" value="#00401e">
+                    </div>
+                    <div class="setting-item">
+                        <label>Gradient Color 2:</label>
+                        <input type="color" id="input-bg-grad2" value="#001a0c">
+                    </div>
+                    <div class="setting-item">
+                        <label>Direction (Degrees):</label>
+                        <input type="number" id="input-bg-grad-deg" value="135" min="0" max="360">
+                    </div>
+                </div>
+
+                <!-- Image Link Option -->
+                <div id="modal-bg-image-group" class="bg-mode-group" style="display: none;">
+                    <div class="setting-item flex-column">
+                        <label>Background Image URL:</label>
+                        <input type="text" id="input-bg-image" placeholder="https://example.com/background.jpg">
+                    </div>
+                </div>
+
                 <div class="setting-item">
                     <label>Progress Bar Color:</label>
                     <div class="input-with-reset">
@@ -101,26 +204,26 @@
                     <input type="checkbox" id="input-low-perf">
                     <label for="input-low-perf">Low Performance Mode</label>
                 </div>
-                <button id="save-settings-btn">Save Settings</button>
+                <button id="save-settings-btn"><i data-lucide="save"></i> Save Settings</button>
             </div>
 
             <hr>
 
             <div class="control-section">
-                <h3>Override</h3>
+                <h3><i data-lucide="alert-triangle"></i> Override</h3>
                 <label>Overlay Text:</label>
                 <textarea id="input-override-text" placeholder="Enter message for full-screen override"></textarea>
                 <div class="checkbox-item">
                     <input type="checkbox" id="input-override-active">
                     <label for="input-override-active">Activate Full Screen Override</label>
                 </div>
-                <button id="save-override-btn">Update Override</button>
+                <button id="save-override-btn"><i data-lucide="save"></i> Update Override</button>
             </div>
 
             <hr>
 
             <div class="control-section">
-                <h3>Metadata</h3>
+                <h3><i data-lucide="info"></i> Metadata</h3>
                 <div class="metadata-grid">
                     <p><span>Browser:</span> <span id="modal-browser">---</span></p>
                     <p><span>First Seen:</span> <span id="modal-first-seen">---</span></p>
@@ -139,12 +242,12 @@
             <hr>
 
             <div class="control-section">
-                <h3>Actions</h3>
+                <h3><i data-lucide="zap"></i> Actions</h3>
                 <div class="btn-group">
-                    <button id="refresh-device-btn" class="btn-warning">Refresh Device</button>
-                    <button id="hard-reload-device-btn" class="btn-warning">Hard Reload</button>
-                    <button id="redirect-old-btn" class="btn-secondary">View Old Version</button>
-                    <button id="delete-device-btn" class="btn-danger">Delete Device</button>
+                    <button id="refresh-device-btn" class="btn-warning"><i data-lucide="refresh-cw"></i> Refresh Device</button>
+                    <button id="hard-reload-device-btn" class="btn-warning"><i data-lucide="rotate-ccw"></i> Hard Reload</button>
+                    <button id="redirect-old-btn" class="btn-secondary"><i data-lucide="external-link"></i> View Old Version</button>
+                    <button id="delete-device-btn" class="btn-danger"><i data-lucide="trash-2"></i> Delete Device</button>
                 </div>
             </div>
         </div>

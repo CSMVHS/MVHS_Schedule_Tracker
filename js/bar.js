@@ -148,16 +148,35 @@ class RemoteManager {
             const data = snap.val();
             if (!data) return;
 
-            // Apply Theme
+            // Apply Theme & Background Modes
             const settings = data.settings || {};
+            const bgMode = settings.bgMode || 'color';
 
-            // Background Color & Auto Text Color
-            if (settings.bgColor) {
-                document.documentElement.style.setProperty('--bg-color', settings.bgColor);
-                document.documentElement.style.setProperty('--text-color', this.getContrastColor(settings.bgColor));
-            } else {
-                document.documentElement.style.setProperty('--bg-color', '#00401e');
+            // Reset body background properties to ensure clean switching
+            document.body.style.backgroundImage = 'none';
+            document.body.style.backgroundSize = '';
+            document.body.style.backgroundPosition = '';
+            document.body.style.backgroundRepeat = '';
+
+            if (bgMode === 'gradient') {
+                const g1 = settings.bgGradient1 || '#00401e';
+                const g2 = settings.bgGradient2 || '#001a0c';
+                const deg = settings.bgGradientAngle || '135';
+                document.body.style.background = `linear-gradient(${deg}deg, ${g1}, ${g2})`;
+                document.documentElement.style.setProperty('--text-color', this.getContrastColor(g1));
+            } else if (bgMode === 'image' && settings.bgImage) {
+                document.body.style.backgroundImage = `url('${settings.bgImage}')`;
+                document.body.style.backgroundSize = 'cover';
+                document.body.style.backgroundPosition = 'center';
+                document.body.style.backgroundRepeat = 'no-repeat';
+                document.body.style.backgroundColor = settings.bgColor || '#00401e';
                 document.documentElement.style.setProperty('--text-color', '#ffffff');
+            } else {
+                // Default Solid Color
+                const bgColor = settings.bgColor || '#00401e';
+                document.body.style.background = bgColor;
+                document.documentElement.style.setProperty('--bg-color', bgColor);
+                document.documentElement.style.setProperty('--text-color', this.getContrastColor(bgColor));
             }
 
             // Progress Bar Color
@@ -355,8 +374,6 @@ class ScheduleTracker {
             if (parts.length === 3) {
                 return { start: parts[0], name: parts[1], end: parts[2] };
             } else if (parts.length === 2) {
-                 // Support simple start;end if name is missing?
-                 // But original strings are usually full.
                  return { start: parts[0], name: "Period", end: parts[1] };
             }
             return null;
@@ -405,7 +422,7 @@ class ScheduleTracker {
     updateCredits() {
         const creditsEl = document.querySelector('.credits');
         if (creditsEl) {
-            creditsEl.textContent = `Created by Austin Strong • Version 3.4.2 Hotfix 4 • ${this.remote.id}`;
+            creditsEl.textContent = `Created by Austin Strong • Version 3.2.0 • ${this.remote.id}`;
         }
     }
 
@@ -424,24 +441,20 @@ class ScheduleTracker {
         }
 
         // 1. Synchronized Header Updates (Clock & Date)
-        // Reload schedules if the day changes
         if (now.getDay() !== this.lastDay) {
             this.lastDay = now.getDay();
             this.loadSchedules();
         }
 
-        // Date: MMM DD
         if (this.dateDisplay) {
             this.dateDisplay.textContent = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         }
 
-        // Time: HH:MM:SS (12h)
         if (this.clockDisplay) {
             let h = now.getHours();
             const m = String(now.getMinutes()).padStart(2, '0');
             const s = String(now.getSeconds()).padStart(2, '0');
             h = h % 12 || 12;
-            // Ensure no spaces around colons
             this.clockDisplay.textContent = `${String(h).padStart(2, '0')}:${m}:${s}`;
         }
 
@@ -468,13 +481,11 @@ class ScheduleTracker {
             const startTime = this.parseTime(periods[0].start, now);
             const endTime = this.parseTime(periods[periods.length - 1].end, now);
 
-            // Second bar is only visible during its scheduled range
             if (idx === 1 && (now < startTime || now >= endTime)) {
                 container.style.display = 'none';
                 return;
             }
 
-            // First bar is visible if school hasn't ended
             if (idx === 0 && now >= endTime) {
                 container.style.display = 'none';
             } else {
@@ -502,7 +513,6 @@ class ScheduleTracker {
                     const remaining = Math.max(0, Math.ceil((end - now) / 1000));
                     timeEl.textContent = this.formatTimeRemaining(remaining);
                 } else {
-                    // Pre-school or Passing
                     const nextPeriod = periods.find(p => this.parseTime(p.start, now) > now);
                     if (nextPeriod) {
                         titleEl.textContent = `Next: ${nextPeriod.name}`;

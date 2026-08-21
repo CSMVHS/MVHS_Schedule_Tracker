@@ -12,6 +12,8 @@ const firebaseConfig = {
 // Admin Config
 let currentDeviceId = null;
 let devicesData = {};
+let activeSearchQuery = "";
+let renderDebounceTimer = null;
 
 // UI Elements
 const loginContainer = document.getElementById('login-container');
@@ -50,43 +52,135 @@ function initDashboard() {
     loginContainer.style.display = 'none';
     adminDashboard.style.display = 'block';
 
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
+
     const db = firebase.database();
 
-    // Global Actions
+    // Mode Toggle Logic - Global Controls
+    const globalBgMode = document.getElementById('global-bg-mode');
+    const globalBgColorGroup = document.getElementById('global-bg-color-group');
+    const globalBgGradientGroup = document.getElementById('global-bg-gradient-group');
+    const globalBgImageGroup = document.getElementById('global-bg-image-group');
+
+    globalBgMode.addEventListener('change', () => {
+        const mode = globalBgMode.value;
+        globalBgColorGroup.style.display = mode === 'color' ? 'flex' : 'none';
+        globalBgGradientGroup.style.display = mode === 'gradient' ? 'flex' : 'none';
+        globalBgImageGroup.style.display = mode === 'image' ? 'flex' : 'none';
+    });
+
+    // Mode Toggle Logic - Modal Controls
+    const modalBgMode = document.getElementById('modal-bg-mode');
+    const modalBgColorGroup = document.getElementById('modal-bg-color-group');
+    const modalBgGradientGroup = document.getElementById('modal-bg-gradient-group');
+    const modalBgImageGroup = document.getElementById('modal-bg-image-group');
+
+    modalBgMode.addEventListener('change', () => {
+        const mode = modalBgMode.value;
+        modalBgColorGroup.style.display = mode === 'color' ? 'block' : 'none';
+        modalBgGradientGroup.style.display = mode === 'gradient' ? 'block' : 'none';
+        modalBgImageGroup.style.display = mode === 'image' ? 'block' : 'none';
+    });
+
+    // Search Controls (Non-realtime)
+    const searchInput = document.getElementById('search-input');
+    const searchBtn = document.getElementById('search-btn');
+    const clearSearchBtn = document.getElementById('clear-search-btn');
+
+    const performSearch = () => {
+        activeSearchQuery = searchInput.value.trim().toLowerCase();
+        if (activeSearchQuery) {
+            clearSearchBtn.style.display = 'inline-flex';
+        } else {
+            clearSearchBtn.style.display = 'none';
+        }
+        renderDevices();
+    };
+
+    searchBtn.addEventListener('click', performSearch);
+    searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+    });
+
+    clearSearchBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        activeSearchQuery = '';
+        clearSearchBtn.style.display = 'none';
+        renderDevices();
+    });
+
+    // Global Actions - Batch Update to Prevent UI Freeze
     document.getElementById('refresh-all-btn').addEventListener('click', () => {
-        if (confirm("Refresh ALL connected displays?")) {
-            Object.keys(devicesData).forEach(id => {
-                db.ref(`devices/${id}/command`).set({ type: 'REFRESH', ts: Date.now() });
+        const deviceIds = Object.keys(devicesData);
+        if (deviceIds.length === 0) return;
+
+        if (confirm(`Refresh ALL (${deviceIds.length}) connected displays?`)) {
+            const updates = {};
+            const ts = Date.now();
+            deviceIds.forEach(id => {
+                updates[`devices/${id}/command`] = { type: 'REFRESH', ts: ts };
             });
+            db.ref().update(updates)
+                .then(() => alert("Refresh command sent to all devices!"))
+                .catch(e => alert("Error: " + e.message));
         }
     });
 
     document.getElementById('hard-reload-all-btn').addEventListener('click', () => {
-        if (confirm("Hard Reload ALL connected displays?")) {
-            Object.keys(devicesData).forEach(id => {
-                db.ref(`devices/${id}/command`).set({ type: 'HARD_RELOAD', ts: Date.now() });
+        const deviceIds = Object.keys(devicesData);
+        if (deviceIds.length === 0) return;
+
+        if (confirm(`Hard Reload ALL (${deviceIds.length}) connected displays?`)) {
+            const updates = {};
+            const ts = Date.now();
+            deviceIds.forEach(id => {
+                updates[`devices/${id}/command`] = { type: 'HARD_RELOAD', ts: ts };
             });
+            db.ref().update(updates)
+                .then(() => alert("Hard reload command sent to all devices!"))
+                .catch(e => alert("Error: " + e.message));
         }
     });
 
     document.getElementById('save-global-theme-btn').addEventListener('click', () => {
+        const deviceIds = Object.keys(devicesData);
+        if (deviceIds.length === 0) return;
+
+        const mode = document.getElementById('global-bg-mode').value;
         const bg = document.getElementById('input-global-bg').value;
+        const grad1 = document.getElementById('input-global-grad1').value;
+        const grad2 = document.getElementById('input-global-grad2').value;
+        const gradDeg = document.getElementById('input-global-grad-deg').value || "135";
+        const bgImage = document.getElementById('input-global-bg-image').value.trim();
         const bar = document.getElementById('input-global-bar').value;
-        if (confirm(`Apply these theme colors to ALL displays?`)) {
-            Object.keys(devicesData).forEach(id => {
-                db.ref(`devices/${id}/settings`).update({
-                    bgColor: bg,
-                    barColor: bar
-                });
+
+        if (confirm(`Apply this theme settings to ALL (${deviceIds.length}) displays?`)) {
+            const updates = {};
+            deviceIds.forEach(id => {
+                updates[`devices/${id}/settings/bgMode`] = mode;
+                updates[`devices/${id}/settings/bgColor`] = bg;
+                updates[`devices/${id}/settings/bgGradient1`] = grad1;
+                updates[`devices/${id}/settings/bgGradient2`] = grad2;
+                updates[`devices/${id}/settings/bgGradientAngle`] = gradDeg;
+                updates[`devices/${id}/settings/bgImage`] = bgImage;
+                updates[`devices/${id}/settings/barColor`] = bar;
             });
+
+            db.ref().update(updates)
+                .then(() => alert("Theme applied to all devices!"))
+                .catch(e => alert("Error: " + e.message));
         }
     });
 
     // Handle Reset Buttons
     document.querySelectorAll('.btn-reset').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const targetId = e.target.getAttribute('data-target');
-            const defaultValue = e.target.getAttribute('data-default');
+            const targetId = e.currentTarget.getAttribute('data-target');
+            const defaultValue = e.currentTarget.getAttribute('data-default');
             const targetEl = document.getElementById(targetId);
             if (targetEl) {
                 targetEl.value = defaultValue;
@@ -94,10 +188,15 @@ function initDashboard() {
         });
     });
 
-    // Auto-update modal if open
+    // Auto-update modal if open, debouncing renderDevices to maintain smooth performance
     db.ref('devices').on('value', (snap) => {
         devicesData = snap.val() || {};
-        renderDevices();
+
+        if (renderDebounceTimer) clearTimeout(renderDebounceTimer);
+        renderDebounceTimer = setTimeout(() => {
+            renderDevices();
+        }, 150);
+
         if (controlModal.style.display === 'flex' && currentDeviceId) {
             updateModalData(currentDeviceId);
         }
@@ -106,11 +205,36 @@ function initDashboard() {
 
 function renderDevices() {
     deviceList.innerHTML = '';
-    const ids = Object.keys(devicesData);
+    let ids = Object.keys(devicesData);
+
+    // Apply Search Filter (Non-realtime, filtered on submit or clear)
+    if (activeSearchQuery) {
+        ids = ids.filter(id => {
+            const device = devicesData[id] || {};
+            const settings = device.settings || {};
+            const status = device.status || {};
+
+            const searchTargets = [
+                id,
+                settings.name,
+                status.browser,
+                status.isOnline ? "online" : "offline",
+                status.battery,
+                settings.overrideText,
+                settings.bgMode,
+                settings.bgImage
+            ].map(v => (v || '').toString().toLowerCase());
+
+            return searchTargets.some(target => target.includes(activeSearchQuery));
+        });
+    }
+
     deviceCount.textContent = ids.length;
 
     if (ids.length === 0) {
-        deviceList.innerHTML = '<p class="empty-msg">No devices found in database.</p>';
+        deviceList.innerHTML = activeSearchQuery
+            ? '<p class="empty-msg">No devices matched your search.</p>'
+            : '<p class="empty-msg">No devices found in database.</p>';
         return;
     }
 
@@ -139,6 +263,8 @@ function renderDevices() {
         return a.localeCompare(b);
     });
 
+    const fragment = document.createDocumentFragment();
+
     ids.forEach(id => {
         const device = devicesData[id];
         const now = Date.now();
@@ -150,13 +276,16 @@ function renderDevices() {
 
         let statusClass = 'offline';
         let statusText = 'Offline';
+        let statusIcon = 'wifi-off';
         if (isOnline) {
             if (isActive) {
                 statusClass = 'online';
                 statusText = 'Online';
+                statusIcon = 'wifi';
             } else {
                 statusClass = 'online-inactive';
                 statusText = 'Inactive';
+                statusIcon = 'clock';
             }
         }
 
@@ -180,19 +309,32 @@ function renderDevices() {
         const timeOffset = parseInt(settings.timeOffset) || 0;
         const offsetClass = timeOffset !== 0 ? 'active' : '';
 
+        // BG Preview Styling
+        const bgMode = settings.bgMode || 'color';
+        let bgStyle = `background-color: ${settings.bgColor || '#00401e'}`;
+        if (bgMode === 'gradient') {
+            const g1 = settings.bgGradient1 || '#00401e';
+            const g2 = settings.bgGradient2 || '#001a0c';
+            const deg = settings.bgGradientAngle || '135';
+            bgStyle = `background: linear-gradient(${deg}deg, ${g1}, ${g2})`;
+        } else if (bgMode === 'image' && settings.bgImage) {
+            bgStyle = `background: url('${settings.bgImage}') center/cover no-repeat`;
+        }
+
         const card = document.createElement('div');
         card.className = `device-card ${statusClass}`;
         card.innerHTML = `
-            <div class="status-badge">${statusText}</div>
+            <div class="status-badge"><i data-lucide="${statusIcon}"></i> ${statusText}</div>
             <div class="device-name">${name}</div>
 
             <div class="device-previews">
-                <div class="color-preview" style="background-color: ${settings.bgColor || '#00401e'}" title="BG Color"></div>
+                <div class="color-preview ${bgMode !== 'color' ? 'gradient-preview' : ''}" style="${bgStyle}" title="BG (${bgMode})"></div>
                 <div class="color-preview" style="background-color: ${settings.barColor || '#b1953a'}" title="Bar Color"></div>
+                <span class="bg-type-tag">${bgMode}</span>
                 <div class="offset-preview ${offsetClass}" title="Time Offset">${timeOffset >= 0 ? '+' : ''}${timeOffset}m</div>
-                ${hasBattery ? `<div class="battery-icon" title="Battery: ${device.status.battery}"></div>` : ''}
-                ${settings.lowPerf ? `<div class="bolt-icon" title="Low Performance Mode Enabled"></div>` : ''}
-                ${isActive ? `<div class="hand-icon" title="Active in last 7 days"></div>` : ''}
+                ${hasBattery ? `<i data-lucide="battery-charging" title="Battery: ${device.status.battery}"></i>` : ''}
+                ${settings.lowPerf ? `<i data-lucide="zap" title="Low Performance Mode Enabled"></i>` : ''}
+                ${isActive ? `<i data-lucide="pointer" title="Active in last 7 days"></i>` : ''}
                 ${isOverridden ? '<div class="overridden-badge">OVERRIDDEN</div>' : ''}
             </div>
 
@@ -203,8 +345,14 @@ function renderDevices() {
             </div>
         `;
         card.onclick = () => openControlModal(id);
-        deviceList.appendChild(card);
+        fragment.appendChild(card);
     });
+
+    deviceList.appendChild(fragment);
+
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
 }
 
 function openControlModal(id) {
@@ -224,7 +372,21 @@ function updateModalData(id, updateInputs = false) {
 
     if (updateInputs) {
         document.getElementById('input-name').value = settings.name || "";
+
+        const mode = settings.bgMode || "color";
+        const modalBgMode = document.getElementById('modal-bg-mode');
+        modalBgMode.value = mode;
+
+        document.getElementById('modal-bg-color-group').style.display = mode === 'color' ? 'block' : 'none';
+        document.getElementById('modal-bg-gradient-group').style.display = mode === 'gradient' ? 'block' : 'none';
+        document.getElementById('modal-bg-image-group').style.display = mode === 'image' ? 'block' : 'none';
+
         document.getElementById('input-bg-color').value = settings.bgColor || "#00401e";
+        document.getElementById('input-bg-grad1').value = settings.bgGradient1 || "#00401e";
+        document.getElementById('input-bg-grad2').value = settings.bgGradient2 || "#001a0c";
+        document.getElementById('input-bg-grad-deg').value = settings.bgGradientAngle || "135";
+        document.getElementById('input-bg-image').value = settings.bgImage || "";
+
         document.getElementById('input-bar-color').value = settings.barColor || "#b1953a";
         document.getElementById('input-offset').value = settings.timeOffset || 0;
         document.getElementById('input-low-perf').checked = settings.lowPerf || false;
@@ -256,7 +418,7 @@ function updateModalData(id, updateInputs = false) {
         document.getElementById('modal-total-uptime').textContent = "Unknown";
     }
 
-    // New Metadata
+    // Metadata details
     document.getElementById('modal-battery').textContent = status.battery || "Unknown";
     document.getElementById('modal-touch').textContent = status.touchPoints !== undefined ? status.touchPoints : "Unknown";
     document.getElementById('modal-visibility').textContent = status.visibility || "Unknown";
@@ -285,12 +447,24 @@ document.getElementById('save-name-btn').onclick = () => {
 };
 
 document.getElementById('save-settings-btn').onclick = () => {
+    const mode = document.getElementById('modal-bg-mode').value;
     const bg = document.getElementById('input-bg-color').value;
+    const grad1 = document.getElementById('input-bg-grad1').value;
+    const grad2 = document.getElementById('input-bg-grad2').value;
+    const gradDeg = document.getElementById('input-bg-grad-deg').value || "135";
+    const bgImage = document.getElementById('input-bg-image').value.trim();
+
     const bar = document.getElementById('input-bar-color').value;
     const offset = document.getElementById('input-offset').value;
     const lowPerf = document.getElementById('input-low-perf').checked;
+
     firebase.database().ref('devices').child(currentDeviceId).child('settings').update({
+        bgMode: mode,
         bgColor: bg,
+        bgGradient1: grad1,
+        bgGradient2: grad2,
+        bgGradientAngle: gradDeg,
+        bgImage: bgImage,
         barColor: bar,
         timeOffset: offset,
         lowPerf: lowPerf
