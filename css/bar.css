@@ -1,7 +1,7 @@
 :root {
-    --bg-color: #00401e; /* Dark green */
+    --bg-color: #00401e; /* High contrast dark green */
     --text-color: #ffffff;
-    --bar-bg: rgba(0, 0, 0, 0.3); /* Slightly darker track for better contrast */
+    --bar-bg: rgba(0, 0, 0, 0.4); /* Strong contrast track */
     --bar-color: #b1953a; /* Default Gold */
 }
 
@@ -11,79 +11,114 @@
     box-sizing: border-box;
 }
 
-body {
+html, body {
+    height: 100%;
+    width: 100vw;
+    overflow: hidden;
     background-color: var(--bg-color);
     color: var(--text-color);
-    font-family: 'Google Sans Flex', sans-serif;
-    overflow: hidden;
-    height: 100vh;
-    width: 100vw;
+    font-family: 'Google Sans Flex', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 .background_container {
     display: flex;
     flex-direction: column;
     height: 100vh;
-    padding: 1.5vh 3vw 3vh 3vw;
+    padding: clamp(1rem, 2vh, 2.5rem) clamp(1rem, 3vw, 4rem);
+    justify-content: space-between;
 }
 
+/* Header Grid - High Contrast, Large Readable Text */
 .title_container {
     display: grid;
-    grid-template-columns: 1fr 2fr 1fr;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
+    gap: 1vw;
+    width: 100%;
     margin-bottom: 1vh;
-    font-size: 4vmin;
-    font-weight: 700;
 }
 
-.top-bar-item:nth-child(1) { text-align: left; }
+.top-bar-item {
+    font-weight: 700;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+.left-header-group {
+    display: flex;
+    align-items: center;
+    gap: clamp(0.75rem, 1.5vw, 2.5rem);
+    text-align: left;
+    font-size: clamp(1.6rem, 4vmin, 3.6rem);
+}
+
+.weather-text {
+    font-variant-numeric: tabular-nums;
+    opacity: 0.95;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0.1em 0.4em;
+    border-radius: 0.5rem;
+}
+
 .top-bar-item:nth-child(2) {
     text-align: center;
     font-family: 'Google Sans Flex', sans-serif;
-    font-size: 8vmin;
-    font-weight: 700;
+    font-size: clamp(3rem, 8.5vmin, 8rem);
+    font-weight: 800;
     font-variant-numeric: tabular-nums;
-    -webkit-font-smoothing: antialiased;
-    text-shadow: none !important;
+    letter-spacing: 0.02em;
+    padding: 0.2em 0.6em;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 1rem;
+    backdrop-filter: blur(6px);
 }
-.top-bar-item:nth-child(3) { text-align: right; }
 
+.right-header-placeholder {
+    visibility: hidden;
+}
+
+/* Main Content Area */
 .main-content {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
-    padding-top: 4vh;
-    gap: 6vh;
+    justify-content: center;
+    gap: clamp(2rem, 5vh, 5rem);
+    padding: 2vh 0;
 }
 
 .schedule-wrapper {
     display: flex;
     flex-direction: column;
-    gap: 6vh;
+    gap: clamp(2rem, 5vh, 4.5rem);
+    width: 100%;
 }
 
 .tracker-item {
     display: flex;
     flex-direction: column;
-    gap: 1.5vh;
+    gap: clamp(0.75rem, 1.5vh, 1.5rem);
 }
 
 .text_container {
-    padding-left: 2vw;
+    padding-left: clamp(0.5rem, 1.5vw, 2vw);
 }
 
 .period {
-    font-size: 6vmin;
-    font-weight: 700;
+    font-size: clamp(2rem, 5.8vmin, 5rem);
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
 }
 
 .progress_container {
     position: relative;
-    height: 12vh;
+    height: clamp(5rem, 11vh, 9rem);
     background: var(--bar-bg);
-    border-radius: 6vh;
+    border-radius: clamp(2.5rem, 5.5vh, 4.5rem);
     overflow: hidden;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5), 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 .progress_bar {
@@ -92,39 +127,27 @@ body {
     top: 0;
     height: 100%;
     background: var(--bar-color);
-    border-radius: 6vh;
+    border-radius: inherit;
     width: 0%;
-    overflow: hidden; /* Keep the blurred edges inside the bar */
+    will-change: width;
+    overflow: hidden;
+    transition: width 0.3s ease-out;
 }
 
-.progress_bar.low-perf {
-    background-color: var(--bar-color) !important;
-    background-image: linear-gradient(to bottom,
-        rgba(255, 255, 255, 0.4) 0%,
-        transparent 50%,
-        rgba(0, 0, 0, 0.2) 100%
-    ) !important;
-}
-
-.progress_bar.low-perf::before,
-.progress_bar.low-perf::after {
-    display: none !important;
-}
-
-/* Bubbles inside the bar - Dynamic Liquid effect */
-.progress_bar::before,
-.progress_bar::after {
+/* Progress Bar Style: Liquid Wave (Default) */
+.progress_bar.bar-style-liquid::before,
+.progress_bar.bar-style-liquid::after {
     content: '';
     position: absolute;
-    top: -6vh;
-    left: -6vh;
-    right: -6vh;
-    bottom: -6vh;
-    filter: blur(2vh);
-    border-radius: 6vh;
+    top: -50%;
+    left: -50%;
+    right: -50%;
+    bottom: -50%;
+    filter: blur(1.5vh);
+    border-radius: inherit;
 }
 
-.progress_bar::before {
+.progress_bar.bar-style-liquid::before {
     background:
         radial-gradient(circle at 20% 35%, rgba(255, 255, 255, 0.5) 0%, transparent 40%),
         radial-gradient(circle at 70% 65%, rgba(255, 255, 255, 0.4) 0%, transparent 45%);
@@ -132,10 +155,9 @@ body {
     background-repeat: repeat-x;
     animation: liquidFlow1 20s linear infinite;
     opacity: 0.5;
-    z-index: 1;
 }
 
-.progress_bar::after {
+.progress_bar.bar-style-liquid::after {
     background:
         radial-gradient(circle at 40% 70%, rgba(255, 255, 255, 0.3) 0%, transparent 40%),
         radial-gradient(circle at 80% 30%, rgba(255, 255, 255, 0.4) 0%, transparent 50%);
@@ -143,85 +165,229 @@ body {
     background-repeat: repeat-x;
     animation: liquidFlow2 15s linear infinite reverse;
     opacity: 0.4;
-    z-index: 2;
+}
+
+/* Progress Bar Style: Glow / Shimmer */
+.progress_bar.bar-style-glow::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    animation: barShimmer 3s infinite;
+}
+
+/* Progress Bar Style: Clean Pulse (Efficient Animation) */
+.progress_bar.bar-style-pulse {
+    animation: barPulse 2s ease-in-out infinite alternate;
+}
+
+/* Progress Bar Style: Solid Static */
+.progress_bar.bar-style-solid::before,
+.progress_bar.bar-style-solid::after {
+    display: none !important;
+}
+
+/* Low Performance Mode Override */
+.progress_bar.low-perf {
+    background-color: var(--bar-color) !important;
+    background-image: linear-gradient(to bottom,
+        rgba(255, 255, 255, 0.35) 0%,
+        transparent 50%,
+        rgba(0, 0, 0, 0.2) 100%
+    ) !important;
+    animation: barPulse 3s ease-in-out infinite alternate !important;
+}
+
+.progress_bar.low-perf::before,
+.progress_bar.low-perf::after {
+    display: none !important;
 }
 
 @keyframes liquidFlow1 {
-    from { background-position: 0 0; }
-    to { background-position: 100vh 0; }
+    from { transform: translateX(0); }
+    to { transform: translateX(50vh); }
 }
 
 @keyframes liquidFlow2 {
-    from { background-position: 0 0; }
-    to { background-position: 85vh 0; }
+    from { transform: translateX(0); }
+    to { transform: translateX(-40vh); }
 }
 
+@keyframes barShimmer {
+    0% { left: -100%; }
+    100% { left: 200%; }
+}
+
+@keyframes barPulse {
+    0% { filter: brightness(0.95); }
+    100% { filter: brightness(1.1); }
+}
+
+/* Timer Pill - High Contrast & Crisp Monospace Numbers */
 .progress_time {
     position: absolute;
-    /* Spacing logic: Right margin should be around 1.1vh.
-       Container is 12vh. Font is 6.5vmin (6.5vh on 16:9).
-       Target gap = 1.1vh. Total pill height = 12 - 2.2 = 9.8vh.
-       Vertical padding = (9.8 - 6.5) / 2 = 1.65vh.
-    */
-    right: 1.1vh;
+    right: clamp(0.5rem, 1vh, 1.5rem);
     top: 50%;
     transform: translateY(-50%);
     font-family: 'Azeret Mono', monospace;
-    font-size: 6.5vmin;
-    line-height: 1;
-    font-weight: 500;
+    font-size: clamp(1.4rem, 4.5vmin, 4.2rem);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
     color: #ffffff;
-    background: rgba(0, 0, 0, 0.8);
-    padding: 1.65vh 2.5vw;
-    border-radius: 5vh;
+    background: rgba(0, 0, 0, 0.92);
+    padding: clamp(0.4rem, 1vh, 1rem) clamp(0.8rem, 1.8vw, 2rem);
+    border-radius: clamp(1.2rem, 3.5vh, 3rem);
+    border: 2px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
     z-index: 20;
-    text-shadow: none !important;
-    -webkit-font-smoothing: antialiased;
+    line-height: 1;
+    white-space: nowrap;
 }
 
 .end-message {
     display: none;
     text-align: center;
-    font-size: 15vmin;
-    font-weight: 700;
-    background: rgba(255, 255, 255, 0.05);
-    padding: 8vh 5vw;
-    border-radius: 10vh;
-    box-shadow: 0 2vh 5vh rgba(0,0,0,0.3);
-    margin: auto 0; /* Center vertically when it's the only thing */
+    font-size: clamp(3rem, 12vmin, 10rem);
+    font-weight: 800;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 6vh 4vw;
+    border-radius: 4rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    margin: auto 0;
+}
+
+/* Footer Section */
+.footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    width: 100%;
+    padding-top: 1vh;
 }
 
 .total-time-left {
-    position: fixed;
-    bottom: 4vh;
-    left: 4vw;
-    z-index: 100;
     display: flex;
-    align-items: flex-end; /* Align text to bottom of the pill */
-    gap: 1.5vw;
+    align-items: center;
 }
 
+/* 50% transparent background, slightly smaller font */
 .total-time-remaining {
-    font-size: 4.5vmin;
-    font-weight: 500;
-    background: rgba(0, 0, 0, 0.8);
+    font-size: clamp(1.05rem, 3.2vmin, 2.5rem);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    background: rgba(0, 0, 0, 0.45);
     color: #ffffff;
-    padding: 1.5vh 2.5vw;
-    border-radius: 2.5vh;
-    backdrop-filter: blur(10px);
-    text-shadow: none !important;
+    padding: clamp(0.5rem, 1vh, 1rem) clamp(1rem, 1.8vw, 1.8rem);
+    border-radius: clamp(0.8rem, 1.8vh, 1.6rem);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 .credits {
-    position: fixed;
-    bottom: 10px;
-    right: 10px;
     color: var(--text-color);
-    opacity: 0.2;
-    font-size: 2vmin;
-    font-weight: 400;
+    opacity: 0.55;
+    font-size: clamp(0.8rem, 1.8vmin, 1.4rem);
+    font-weight: 500;
     white-space: nowrap;
-    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 0.35em;
+}
+
+.report-issue-link {
+    color: inherit;
+    text-decoration: underline;
+    opacity: 0.85;
+    transition: opacity 0.2s;
+}
+
+.report-issue-link:hover {
+    opacity: 1;
+}
+
+/* Device ID in bottom right - 50% more visible than normal credits opacity (0.55 * 1.5 = 0.825) */
+.device-id-credit {
+    font-family: 'Azeret Mono', monospace;
+    font-weight: 700;
+    opacity: 0.825;
+}
+
+/* First time "Who's this?" Modal Prompt */
+.identify-modal {
+    position: fixed;
+    top: 2rem;
+    right: 2rem;
+    z-index: 10000;
+    animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-1rem); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.identify-card {
+    background: rgba(0, 0, 0, 0.9);
+    border: 2px solid var(--bar-color);
+    padding: 1.25rem 1.5rem;
+    border-radius: 1rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+    color: #ffffff;
+    max-width: 420px;
+}
+
+.identify-card h3 {
+    font-size: 1.2rem;
+    font-weight: 800;
+    margin-bottom: 0.25rem;
+}
+
+.identify-sub {
+    font-size: 0.78rem;
+    color: #cbd5e1;
+    margin-bottom: 0.85rem;
+    line-height: 1.35;
+}
+
+.identify-input-row {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.identify-input-row input {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.85rem;
+}
+
+.identify-input-row input:focus {
+    outline: none;
+    border-color: var(--bar-color);
+}
+
+.identify-input-row button {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    background: var(--bar-color);
+    color: #000;
+}
+
+.identify-input-row .btn-skip {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
 }
 
 /* Remote Override Overlay */
@@ -233,18 +399,63 @@ body {
     height: 100vh;
     background-color: #000000;
     z-index: 9999;
-    display: none; /* Controlled by JS */
+    display: none;
     justify-content: center;
     align-items: center;
-    padding: 10vw;
+    padding: 8vw;
     text-align: center;
 }
 
 .override-text {
     color: #ffffff;
-    font-size: 10vmin;
-    font-weight: 700;
-    line-height: 1.2;
-    word-wrap: break-word;
+    font-size: clamp(2.5rem, 9vmin, 8rem);
+    font-weight: 800;
+    line-height: 1.25;
+    word-break: break-word;
     max-width: 95vw;
+}
+
+/* Responsive adjustments for mobile/portrait */
+@media (max-width: 768px), (max-aspect-ratio: 1/1) {
+    .background_container {
+        padding: 1.25rem 0.85rem;
+    }
+
+    .title_container {
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+            "clock clock"
+            "left left";
+        row-gap: 0.5rem;
+    }
+
+    .left-header-group { grid-area: left; justify-content: space-between; }
+    .top-bar-item:nth-child(2) { grid-area: clock; text-align: center; }
+
+    .progress_container {
+        height: 4.25rem;
+        border-radius: 2.125rem;
+    }
+
+    .progress_time {
+        font-size: 1.15rem;
+        padding: 0.4rem 0.7rem;
+        right: 0.4rem;
+    }
+
+    .footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .credits {
+        align-self: flex-end;
+    }
+
+    .identify-modal {
+        top: 1rem;
+        right: 1rem;
+        left: 1rem;
+    }
 }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MVHS Admin Dashboard</title>
+    <title>Schedule Tracker Admin</title>
     <link rel="stylesheet" href="admin.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,6 +12,8 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
+    <div id="toast-container" class="toast-container"></div>
+
     <div id="login-container" class="center-container">
         <div class="card login-card">
             <div class="card-header-icon">
@@ -31,7 +33,7 @@
                 <i data-lucide="layout-dashboard"></i>
                 <h1>Schedule Tracker Admin</h1>
             </div>
-            <button id="logout-btn"><i data-lucide="log-out"></i> Logout</button>
+            <button id="logout-btn" class="btn-secondary"><i data-lucide="log-out"></i> Logout</button>
         </header>
 
         <main>
@@ -41,6 +43,7 @@
                     <div class="btn-group">
                         <button id="refresh-all-btn" class="btn-warning"><i data-lucide="refresh-cw"></i> Refresh All</button>
                         <button id="hard-reload-all-btn" class="btn-warning"><i data-lucide="rotate-ccw"></i> Hard Reload All</button>
+                        <button id="hold-identify-btn" class="btn-hold"><i data-lucide="eye"></i> Hold to Show Device IDs</button>
                     </div>
 
                     <div class="global-setting-item">
@@ -98,6 +101,28 @@
                             </div>
                         </div>
 
+                        <div class="setting-row">
+                            <div class="picker-group">
+                                <span>Bar Animation</span>
+                                <select id="global-bar-style">
+                                    <option value="liquid">Liquid Wave</option>
+                                    <option value="glow">Smooth Shimmer</option>
+                                    <option value="pulse">Clean Pulse</option>
+                                    <option value="solid">Solid Static</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="setting-row">
+                            <div class="picker-group">
+                                <span>Clock Format</span>
+                                <select id="global-clock-format">
+                                    <option value="12">12-Hour</option>
+                                    <option value="24">24-Hour</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <button id="save-global-theme-btn"><i data-lucide="check-circle-2"></i> Apply Theme to All</button>
                     </div>
                 </div>
@@ -107,18 +132,23 @@
                 <div class="list-header">
                     <h2><i data-lucide="monitor"></i> Connected Devices (<span id="device-count">0</span>)</h2>
 
+                    <div class="filter-group">
+                        <button class="filter-btn active" data-filter="all">All</button>
+                        <button class="filter-btn" data-filter="online">Online</button>
+                        <button class="filter-btn" data-filter="inactive">Inactive</button>
+                        <button class="filter-btn" data-filter="offline">Offline</button>
+                    </div>
+
                     <div class="search-bar-container">
                         <div class="search-input-wrapper">
                             <i data-lucide="search" class="search-icon"></i>
-                            <input type="text" id="search-input" placeholder="Search devices by name, ID, status, OS...">
+                            <input type="text" id="search-input" placeholder="Search devices by name, ID, browser...">
                         </div>
-                        <button id="search-btn"><i data-lucide="search"></i> Search</button>
                         <button id="clear-search-btn" class="btn-secondary" style="display: none;"><i data-lucide="x"></i> Clear</button>
                     </div>
                 </div>
 
                 <div id="device-list" class="device-grid">
-                    <!-- Devices will be injected here -->
                     <p class="empty-msg">Waiting for devices to connect...</p>
                 </div>
             </section>
@@ -144,7 +174,7 @@
             <hr>
 
             <div class="control-section">
-                <h3><i data-lucide="palette"></i> Settings & Background</h3>
+                <h3><i data-lucide="palette"></i> Settings & Theme</h3>
                 <div class="setting-item">
                     <label>Background Mode:</label>
                     <select id="modal-bg-mode">
@@ -196,21 +226,56 @@
                         <button class="btn-reset" data-target="input-bar-color" data-default="#b1953a">Reset</button>
                     </div>
                 </div>
+
+                <div class="setting-item">
+                    <label>Bar Animation Style:</label>
+                    <select id="input-bar-style">
+                        <option value="liquid">Liquid Wave</option>
+                        <option value="glow">Smooth Shimmer</option>
+                        <option value="pulse">Clean Pulse</option>
+                        <option value="solid">Solid Static</option>
+                    </select>
+                </div>
+
+                <div class="setting-item">
+                    <label>Clock Format:</label>
+                    <select id="input-clock-format">
+                        <option value="12">12-Hour (09:15:30)</option>
+                        <option value="24">24-Hour (21:15:30)</option>
+                    </select>
+                </div>
+
                 <div class="setting-item">
                     <label>Time Offset (Minutes):</label>
                     <input type="number" id="input-offset" value="0">
                 </div>
-                <div class="checkbox-item">
-                    <input type="checkbox" id="input-low-perf">
-                    <label for="input-low-perf">Low Performance Mode</label>
+
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="input-show-weather" checked>
+                        <label for="input-show-weather">Show Weather Widget</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="input-show-total-time" checked>
+                        <label for="input-show-total-time">Show Total Time Remaining</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="input-show-credits" checked>
+                        <label for="input-show-credits">Show Footer Credits</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="input-low-perf">
+                        <label for="input-low-perf">Low Performance Mode</label>
+                    </div>
                 </div>
+
                 <button id="save-settings-btn"><i data-lucide="save"></i> Save Settings</button>
             </div>
 
             <hr>
 
             <div class="control-section">
-                <h3><i data-lucide="alert-triangle"></i> Override</h3>
+                <h3><i data-lucide="alert-triangle"></i> Override Message</h3>
                 <label>Overlay Text:</label>
                 <textarea id="input-override-text" placeholder="Enter message for full-screen override"></textarea>
                 <div class="checkbox-item">
@@ -223,7 +288,7 @@
             <hr>
 
             <div class="control-section">
-                <h3><i data-lucide="info"></i> Metadata</h3>
+                <h3><i data-lucide="info"></i> Metadata & Health</h3>
                 <div class="metadata-grid">
                     <p><span>Browser:</span> <span id="modal-browser">---</span></p>
                     <p><span>First Seen:</span> <span id="modal-first-seen">---</span></p>
@@ -242,11 +307,10 @@
             <hr>
 
             <div class="control-section">
-                <h3><i data-lucide="zap"></i> Actions</h3>
+                <h3><i data-lucide="zap"></i> Remote Actions</h3>
                 <div class="btn-group">
                     <button id="refresh-device-btn" class="btn-warning"><i data-lucide="refresh-cw"></i> Refresh Device</button>
                     <button id="hard-reload-device-btn" class="btn-warning"><i data-lucide="rotate-ccw"></i> Hard Reload</button>
-                    <button id="redirect-old-btn" class="btn-secondary"><i data-lucide="external-link"></i> View Old Version</button>
                     <button id="delete-device-btn" class="btn-danger"><i data-lucide="trash-2"></i> Delete Device</button>
                 </div>
             </div>
