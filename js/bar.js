@@ -305,14 +305,22 @@ class ScheduleTracker {
         this.remote = new RemoteManager(this);
 
         // Cache DOM elements
+        this.dateContainer = document.getElementById("date-container");
         this.dateDisplay = document.getElementById("date-display");
         this.clockDisplay = document.getElementById("clock-display");
+        this.weatherContainer = document.getElementById("weather-container");
         this.weatherDisplay = document.getElementById("weather-display");
         this.endMessage = document.getElementById('end');
         this.scheduleWrapper = document.querySelector('.schedule-wrapper');
         this.totalTimeRemaining = document.querySelector(".total-time-remaining");
         this.totalTimeContainer = document.getElementById("total-time-container");
         this.deviceIdDisplay = document.getElementById("device-id-display");
+
+        // Customize Modal Elements
+        this.customizeModal = document.getElementById("local-customize-modal");
+        this.openCustomizeBtn = document.getElementById("open-customize-btn");
+        this.closeCustomizeBtn = document.getElementById("close-customize-btn");
+        this.saveCustomizeBtn = document.getElementById("save-customize-btn");
 
         // First Time User Prompt Elements
         this.identifyModal = document.getElementById("user-identify-modal");
@@ -339,12 +347,80 @@ class ScheduleTracker {
         this.updateDeviceIdDisplay();
         this.setupVisibilityHandler();
         this.setupFirstTimeIdentifyPrompt();
+        this.setupCustomizeModal();
     }
 
     async init() {
         this.setupWeather();
         this.loadSchedules();
+        this.loadLocalCustomizations();
         this.startUpdateLoop();
+    }
+
+    setupCustomizeModal() {
+        if (!this.openCustomizeBtn || !this.customizeModal) return;
+
+        this.openCustomizeBtn.addEventListener('click', () => {
+            this.customizeModal.style.display = 'flex';
+        });
+
+        if (this.closeCustomizeBtn) {
+            this.closeCustomizeBtn.addEventListener('click', () => {
+                this.customizeModal.style.display = 'none';
+            });
+        }
+
+        if (this.saveCustomizeBtn) {
+            this.saveCustomizeBtn.addEventListener('click', () => {
+                const bg = document.getElementById('cust-bg-color').value;
+                const bar = document.getElementById('cust-bar-color').value;
+                const style = document.getElementById('cust-bar-style').value;
+                const format = document.getElementById('cust-clock-format').value;
+                const weather = document.getElementById('cust-show-weather').checked;
+                const totalTime = document.getElementById('cust-show-total-time').checked;
+
+                const localSettings = { bg, bar, style, format, weather, totalTime };
+                localStorage.setItem('mvhs_local_customizations', JSON.stringify(localSettings));
+
+                this.applyLocalSettings(localSettings);
+                this.customizeModal.style.display = 'none';
+            });
+        }
+    }
+
+    loadLocalCustomizations() {
+        const saved = localStorage.getItem('mvhs_local_customizations');
+        if (saved) {
+            try {
+                const settings = JSON.parse(saved);
+                this.applyLocalSettings(settings);
+            } catch (e) {
+                console.error("Failed to parse local customizations", e);
+            }
+        }
+    }
+
+    applyLocalSettings(settings) {
+        if (settings.bg) {
+            document.body.style.background = settings.bg;
+            document.documentElement.style.setProperty('--bg-color', settings.bg);
+            document.documentElement.style.setProperty('--text-color', this.remote.getContrastColor(settings.bg));
+        }
+        if (settings.bar) {
+            document.documentElement.style.setProperty('--bar-color', settings.bar);
+        }
+        if (settings.style) {
+            this.setBarStyle(settings.style);
+        }
+        if (settings.format) {
+            this.setUse24HourClock(settings.format === '24');
+        }
+        if (settings.weather !== undefined) {
+            this.setWeatherVisible(settings.weather);
+        }
+        if (settings.totalTime !== undefined) {
+            this.setTotalTimeVisible(settings.totalTime);
+        }
     }
 
     setupFirstTimeIdentifyPrompt() {
@@ -413,6 +489,13 @@ class ScheduleTracker {
 
     setShowDeviceIDFlash(show) {
         this.showDeviceIDFlash = show;
+        if (this.clockDisplay) {
+            if (show) {
+                this.clockDisplay.classList.add('device-id-flash');
+            } else {
+                this.clockDisplay.classList.remove('device-id-flash');
+            }
+        }
         this.updateUI(true);
     }
 
@@ -527,16 +610,16 @@ class ScheduleTracker {
                 s2 = "11:05;Period 3;12:40,12:40;Passing Period;12:45,12:45;B Lunch;13:15";
                 break;
             case 2: // Tuesday
-                s1 = "7:00;Good Morning!;7:50,7:50;Period 5;9:25,9:25;Homeroom;9:35,9:35;SAS & Eagle Time;10:05,10:05;Eagle Time;11:00,11:00;Passing Period;11:05,11:05;A Lunch;11:35,11:35;Passing Period;11:40,11:40;Period 6;13:15,13:15;Passing Period;13:20,13:20;Period 7;14:55";
-                s2 = "11:05;Period 6;12:40,12:40;Passing Period;12:45,12:45;B Lunch;13:15";
+                s1 = "7:00;Good Morning!;7:50,7:50;Period 5;9:25,9:25;Homeroom;9:35,9:35;Passing Period;9:40,9:40;SAS (9/10);10:10,10:10;Eagle Time (All);11:00,11:00;Passing Period;11:05,11:05;A Lunch;11:35,11:35;Passing Period;11:40,11:40;Period 6;13:15,13:15;Passing Period;13:20,13:20;Period 7;14:55";
+                s2 = "9:40;Eagle Time (11/12);10:10,11:05;Period 6;12:40,12:40;Passing Period;12:45,12:45;B Lunch;13:15";
                 break;
             case 3: // Wednesday
                 s1 = "7:00;Good Morning!;7:50,7:50;Period 1;9:25,9:25;Passing Period;9:30,9:30;Period 2;11:05,11:05;A Lunch;11:35,11:35;Passing Period;11:40,11:40;Period 3;13:15,13:15;Passing Period;13:20,13:20;Period 4;14:55";
                 s2 = "11:05;Period 3;12:40,12:40;Passing Period;12:45,12:45;B Lunch;13:15";
                 break;
             case 4: // Thursday
-                s1 = "7:00;Good Morning!;7:50,7:50;Period 5;9:25,9:25;Homeroom;9:35,9:35;SAS & Eagle Time;10:05,10:05;Eagle Time;11:00,11:00;Passing Period;11:05,11:05;A Lunch;11:35,11:35;Passing Period;11:40,11:40;Period 6;13:15,13:15;Passing Period;13:20,13:20;Period 7;14:55";
-                s2 = "11:05;Period 6;12:40,12:40;Passing Period;12:45,12:45;B Lunch;13:15";
+                s1 = "7:00;Good Morning!;7:50,7:50;Period 5;9:25,9:25;Homeroom;9:35,9:35;Passing Period;9:40,9:40;SAS (9/10);10:10,10:10;Eagle Time (All);11:00,11:00;Passing Period;11:05,11:05;A Lunch;11:35,11:35;Passing Period;11:40,11:40;Period 6;13:15,13:15;Passing Period;13:20,13:20;Period 7;14:55";
+                s2 = "9:40;Eagle Time (11/12);10:10,11:05;Period 6;12:40,12:40;Passing Period;12:45,12:45;B Lunch;13:15";
                 break;
             case 5: // Friday
                 s1 = "7:00;Happy Friday!;7:35,7:35;PLC;8:35,8:35;Period 1;9:20,9:20;Passing Period;9:25,9:25;Period 2;10:10,10:10;Passing Period;10:15,10:15;Period 3;11:00,11:00;Passing Period;11:05,11:05;A Lunch;11:35,11:35;Passing Period;11:40,11:40;Period 4;12:25,12:25;Passing Period;12:30,12:30;Period 5;13:15,13:15;Passing Period;13:20,13:20;Period 6;14:05,14:05;Passing Period;14:10,14:10;Period 7;14:55";
@@ -785,14 +868,15 @@ class ScheduleTracker {
     }
 
     setWeatherVisible(visible) {
-        if (this.weatherDisplay) {
-            this.weatherDisplay.style.display = visible ? 'inline-block' : 'none';
+        if (this.weatherContainer) {
+            this.weatherContainer.style.display = visible ? 'inline-flex' : 'none';
         }
     }
 
     setTotalTimeVisible(visible) {
         if (this.totalTimeContainer) {
-            this.totalTimeContainer.style.visibility = visible ? 'visible' : 'hidden';
+            this.totalTimeContainer.style.display = visible ? 'flex' : 'none';
+            this.lastState.totalTimeVisible = visible;
         }
     }
 

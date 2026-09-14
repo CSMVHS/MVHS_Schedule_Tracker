@@ -507,61 +507,56 @@ function updateModalData(id, updateInputs = false) {
 // Modal Actions
 document.querySelector('.close-btn').onclick = () => controlModal.style.display = 'none';
 
-document.getElementById('save-name-btn').onclick = () => {
-    const name = document.getElementById('input-name').value;
-    firebase.database().ref('devices').child(currentDeviceId).child('settings').update({ name: name })
-        .then(() => showToast("Device name updated!"))
+const saveAllDeviceBtn = document.getElementById('save-all-device-settings-btn');
+if (saveAllDeviceBtn) {
+    saveAllDeviceBtn.onclick = () => {
+        if (!currentDeviceId) return;
+
+        const name = document.getElementById('input-name').value;
+
+        const mode = document.getElementById('modal-bg-mode').value;
+        const bg = document.getElementById('input-bg-color').value;
+        const grad1 = document.getElementById('input-bg-grad1').value;
+        const grad2 = document.getElementById('input-bg-grad2').value;
+        const gradDeg = document.getElementById('input-bg-grad-deg').value || "135";
+        const bgImage = document.getElementById('input-bg-image').value.trim();
+
+        const bar = document.getElementById('input-bar-color').value;
+        const barStyle = document.getElementById('input-bar-style').value;
+        const clock24h = document.getElementById('input-clock-format').value === '24';
+        const offset = document.getElementById('input-offset').value;
+
+        const showWeather = document.getElementById('input-show-weather').checked;
+        const showTotalTime = document.getElementById('input-show-total-time').checked;
+        const showCredits = document.getElementById('input-show-credits').checked;
+        const lowPerf = document.getElementById('input-low-perf').checked;
+
+        const overrideText = document.getElementById('input-override-text').value;
+        const overrideActive = document.getElementById('input-override-active').checked;
+
+        firebase.database().ref('devices').child(currentDeviceId).child('settings').update({
+            name: name,
+            bgMode: mode,
+            bgColor: bg,
+            bgGradient1: grad1,
+            bgGradient2: grad2,
+            bgGradientAngle: gradDeg,
+            bgImage: bgImage,
+            barColor: bar,
+            barStyle: barStyle,
+            clock24h: clock24h,
+            timeOffset: offset,
+            showWeather: showWeather,
+            showTotalTime: showTotalTime,
+            showCredits: showCredits,
+            lowPerf: lowPerf,
+            overrideText: overrideText,
+            overrideActive: overrideActive
+        })
+        .then(() => showToast("All device settings saved successfully!"))
         .catch(e => showToast("Error: " + e.message, 'error'));
-};
-
-document.getElementById('save-settings-btn').onclick = () => {
-    const mode = document.getElementById('modal-bg-mode').value;
-    const bg = document.getElementById('input-bg-color').value;
-    const grad1 = document.getElementById('input-bg-grad1').value;
-    const grad2 = document.getElementById('input-bg-grad2').value;
-    const gradDeg = document.getElementById('input-bg-grad-deg').value || "135";
-    const bgImage = document.getElementById('input-bg-image').value.trim();
-
-    const bar = document.getElementById('input-bar-color').value;
-    const barStyle = document.getElementById('input-bar-style').value;
-    const clock24h = document.getElementById('input-clock-format').value === '24';
-    const offset = document.getElementById('input-offset').value;
-
-    const showWeather = document.getElementById('input-show-weather').checked;
-    const showTotalTime = document.getElementById('input-show-total-time').checked;
-    const showCredits = document.getElementById('input-show-credits').checked;
-    const lowPerf = document.getElementById('input-low-perf').checked;
-
-    firebase.database().ref('devices').child(currentDeviceId).child('settings').update({
-        bgMode: mode,
-        bgColor: bg,
-        bgGradient1: grad1,
-        bgGradient2: grad2,
-        bgGradientAngle: gradDeg,
-        bgImage: bgImage,
-        barColor: bar,
-        barStyle: barStyle,
-        clock24h: clock24h,
-        timeOffset: offset,
-        showWeather: showWeather,
-        showTotalTime: showTotalTime,
-        showCredits: showCredits,
-        lowPerf: lowPerf
-    })
-    .then(() => showToast("Device settings saved!"))
-    .catch(e => showToast("Error: " + e.message, 'error'));
-};
-
-document.getElementById('save-override-btn').onclick = () => {
-    const text = document.getElementById('input-override-text').value;
-    const active = document.getElementById('input-override-active').checked;
-    firebase.database().ref('devices').child(currentDeviceId).child('settings').update({
-        overrideText: text,
-        overrideActive: active
-    })
-    .then(() => showToast("Override setting updated!"))
-    .catch(e => showToast("Error: " + e.message, 'error'));
-};
+    };
+}
 
 document.getElementById('refresh-device-btn').onclick = () => {
     firebase.database().ref('devices').child(currentDeviceId).child('command').set({
