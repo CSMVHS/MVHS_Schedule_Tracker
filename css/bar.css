@@ -1,7 +1,7 @@
 :root {
-    --bg-color: #00401e; /* High contrast dark green */
+    --bg-color: #00401e; /* Dark green */
     --text-color: #ffffff;
-    --bar-bg: rgba(0, 0, 0, 0.4); /* Strong contrast track */
+    --bar-bg: rgba(0, 0, 0, 0.3); /* Slightly darker track for better contrast */
     --bar-color: #b1953a; /* Default Gold */
 }
 
@@ -11,129 +11,79 @@
     box-sizing: border-box;
 }
 
-html, body {
-    height: 100%;
-    width: 100vw;
-    overflow: hidden;
+body {
     background-color: var(--bg-color);
     color: var(--text-color);
-    font-family: 'Google Sans Flex', -apple-system, BlinkMacSystemFont, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    font-family: 'Google Sans Flex', sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
 }
 
 .background_container {
     display: flex;
     flex-direction: column;
     height: 100vh;
-    padding: clamp(1rem, 2vh, 2.5rem) clamp(1rem, 3vw, 4rem);
-    justify-content: space-between;
+    padding: 1.5vh 3vw 3vh 3vw;
 }
 
-/* Header Grid - High Contrast, Large Readable Text */
 .title_container {
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: 1fr 2fr 1fr;
     align-items: center;
-    gap: 1vw;
-    width: 100%;
     margin-bottom: 1vh;
-}
-
-.top-bar-item {
+    font-size: 4vmin;
     font-weight: 700;
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 }
 
-.header-pill {
-    background: rgba(0, 0, 0, 0.25);
-    border-radius: 0.85rem;
-    backdrop-filter: blur(6px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
-}
-
-.left-header-group {
-    display: flex;
-    align-items: center;
-    gap: clamp(0.75rem, 1.5vw, 2rem);
-    text-align: left;
-}
-
-#date-container, #weather-container {
-    font-size: clamp(1.3rem, 3.2vmin, 2.8rem);
-    padding: 0.25em 0.6em;
-    display: inline-flex;
-    align-items: center;
-}
-
-.weather-text {
-    font-variant-numeric: tabular-nums;
-    opacity: 0.95;
-}
-
-#clock-display {
+.top-bar-item:nth-child(1) { text-align: left; }
+.top-bar-item:nth-child(2) {
     text-align: center;
     font-family: 'Google Sans Flex', sans-serif;
-    font-size: clamp(2.2rem, 6.5vmin, 6rem); /* Reduced slightly so 2 bars fit more easily */
-    font-weight: 800;
+    font-size: 8vmin;
+    font-weight: 700;
     font-variant-numeric: tabular-nums;
-    letter-spacing: 0.02em;
-    padding: 0.15em 0.5em;
-    border-radius: 1rem;
+    -webkit-font-smoothing: antialiased;
+    text-shadow: none !important;
 }
+.top-bar-item:nth-child(3) { text-align: right; }
 
-#clock-display.device-id-flash {
-    font-family: 'DM Mono', monospace !important;
-    font-size: clamp(1.8rem, 5.5vmin, 5rem);
-    color: #f59e0b;
-}
-
-.right-header-placeholder {
-    visibility: hidden;
-}
-
-/* Main Content Area */
 .main-content {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    gap: clamp(2rem, 5vh, 5rem);
-    padding: 2vh 0;
+    justify-content: flex-start;
+    padding-top: 4vh;
+    gap: 6vh;
 }
 
 .schedule-wrapper {
     display: flex;
     flex-direction: column;
-    gap: clamp(2rem, 5vh, 4.5rem);
-    width: 100%;
+    gap: 6vh;
 }
 
 .tracker-item {
     display: flex;
     flex-direction: column;
-    gap: clamp(0.75rem, 1.5vh, 1.5rem);
+    gap: 1.5vh;
 }
 
 .text_container {
-    padding-left: clamp(0.5rem, 1.5vw, 2vw);
+    padding-left: 2vw;
 }
 
 .period {
-    font-size: clamp(2rem, 5.8vmin, 5rem);
-    font-weight: 800;
-    letter-spacing: 0.01em;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+    font-size: 6vmin;
+    font-weight: 700;
 }
 
 .progress_container {
     position: relative;
-    height: clamp(5rem, 11vh, 9rem);
+    height: 12vh;
     background: var(--bar-bg);
-    border-radius: clamp(2.5rem, 5.5vh, 4.5rem);
+    border-radius: 6vh;
     overflow: hidden;
-    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5), 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 .progress_bar {
@@ -142,78 +92,18 @@ html, body {
     top: 0;
     height: 100%;
     background: var(--bar-color);
-    border-radius: inherit;
+    border-radius: 6vh;
     width: 0%;
-    will-change: width;
-    overflow: hidden;
-    transition: width 0.3s ease-out;
+    overflow: hidden; /* Keep the blurred edges inside the bar */
 }
 
-/* Progress Bar Style: Liquid Wave (Default) */
-.progress_bar.bar-style-liquid::before,
-.progress_bar.bar-style-liquid::after {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    right: -50%;
-    bottom: -50%;
-    filter: blur(1.5vh);
-    border-radius: inherit;
-}
-
-.progress_bar.bar-style-liquid::before {
-    background:
-        radial-gradient(circle at 20% 35%, rgba(255, 255, 255, 0.5) 0%, transparent 40%),
-        radial-gradient(circle at 70% 65%, rgba(255, 255, 255, 0.4) 0%, transparent 45%);
-    background-size: 100vh 100%;
-    background-repeat: repeat-x;
-    animation: liquidFlow1 20s linear infinite;
-    opacity: 0.5;
-}
-
-.progress_bar.bar-style-liquid::after {
-    background:
-        radial-gradient(circle at 40% 70%, rgba(255, 255, 255, 0.3) 0%, transparent 40%),
-        radial-gradient(circle at 80% 30%, rgba(255, 255, 255, 0.4) 0%, transparent 50%);
-    background-size: 85vh 100%;
-    background-repeat: repeat-x;
-    animation: liquidFlow2 15s linear infinite reverse;
-    opacity: 0.4;
-}
-
-/* Progress Bar Style: Glow / Shimmer */
-.progress_bar.bar-style-glow::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 60%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-    animation: barShimmer 3s infinite;
-}
-
-/* Progress Bar Style: Clean Pulse (Efficient Animation) */
-.progress_bar.bar-style-pulse {
-    animation: barPulse 2s ease-in-out infinite alternate;
-}
-
-/* Progress Bar Style: Solid Static */
-.progress_bar.bar-style-solid::before,
-.progress_bar.bar-style-solid::after {
-    display: none !important;
-}
-
-/* Low Performance Mode Override */
 .progress_bar.low-perf {
     background-color: var(--bar-color) !important;
     background-image: linear-gradient(to bottom,
-        rgba(255, 255, 255, 0.35) 0%,
+        rgba(255, 255, 255, 0.4) 0%,
         transparent 50%,
         rgba(0, 0, 0, 0.2) 100%
     ) !important;
-    animation: barPulse 3s ease-in-out infinite alternate !important;
 }
 
 .progress_bar.low-perf::before,
@@ -221,317 +111,117 @@ html, body {
     display: none !important;
 }
 
+/* Bubbles inside the bar - Dynamic Liquid effect */
+.progress_bar::before,
+.progress_bar::after {
+    content: '';
+    position: absolute;
+    top: -6vh;
+    left: -6vh;
+    right: -6vh;
+    bottom: -6vh;
+    filter: blur(2vh);
+    border-radius: 6vh;
+}
+
+.progress_bar::before {
+    background:
+        radial-gradient(circle at 20% 35%, rgba(255, 255, 255, 0.5) 0%, transparent 40%),
+        radial-gradient(circle at 70% 65%, rgba(255, 255, 255, 0.4) 0%, transparent 45%);
+    background-size: 100vh 100%;
+    background-repeat: repeat-x;
+    animation: liquidFlow1 20s linear infinite;
+    opacity: 0.5;
+    z-index: 1;
+}
+
+.progress_bar::after {
+    background:
+        radial-gradient(circle at 40% 70%, rgba(255, 255, 255, 0.3) 0%, transparent 40%),
+        radial-gradient(circle at 80% 30%, rgba(255, 255, 255, 0.4) 0%, transparent 50%);
+    background-size: 85vh 100%;
+    background-repeat: repeat-x;
+    animation: liquidFlow2 15s linear infinite reverse;
+    opacity: 0.4;
+    z-index: 2;
+}
+
 @keyframes liquidFlow1 {
-    from { transform: translateX(0); }
-    to { transform: translateX(50vh); }
+    from { background-position: 0 0; }
+    to { background-position: 100vh 0; }
 }
 
 @keyframes liquidFlow2 {
-    from { transform: translateX(0); }
-    to { transform: translateX(-40vh); }
+    from { background-position: 0 0; }
+    to { background-position: 85vh 0; }
 }
 
-@keyframes barShimmer {
-    0% { left: -100%; }
-    100% { left: 200%; }
-}
-
-@keyframes barPulse {
-    0% { filter: brightness(0.95); }
-    100% { filter: brightness(1.1); }
-}
-
-/* Timer Pill - Takes up most of height of progress bar background, keeping same padding on top/bottom as right side */
 .progress_time {
     position: absolute;
-    right: clamp(0.4rem, 0.8vh, 1rem);
-    top: clamp(0.4rem, 0.8vh, 1rem);
-    bottom: clamp(0.4rem, 0.8vh, 1rem);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Google Sans Flex', -apple-system, sans-serif;
-    font-size: clamp(1.4rem, 4.2vmin, 3.8rem);
-    font-weight: 800;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: 0.05em;
-    color: #ffffff;
-    background: rgba(0, 0, 0, 0.92);
-    padding: 0 clamp(0.8rem, 1.8vw, 2rem);
-    border-radius: clamp(1.8rem, 4vh, 3.5rem);
-    border: 2px solid rgba(255, 255, 255, 0.18);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
-    z-index: 20;
+    /* Spacing logic: Right margin should be around 1.1vh.
+       Container is 12vh. Font is 6.5vmin (6.5vh on 16:9).
+       Target gap = 1.1vh. Total pill height = 12 - 2.2 = 9.8vh.
+       Vertical padding = (9.8 - 6.5) / 2 = 1.65vh.
+    */
+    right: 1.1vh;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: 'Azeret Mono', monospace;
+    font-size: 6.5vmin;
     line-height: 1;
-    white-space: nowrap;
+    font-weight: 500;
+    color: #ffffff;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 1.65vh 2.5vw;
+    border-radius: 5vh;
+    z-index: 20;
+    text-shadow: none !important;
+    -webkit-font-smoothing: antialiased;
 }
 
 .end-message {
     display: none;
     text-align: center;
-    font-size: clamp(3rem, 12vmin, 10rem);
-    font-weight: 800;
-    background: rgba(0, 0, 0, 0.4);
-    padding: 6vh 4vw;
-    border-radius: 4rem;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    margin: auto 0;
-}
-
-/* Footer Section */
-.footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    width: 100%;
-    padding-top: 1vh;
+    font-size: 15vmin;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 8vh 5vw;
+    border-radius: 10vh;
+    box-shadow: 0 2vh 5vh rgba(0,0,0,0.3);
+    margin: auto 0; /* Center vertically when it's the only thing */
 }
 
 .total-time-left {
+    position: fixed;
+    bottom: 4vh;
+    left: 4vw;
+    z-index: 100;
     display: flex;
-    align-items: center;
+    align-items: flex-end; /* Align text to bottom of the pill */
+    gap: 1.5vw;
 }
 
-/* 50% transparent background, slightly smaller font */
 .total-time-remaining {
-    font-size: clamp(1.05rem, 3.2vmin, 2.5rem);
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    background: rgba(0, 0, 0, 0.45);
+    font-size: 4.5vmin;
+    font-weight: 500;
+    background: rgba(0, 0, 0, 0.8);
     color: #ffffff;
-    padding: clamp(0.5rem, 1vh, 1rem) clamp(1rem, 1.8vw, 1.8rem);
-    border-radius: clamp(0.8rem, 1.8vh, 1.6rem);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    padding: 1.5vh 2.5vw;
+    border-radius: 2.5vh;
+    backdrop-filter: blur(10px);
+    text-shadow: none !important;
 }
 
 .credits {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
     color: var(--text-color);
-    opacity: 0.55;
-    font-size: clamp(0.8rem, 1.8vmin, 1.4rem);
-    font-weight: 500;
+    opacity: 0.2;
+    font-size: 2vmin;
+    font-weight: 400;
     white-space: nowrap;
-    display: flex;
-    align-items: center;
-    gap: 0.35em;
-}
-
-.report-issue-link {
-    color: inherit;
-    text-decoration: underline;
-    opacity: 0.85;
-    transition: opacity 0.2s;
-}
-
-.report-issue-link:hover {
-    opacity: 1;
-}
-
-/* Device ID in bottom right - DM Mono font, 50% more visible than normal credits opacity */
-.device-id-credit {
-    font-family: 'DM Mono', monospace;
-    font-weight: 500;
-    opacity: 0.825;
-}
-
-.customize-link {
-    background: none;
-    border: none;
-    color: inherit;
-    text-decoration: underline;
-    opacity: 0.85;
-    font-size: inherit;
-    font-family: inherit;
-    cursor: pointer;
-    padding: 0;
-}
-
-.customize-link:hover {
-    opacity: 1;
-}
-
-/* Local Customize Modal */
-.customize-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(4px);
-    z-index: 99999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.customize-card {
-    background: #0f172a;
-    color: #ffffff;
-    border: 2px solid var(--bar-color);
-    border-radius: 1.25rem;
-    padding: 1.5rem;
-    width: 90%;
-    max-width: 400px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
-}
-
-.customize-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.25rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-.customize-header h3 {
-    font-size: 1.2rem;
-    font-weight: 700;
-}
-
-.close-modal {
-    font-size: 1.5rem;
-    cursor: pointer;
-    opacity: 0.7;
-}
-
-.close-modal:hover { opacity: 1; }
-
-.customize-body {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.cust-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.9rem;
-    font-weight: 600;
-}
-
-.cust-row input[type="color"] {
-    width: 40px;
-    height: 32px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 6px;
-    background: none;
-    cursor: pointer;
-}
-
-.cust-row select {
-    padding: 0.4rem 0.6rem;
-    border-radius: 6px;
-    background: #1e293b;
-    color: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    font-family: inherit;
-}
-
-.cust-checkboxes {
-    display: flex;
-    gap: 1rem;
-    margin-top: 0.5rem;
-    font-size: 0.85rem;
-}
-
-.cust-checkboxes label {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    cursor: pointer;
-}
-
-.customize-footer {
-    margin-top: 1.25rem;
-    text-align: right;
-}
-
-.customize-footer button {
-    background: var(--bar-color);
-    color: #000000;
-    font-weight: 700;
-    padding: 0.6rem 1.25rem;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-}
-
-/* First time "Who's this?" Modal Prompt */
-.identify-modal {
-    position: fixed;
-    top: 2rem;
-    right: 2rem;
-    z-index: 10000;
-    animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes slideDown {
-    from { opacity: 0; transform: translateY(-1rem); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.identify-card {
-    background: rgba(0, 0, 0, 0.9);
-    border: 2px solid var(--bar-color);
-    padding: 1.25rem 1.5rem;
-    border-radius: 1rem;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.7);
-    color: #ffffff;
-    max-width: 420px;
-}
-
-.identify-card h3 {
-    font-size: 1.2rem;
-    font-weight: 800;
-    margin-bottom: 0.25rem;
-}
-
-.identify-sub {
-    font-size: 0.78rem;
-    color: #cbd5e1;
-    margin-bottom: 0.85rem;
-    line-height: 1.35;
-}
-
-.identify-input-row {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.identify-input-row input {
-    flex: 1;
-    padding: 0.5rem 0.75rem;
-    border-radius: 6px;
-    border: 1px solid rgba(255,255,255,0.2);
-    background: rgba(255,255,255,0.1);
-    color: #fff;
-    font-family: inherit;
-    font-size: 0.85rem;
-}
-
-.identify-input-row input:focus {
-    outline: none;
-    border-color: var(--bar-color);
-}
-
-.identify-input-row button {
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 6px;
-    font-weight: 700;
-    font-size: 0.85rem;
-    cursor: pointer;
-    background: var(--bar-color);
-    color: #000;
-}
-
-.identify-input-row .btn-skip {
-    background: rgba(255,255,255,0.15);
-    color: #fff;
+    z-index: 1000;
 }
 
 /* Remote Override Overlay */
@@ -543,63 +233,18 @@ html, body {
     height: 100vh;
     background-color: #000000;
     z-index: 9999;
-    display: none;
+    display: none; /* Controlled by JS */
     justify-content: center;
     align-items: center;
-    padding: 8vw;
+    padding: 10vw;
     text-align: center;
 }
 
 .override-text {
     color: #ffffff;
-    font-size: clamp(2.5rem, 9vmin, 8rem);
-    font-weight: 800;
-    line-height: 1.25;
-    word-break: break-word;
+    font-size: 10vmin;
+    font-weight: 700;
+    line-height: 1.2;
+    word-wrap: break-word;
     max-width: 95vw;
-}
-
-/* Responsive adjustments for mobile/portrait */
-@media (max-width: 768px), (max-aspect-ratio: 1/1) {
-    .background_container {
-        padding: 1.25rem 0.85rem;
-    }
-
-    .title_container {
-        grid-template-columns: 1fr 1fr;
-        grid-template-areas:
-            "clock clock"
-            "left left";
-        row-gap: 0.5rem;
-    }
-
-    .left-header-group { grid-area: left; justify-content: space-between; }
-    .top-bar-item:nth-child(2) { grid-area: clock; text-align: center; }
-
-    .progress_container {
-        height: 4.25rem;
-        border-radius: 2.125rem;
-    }
-
-    .progress_time {
-        font-size: 1.15rem;
-        padding: 0.4rem 0.7rem;
-        right: 0.4rem;
-    }
-
-    .footer {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-    }
-
-    .credits {
-        align-self: flex-end;
-    }
-
-    .identify-modal {
-        top: 1rem;
-        right: 1rem;
-        left: 1rem;
-    }
 }

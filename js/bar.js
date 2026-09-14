@@ -1,11 +1,10 @@
+
 const CONFIG = {
     WEATHER_API_KEY: "7a08aa9c10a1a7edae637fa85fc3ecae",
     CITY: "Highlands Ranch, CO",
     LAT: 39.5481,
     LON: -104.9739,
     SCHOOL_END_TIME: "14:50",
-    APP_VERSION: "4.0.0",
-    AUTHOR_NAME: "Austin Strong",
     FIREBASE: {
         apiKey: "AIzaSyDbnzWXHsqr6rOXEq99FMYyJEgVp5QSUAo",
         authDomain: "mvhs-st.firebaseapp.com",
@@ -58,7 +57,6 @@ class RemoteManager {
             this.lastInteraction = Date.now();
             localStorage.setItem('mvhs_total_interactions', this.totalInteractions);
             localStorage.setItem('mvhs_last_interaction', this.lastInteraction);
-            if (this.tracker) this.tracker.onUserInteraction();
         };
         events.forEach(e => window.addEventListener(e, record, { passive: true }));
     }
@@ -105,6 +103,7 @@ class RemoteManager {
         else if (ua.indexOf("Firefox") > -1) b = "Firefox";
         else if (ua.indexOf("MSIE") > -1 || !!document.documentMode) b = "IE";
 
+        // Simple OS detection
         let os = "Unknown OS";
         if (ua.indexOf("Win") > -1) os = "Windows";
         else if (ua.indexOf("Mac") > -1) os = "MacOS";
@@ -128,12 +127,6 @@ class RemoteManager {
         // Track time drift
         this.db.ref(".info/serverTimeOffset").on("value", (snap) => {
             this.serverOffset = snap.val() || 0;
-            this.tracker.serverOffset = this.serverOffset;
-        });
-
-        // Track global "Hold to Show Device IDs" state
-        this.db.ref("global/showDeviceIDs").on("value", (snap) => {
-            this.tracker.setShowDeviceIDFlash(!!snap.val());
         });
 
         // Handle connections/disconnections
@@ -141,6 +134,7 @@ class RemoteManager {
         connectedRef.on("value", (snap) => {
             if (snap.val() === true) {
                 this.connected = true;
+                // Set online status and onDisconnect hook
                 this.deviceRef.child('status/isOnline').set(true);
                 this.deviceRef.child('status/isOnline').onDisconnect().set(false);
                 this.deviceRef.child('status/lastSeen').onDisconnect().set(firebase.database.ServerValue.TIMESTAMP);
@@ -154,10 +148,11 @@ class RemoteManager {
             const data = snap.val();
             if (!data) return;
 
+            // Apply Theme & Background Modes
             const settings = data.settings || {};
             const bgMode = settings.bgMode || 'color';
 
-            // Reset body background properties
+            // Reset body background properties to ensure clean switching
             document.body.style.backgroundImage = 'none';
             document.body.style.backgroundSize = '';
             document.body.style.backgroundPosition = '';
@@ -177,6 +172,7 @@ class RemoteManager {
                 document.body.style.backgroundColor = settings.bgColor || '#00401e';
                 document.documentElement.style.setProperty('--text-color', '#ffffff');
             } else {
+                // Default Solid Color
                 const bgColor = settings.bgColor || '#00401e';
                 document.body.style.background = bgColor;
                 document.documentElement.style.setProperty('--bg-color', bgColor);
@@ -184,16 +180,20 @@ class RemoteManager {
             }
 
             // Progress Bar Color
-            document.documentElement.style.setProperty('--bar-color', settings.barColor || '#b1953a');
+            if (settings.barColor) {
+                document.documentElement.style.setProperty('--bar-color', settings.barColor);
+            } else {
+                document.documentElement.style.setProperty('--bar-color', '#b1953a');
+            }
 
             // Apply Time Offset
-            if (settings.timeOffset !== undefined) {
-                this.tracker.timeOffset = parseInt(settings.timeOffset) || 0;
+            if (data.settings && data.settings.timeOffset !== undefined) {
+                this.tracker.timeOffset = parseInt(data.settings.timeOffset) || 0;
             }
 
             // Apply Override
-            if (settings.overrideText) {
-                this.tracker.setOverride(settings.overrideText, settings.overrideActive);
+            if (data.settings && data.settings.overrideText) {
+                this.tracker.setOverride(data.settings.overrideText, data.settings.overrideActive);
             } else {
                 this.tracker.setOverride(null, false);
             }
@@ -206,14 +206,7 @@ class RemoteManager {
                 this.tracker.setLowPerf(this.lowPerf);
             }
 
-            // Customization Options
-            this.tracker.setUse24HourClock(!!settings.clock24h);
-            this.tracker.setWeatherVisible(settings.showWeather !== false);
-            this.tracker.setTotalTimeVisible(settings.showTotalTime !== false);
-            this.tracker.setCreditsVisible(settings.showCredits !== false);
-            this.tracker.setBarStyle(settings.barStyle || 'liquid');
-
-            // Handle Remote Commands
+            // Handle Commands
             if (data.command && data.command.type === 'REFRESH') {
                 const lastRefresh = localStorage.getItem('mvhs_last_refresh_ts');
                 if (!lastRefresh || parseInt(lastRefresh) < data.command.ts) {
@@ -229,23 +222,25 @@ class RemoteManager {
                     window.location.href = window.location.pathname + '?v=' + Date.now();
                 }
             }
+
+            if (data.command && data.command.type === 'REDIRECT') {
+                const lastRedirect = localStorage.getItem('mvhs_last_redirect_ts');
+                if (!lastRedirect || parseInt(lastRedirect) < data.command.ts) {
+                    localStorage.setItem('mvhs_last_redirect_ts', data.command.ts);
+                    window.location.href = data.command.url;
+                }
+            }
         });
 
+        // Periodic status updates
         this.setupIntervals();
-    }
-
-    setDeviceName(name) {
-        if (!name || !this.deviceRef) return;
-        this.deviceRef.child('settings').update({
-            name: `${name.trim()} [write-in]`
-        });
     }
 
     setupIntervals() {
         if (this.statusInterval) clearInterval(this.statusInterval);
         if (this.uptimeInterval) clearInterval(this.uptimeInterval);
 
-        const statusTime = this.lowPerf ? 15000 : 5000;
+        const statusTime = this.lowPerf ? 10000 : 5000;
         const uptimeTime = this.lowPerf ? 120000 : 30000;
 
         this.statusInterval = setInterval(() => this.updateStatus(), statusTime);
@@ -290,43 +285,22 @@ class ScheduleTracker {
         document.title = "Schedule Tracker";
         this.schedules = [];
         this.weatherInterval = null;
-        this.lastWeatherFetchTs = 0;
-        this.lastDay = -1;
-        this.timeOffset = 0;
-        this.serverOffset = 0;
+        this.lastDay = new Date().getDay();
+        this.timeOffset = 0; // In minutes
         this.currentPeriodName = "";
-        this.clock24h = false;
-        this.barStyle = "liquid";
-        this.lowPerf = false;
-        this.showDeviceIDFlash = false;
-        this.hasUserInteracted = false;
 
         // Remote Management
         this.remote = new RemoteManager(this);
+        this.updateCredits();
 
         // Cache DOM elements
-        this.dateContainer = document.getElementById("date-container");
         this.dateDisplay = document.getElementById("date-display");
         this.clockDisplay = document.getElementById("clock-display");
-        this.weatherContainer = document.getElementById("weather-container");
         this.weatherDisplay = document.getElementById("weather-display");
         this.endMessage = document.getElementById('end');
         this.scheduleWrapper = document.querySelector('.schedule-wrapper');
         this.totalTimeRemaining = document.querySelector(".total-time-remaining");
-        this.totalTimeContainer = document.getElementById("total-time-container");
-        this.deviceIdDisplay = document.getElementById("device-id-display");
-
-        // Customize Modal Elements
-        this.customizeModal = document.getElementById("local-customize-modal");
-        this.openCustomizeBtn = document.getElementById("open-customize-btn");
-        this.closeCustomizeBtn = document.getElementById("close-customize-btn");
-        this.saveCustomizeBtn = document.getElementById("save-customize-btn");
-
-        // First Time User Prompt Elements
-        this.identifyModal = document.getElementById("user-identify-modal");
-        this.identifyInput = document.getElementById("identify-input");
-        this.identifySubmitBtn = document.getElementById("identify-submit-btn");
-        this.identifySkipBtn = document.getElementById("identify-skip-btn");
+        this.totalTimeLeftContainer = document.querySelector(".total-time-left");
 
         this.trackerItems = Array.from(document.querySelectorAll('.tracker-item')).map(item => ({
             container: item,
@@ -334,190 +308,16 @@ class ScheduleTracker {
             bar: item.querySelector('.progress_bar'),
             time: item.querySelector('.progress_time')
         }));
-
-        this.lastState = {
-            dateStr: "",
-            clockStr: "",
-            totalTimeStr: "",
-            totalTimeVisible: true,
-            endVisible: false,
-            items: [{}, {}]
-        };
-
-        this.updateDeviceIdDisplay();
-        this.setupVisibilityHandler();
-        this.setupFirstTimeIdentifyPrompt();
-        this.setupCustomizeModal();
     }
 
     async init() {
         this.setupWeather();
-        this.loadSchedules();
-        this.loadLocalCustomizations();
+        await this.loadSchedules();
         this.startUpdateLoop();
     }
 
-    setupCustomizeModal() {
-        if (!this.openCustomizeBtn || !this.customizeModal) return;
-
-        this.openCustomizeBtn.addEventListener('click', () => {
-            this.customizeModal.style.display = 'flex';
-        });
-
-        if (this.closeCustomizeBtn) {
-            this.closeCustomizeBtn.addEventListener('click', () => {
-                this.customizeModal.style.display = 'none';
-            });
-        }
-
-        if (this.saveCustomizeBtn) {
-            this.saveCustomizeBtn.addEventListener('click', () => {
-                const bg = document.getElementById('cust-bg-color').value;
-                const bar = document.getElementById('cust-bar-color').value;
-                const style = document.getElementById('cust-bar-style').value;
-                const format = document.getElementById('cust-clock-format').value;
-                const weather = document.getElementById('cust-show-weather').checked;
-                const totalTime = document.getElementById('cust-show-total-time').checked;
-
-                const localSettings = { bg, bar, style, format, weather, totalTime };
-                localStorage.setItem('mvhs_local_customizations', JSON.stringify(localSettings));
-
-                this.applyLocalSettings(localSettings);
-                this.customizeModal.style.display = 'none';
-            });
-        }
-    }
-
-    loadLocalCustomizations() {
-        const saved = localStorage.getItem('mvhs_local_customizations');
-        if (saved) {
-            try {
-                const settings = JSON.parse(saved);
-                this.applyLocalSettings(settings);
-            } catch (e) {
-                console.error("Failed to parse local customizations", e);
-            }
-        }
-    }
-
-    applyLocalSettings(settings) {
-        if (settings.bg) {
-            document.body.style.background = settings.bg;
-            document.documentElement.style.setProperty('--bg-color', settings.bg);
-            document.documentElement.style.setProperty('--text-color', this.remote.getContrastColor(settings.bg));
-        }
-        if (settings.bar) {
-            document.documentElement.style.setProperty('--bar-color', settings.bar);
-        }
-        if (settings.style) {
-            this.setBarStyle(settings.style);
-        }
-        if (settings.format) {
-            this.setUse24HourClock(settings.format === '24');
-        }
-        if (settings.weather !== undefined) {
-            this.setWeatherVisible(settings.weather);
-        }
-        if (settings.totalTime !== undefined) {
-            this.setTotalTimeVisible(settings.totalTime);
-        }
-    }
-
-    setupFirstTimeIdentifyPrompt() {
-        const hasPrompted = localStorage.getItem("mvhs_identify_prompted");
-        if (hasPrompted) return;
-
-        if (this.identifyModal) {
-            this.identifyModal.style.display = "block";
-        }
-
-        let maxSeconds = 10;
-        let timer = null;
-
-        const dismiss = (inputVal = null) => {
-            if (timer) clearInterval(timer);
-            localStorage.setItem("mvhs_identify_prompted", "true");
-            if (this.identifyModal) {
-                this.identifyModal.style.display = "none";
-            }
-            if (inputVal && inputVal.trim()) {
-                this.remote.setDeviceName(inputVal);
-            }
-        };
-
-        const startTimer = () => {
-            if (timer) clearInterval(timer);
-            timer = setInterval(() => {
-                maxSeconds--;
-                if (maxSeconds <= 0) {
-                    dismiss();
-                }
-            }, 1000);
-        };
-
-        this.onUserInteraction = () => {
-            if (!this.hasUserInteracted) {
-                this.hasUserInteracted = true;
-                if (!localStorage.getItem("mvhs_identify_prompted")) {
-                    maxSeconds = 60; // Extend to 60s if user interacts
-                    startTimer();
-                }
-            }
-        };
-
-        if (this.identifySubmitBtn) {
-            this.identifySubmitBtn.addEventListener("click", () => {
-                const val = this.identifyInput ? this.identifyInput.value : "";
-                dismiss(val);
-            });
-        }
-
-        if (this.identifySkipBtn) {
-            this.identifySkipBtn.addEventListener("click", () => dismiss());
-        }
-
-        if (this.identifyInput) {
-            this.identifyInput.addEventListener("keydown", (e) => {
-                if (e.key === "Enter") {
-                    dismiss(this.identifyInput.value);
-                }
-            });
-        }
-
-        startTimer();
-    }
-
-    setShowDeviceIDFlash(show) {
-        this.showDeviceIDFlash = show;
-        if (this.clockDisplay) {
-            if (show) {
-                this.clockDisplay.classList.add('device-id-flash');
-            } else {
-                this.clockDisplay.classList.remove('device-id-flash');
-            }
-        }
-        this.updateUI(true);
-    }
-
-    updateDeviceIdDisplay() {
-        if (this.deviceIdDisplay) {
-            this.deviceIdDisplay.textContent = this.remote.id;
-        }
-    }
-
-    setupVisibilityHandler() {
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
-                this.updateUI(true);
-            }
-        });
-    }
-
-    getExactNow() {
-        return new Date(Date.now() + this.serverOffset + (this.timeOffset * 60000));
-    }
-
     updateTotalTimeRemaining(now) {
+        // Try to find the end of the day from the first schedule
         let endTimeStr = CONFIG.SCHOOL_END_TIME;
         if (this.schedules[0] && this.schedules[0].length > 0) {
             endTimeStr = this.schedules[0][this.schedules[0].length - 1].end;
@@ -529,44 +329,30 @@ class ScheduleTracker {
 
         const diff = end - now;
 
-        if (this.totalTimeRemaining && this.totalTimeContainer) {
+        if (this.totalTimeRemaining && this.totalTimeLeftContainer) {
             if (diff <= 0) {
-                if (this.lastState.totalTimeVisible !== false) {
-                    this.totalTimeContainer.style.display = 'none';
-                    this.lastState.totalTimeVisible = false;
-                }
+                this.totalTimeLeftContainer.style.display = 'none';
             } else {
-                if (this.lastState.totalTimeVisible !== true) {
-                    this.totalTimeContainer.style.display = 'flex';
-                    this.lastState.totalTimeVisible = true;
-                }
+                this.totalTimeLeftContainer.style.display = 'block';
                 const totalMinutes = Math.ceil(diff / 60000);
                 const h = Math.floor(totalMinutes / 60);
                 const m = totalMinutes % 60;
-                const str = `${h}h ${m}m`;
-                if (this.lastState.totalTimeStr !== str) {
-                    this.totalTimeRemaining.textContent = str;
-                    this.lastState.totalTimeStr = str;
-                }
+                this.totalTimeRemaining.textContent = `${h}h ${m}m`;
             }
         }
     }
 
     async setupWeather() {
+        const weatherDisplay = document.getElementById("weather-display");
         const fetchWeather = async () => {
             if (CONFIG.WEATHER_API_KEY === "YOUR_OPENWEATHERMAP_API_KEY") {
-                if (this.weatherDisplay) this.weatherDisplay.textContent = "72°";
-                this.lastWeatherFetchTs = Date.now();
+                if (weatherDisplay) weatherDisplay.textContent = "72°";
                 return;
             }
             try {
                 const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${CONFIG.LAT}&lon=${CONFIG.LON}&appid=${CONFIG.WEATHER_API_KEY}&units=imperial`);
                 const data = await res.json();
-                if (this.weatherDisplay && data.main) {
-                    this.weatherDisplay.textContent = `${Math.round(data.main.temp)}°`;
-                    this.weatherDisplay.style.display = 'inline-block';
-                    this.lastWeatherFetchTs = Date.now();
-                }
+                if (weatherDisplay) weatherDisplay.textContent = `${Math.round(data.main.temp)}°`;
             } catch (e) {
                 console.error("Weather fetch failed", e);
             }
@@ -576,26 +362,19 @@ class ScheduleTracker {
         this.weatherInterval = setInterval(fetchWeather, 600000); // 10 mins
     }
 
-    checkWeatherExpiration() {
-        if (!this.weatherDisplay) return;
-        // If weather data is older than 30 minutes (1800000 ms), hide it
-        if (this.lastWeatherFetchTs > 0 && (Date.now() - this.lastWeatherFetchTs > 1800000)) {
-            this.weatherDisplay.style.display = 'none';
-        }
-    }
-
-    loadSchedules() {
-        const now = this.getExactNow();
+    async loadSchedules() {
+        const now = new Date();
         this.schedules = this.getDefaultSchedules(now.getDay());
     }
 
     parseScheduleString(str) {
+        // Format: start;name;end,start;name;end...
         return str.split(',').map(p => {
             const parts = p.split(';');
             if (parts.length === 3) {
                 return { start: parts[0], name: parts[1], end: parts[2] };
             } else if (parts.length === 2) {
-                return { start: parts[0], name: "Period", end: parts[1] };
+                 return { start: parts[0], name: "Period", end: parts[1] };
             }
             return null;
         }).filter(p => p !== null);
@@ -610,24 +389,26 @@ class ScheduleTracker {
                 s2 = "11:05;Period 3;12:40,12:40;Passing Period;12:45,12:45;B Lunch;13:15";
                 break;
             case 2: // Tuesday
-                s1 = "7:00;Good Morning!;7:50,7:50;Period 5;9:25,9:25;Homeroom;9:35,9:35;Passing Period;9:40,9:40;SAS (9/10);10:10,10:10;Eagle Time (All);11:00,11:00;Passing Period;11:05,11:05;A Lunch;11:35,11:35;Passing Period;11:40,11:40;Period 6;13:15,13:15;Passing Period;13:20,13:20;Period 7;14:55";
-                s2 = "9:40;Eagle Time (11/12);10:10,11:05;Period 6;12:40,12:40;Passing Period;12:45,12:45;B Lunch;13:15";
+                s1 = "7:00;Good Morning!;7:50,7:50;Period 5;9:25,9:25;Homeroom;9:35,9:35;SAS & Eagle Time;10:05,10:05;Eagle Time;11:00,11:00;Passing Period;11:05,11:05;A Lunch;11:35,11:35;Passing Period;11:40,11:40;Period 6;13:15,13:15;Passing Period;13:20,13:20;Period 7;14:55";
+                s2 = "11:05;Period 6;12:40,12:40;Passing Period;12:45,12:45;B Lunch;13:15";
                 break;
             case 3: // Wednesday
                 s1 = "7:00;Good Morning!;7:50,7:50;Period 1;9:25,9:25;Passing Period;9:30,9:30;Period 2;11:05,11:05;A Lunch;11:35,11:35;Passing Period;11:40,11:40;Period 3;13:15,13:15;Passing Period;13:20,13:20;Period 4;14:55";
                 s2 = "11:05;Period 3;12:40,12:40;Passing Period;12:45,12:45;B Lunch;13:15";
                 break;
             case 4: // Thursday
-                s1 = "7:00;Good Morning!;7:50,7:50;Period 5;9:25,9:25;Homeroom;9:35,9:35;Passing Period;9:40,9:40;SAS (9/10);10:10,10:10;Eagle Time (All);11:00,11:00;Passing Period;11:05,11:05;A Lunch;11:35,11:35;Passing Period;11:40,11:40;Period 6;13:15,13:15;Passing Period;13:20,13:20;Period 7;14:55";
-                s2 = "9:40;Eagle Time (11/12);10:10,11:05;Period 6;12:40,12:40;Passing Period;12:45,12:45;B Lunch;13:15";
+                s1 = "7:00;Good Morning!;7:50,7:50;Period 5;9:25,9:25;Homeroom;9:35,9:35;SAS & Eagle Time;10:05,10:05;Eagle Time;11:00,11:00;Passing Period;11:05,11:05;A Lunch;11:35,11:35;Passing Period;11:40,11:40;Period 6;13:15,13:15;Passing Period;13:20,13:20;Period 7;14:55";
+                s2 = "11:05;Period 6;12:40,12:40;Passing Period;12:45,12:45;B Lunch;13:15";
                 break;
+            
             case 5: // Friday
                 s1 = "7:00;Happy Friday!;7:35,7:35;PLC;8:35,8:35;Period 1;9:20,9:20;Passing Period;9:25,9:25;Period 2;10:10,10:10;Passing Period;10:15,10:15;Period 3;11:00,11:00;Passing Period;11:05,11:05;A Lunch;11:35,11:35;Passing Period;11:40,11:40;Period 4;12:25,12:25;Passing Period;12:30,12:30;Period 5;13:15,13:15;Passing Period;13:20,13:20;Period 6;14:05,14:05;Passing Period;14:10,14:10;Period 7;14:55";
                 s2 = "11:05;Period 4;11:50,11:50;Passing Period;11:55,11:55;B Lunch;12:25";
                 break;
+           
             default:
                 s1 = "0:00;It's the weekend!;23:59";
-                s2 = "12:00;Weekend;12:01";
+                s2 = "12:00;well hello there;12:01";
         }
         return [this.parseScheduleString(s1), this.parseScheduleString(s2)];
     }
@@ -640,76 +421,49 @@ class ScheduleTracker {
         return d;
     }
 
-    startUpdateLoop() {
-        const scheduleNextTick = () => {
-            if (document.hidden) {
-                setTimeout(scheduleNextTick, 1000);
-                return;
-            }
-
-            this.updateUI();
-
-            if (this.lowPerf) {
-                setTimeout(scheduleNextTick, 1000);
-            } else {
-                requestAnimationFrame(scheduleNextTick);
-            }
-        };
-
-        scheduleNextTick();
+    updateCredits() {
+        const creditsEl = document.querySelector('.credits');
+        if (creditsEl) {
+            creditsEl.textContent = `Created by Austin Strong • Version 3.2.0 • ${this.remote.id}`;
+        }
     }
 
-    updateUI(force = false) {
-        const now = this.getExactNow();
-        this.checkWeatherExpiration();
+    startUpdateLoop() {
+        const loop = () => {
+            this.updateUI();
+            requestAnimationFrame(loop);
+        };
+        requestAnimationFrame(loop);
+    }
 
+    updateUI() {
+        let now = new Date();
+        if (this.timeOffset !== 0) {
+            now = new Date(now.getTime() + (this.timeOffset * 60000));
+        }
+
+        // 1. Synchronized Header Updates (Clock & Date)
         if (now.getDay() !== this.lastDay) {
             this.lastDay = now.getDay();
             this.loadSchedules();
         }
 
-        // 1. Date with Day of Week (e.g. Mon Sep 14)
         if (this.dateDisplay) {
-            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-            const dayName = days[now.getDay()];
-            const dateStr = `${dayName} ${now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-            if (force || this.lastState.dateStr !== dateStr) {
-                this.dateDisplay.textContent = dateStr;
-                this.lastState.dateStr = dateStr;
-            }
+            this.dateDisplay.textContent = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         }
 
-        // 2. Main Clock / Device ID Flash
         if (this.clockDisplay) {
-            if (this.showDeviceIDFlash) {
-                const flashStr = `[ ID: ${this.remote.id} ]`;
-                if (force || this.lastState.clockStr !== flashStr) {
-                    this.clockDisplay.textContent = flashStr;
-                    this.lastState.clockStr = flashStr;
-                }
-            } else {
-                let h = now.getHours();
-                const m = String(now.getMinutes()).padStart(2, '0');
-                const s = String(now.getSeconds()).padStart(2, '0');
-                let clockStr = "";
-                if (this.clock24h) {
-                    clockStr = `${String(h).padStart(2, '0')}:${m}:${s}`;
-                } else {
-                    h = h % 12 || 12;
-                    clockStr = `${String(h).padStart(2, '0')}:${m}:${s}`;
-                }
-
-                if (force || this.lastState.clockStr !== clockStr) {
-                    this.clockDisplay.textContent = clockStr;
-                    this.lastState.clockStr = clockStr;
-                }
-            }
+            let h = now.getHours();
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+            h = h % 12 || 12;
+            this.clockDisplay.textContent = `${String(h).padStart(2, '0')}:${m}:${s}`;
         }
 
-        // 3. Total Time Remaining
+        // 2. Synchronized Total Time Remaining
         this.updateTotalTimeRemaining(now);
 
-        // 4. Period Updates
+        // 3. Synchronized Period Updates
         let anyVisible = false;
 
         this.schedules.forEach((periods, idx) => {
@@ -720,40 +474,28 @@ class ScheduleTracker {
             const titleEl = item.title;
             const barEl = item.bar;
             const timeEl = item.time;
-            const state = this.lastState.items[idx];
 
             if (periods.length === 0) {
-                if (state.display !== 'none') {
-                    container.style.display = 'none';
-                    state.display = 'none';
-                }
+                container.style.display = 'none';
                 return;
             }
 
             const startTime = this.parseTime(periods[0].start, now);
             const endTime = this.parseTime(periods[periods.length - 1].end, now);
 
-            let shouldDisplay = true;
             if (idx === 1 && (now < startTime || now >= endTime)) {
-                shouldDisplay = false;
-            } else if (idx === 0 && now >= endTime) {
-                shouldDisplay = false;
+                container.style.display = 'none';
+                return;
             }
 
-            if (!shouldDisplay) {
-                if (state.display !== 'none') {
-                    container.style.display = 'none';
-                    state.display = 'none';
-                }
+            if (idx === 0 && now >= endTime) {
+                container.style.display = 'none';
             } else {
-                if (state.display !== 'flex') {
-                    container.style.display = 'flex';
-                    state.display = 'flex';
-                }
+                container.style.display = 'flex';
                 anyVisible = true;
             }
 
-            if (state.display === 'flex') {
+            if (container.style.display === 'flex') {
                 const currentPeriod = periods.find(p => {
                     const start = this.parseTime(p.start, now);
                     const end = this.parseTime(p.end, now);
@@ -761,66 +503,36 @@ class ScheduleTracker {
                 });
 
                 if (currentPeriod) {
-                    if (state.title !== currentPeriod.name) {
-                        titleEl.textContent = currentPeriod.name;
-                        state.title = currentPeriod.name;
-                    }
+                    titleEl.textContent = currentPeriod.name;
                     if (idx === 0) this.currentPeriodName = currentPeriod.name;
-
                     const start = this.parseTime(currentPeriod.start, now);
                     const end = this.parseTime(currentPeriod.end, now);
                     const total = end - start;
                     const elapsed = now - start;
-                    const percent = Math.min(100, Math.max(0, (elapsed / total) * 100)).toFixed(2);
-
-                    if (state.width !== percent) {
-                        barEl.style.width = `${percent}%`;
-                        state.width = percent;
-                    }
+                    const percent = Math.min(100, (elapsed / total) * 100);
+                    barEl.style.width = `${percent}%`;
 
                     const remaining = Math.max(0, Math.ceil((end - now) / 1000));
-                    const timeStr = this.formatTimeRemaining(remaining);
-                    if (state.time !== timeStr) {
-                        timeEl.textContent = timeStr;
-                        state.time = timeStr;
-                    }
+                    timeEl.textContent = this.formatTimeRemaining(remaining);
                 } else {
                     const nextPeriod = periods.find(p => this.parseTime(p.start, now) > now);
                     if (nextPeriod) {
-                        const nextTitle = `Next: ${nextPeriod.name}`;
-                        if (state.title !== nextTitle) {
-                            titleEl.textContent = nextTitle;
-                            state.title = nextTitle;
-                        }
-                        if (state.width !== '0') {
-                            barEl.style.width = '0%';
-                            state.width = '0';
-                        }
+                        titleEl.textContent = `Next: ${nextPeriod.name}`;
+                        barEl.style.width = '0%';
                         const start = this.parseTime(nextPeriod.start, now);
                         const remaining = Math.max(0, Math.floor((start - now) / 1000));
-                        const timeStr = this.formatTimeRemaining(remaining);
-                        if (state.time !== timeStr) {
-                            timeEl.textContent = timeStr;
-                            state.time = timeStr;
-                        }
+                        timeEl.textContent = this.formatTimeRemaining(remaining);
                     }
                 }
             }
         });
 
-        // Toggle End of Day Message
         if (!anyVisible) {
-            if (!this.lastState.endVisible) {
-                if (this.endMessage) this.endMessage.style.display = 'block';
-                if (this.scheduleWrapper) this.scheduleWrapper.style.display = 'none';
-                this.lastState.endVisible = true;
-            }
+            if (this.endMessage) this.endMessage.style.display = 'block';
+            if (this.scheduleWrapper) this.scheduleWrapper.style.display = 'none';
         } else {
-            if (this.lastState.endVisible) {
-                if (this.endMessage) this.endMessage.style.display = 'none';
-                if (this.scheduleWrapper) this.scheduleWrapper.style.display = 'flex';
-                this.lastState.endVisible = false;
-            }
+            if (this.endMessage) this.endMessage.style.display = 'none';
+            if (this.scheduleWrapper) this.scheduleWrapper.style.display = 'flex';
         }
     }
 
@@ -852,49 +564,12 @@ class ScheduleTracker {
     }
 
     setLowPerf(active) {
-        this.lowPerf = active;
         this.trackerItems.forEach(item => {
             if (active) {
                 item.bar.classList.add('low-perf');
             } else {
                 item.bar.classList.remove('low-perf');
             }
-        });
-    }
-
-    setUse24HourClock(enabled) {
-        this.clock24h = enabled;
-        this.updateUI(true);
-    }
-
-    setWeatherVisible(visible) {
-        if (this.weatherContainer) {
-            this.weatherContainer.style.display = visible ? 'inline-flex' : 'none';
-        }
-    }
-
-    setTotalTimeVisible(visible) {
-        if (this.totalTimeContainer) {
-            this.totalTimeContainer.style.display = visible ? 'flex' : 'none';
-            this.lastState.totalTimeVisible = visible;
-        }
-    }
-
-    setCreditsVisible(visible) {
-        const credits = document.querySelector('.credits');
-        if (credits) {
-            credits.style.display = visible ? 'flex' : 'none';
-        }
-    }
-
-    setBarStyle(style) {
-        const validStyles = ['liquid', 'glow', 'pulse', 'solid'];
-        const chosen = validStyles.includes(style) ? style : 'liquid';
-        this.barStyle = chosen;
-
-        this.trackerItems.forEach(item => {
-            validStyles.forEach(s => item.bar.classList.remove(`bar-style-${s}`));
-            item.bar.classList.add(`bar-style-${chosen}`);
         });
     }
 }
