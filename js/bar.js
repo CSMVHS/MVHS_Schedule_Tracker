@@ -258,7 +258,7 @@ class RemoteManager {
     setDeviceName(name) {
         if (!name || !this.deviceRef) return;
         this.deviceRef.child('settings').update({
-            name: `${name.trim()} [write-in]`
+            name: `${name.trim()} (write-in)`
         });
     }
 
@@ -472,30 +472,21 @@ class ScheduleTracker {
             if (this.identifyModal) {
                 this.identifyModal.style.display = "none";
             }
-            if (inputVal && inputVal.trim()) {
-                this.remote.setDeviceName(inputVal);
+            const finalVal = inputVal !== null ? inputVal : (this.identifyInput ? this.identifyInput.value : "");
+            if (finalVal && finalVal.trim()) {
+                this.remote.setDeviceName(finalVal);
             }
         };
 
-        const startTimer = () => {
-            if (timer) clearInterval(timer);
-            timer = setInterval(() => {
-                maxSeconds--;
-                if (maxSeconds <= 0) {
-                    dismiss();
-                }
-            }, 1000);
-        };
-
-        this.onUserInteraction = () => {
-            if (!this.hasUserInteracted) {
-                this.hasUserInteracted = true;
-                if (!localStorage.getItem("mvhs_identify_prompted")) {
-                    maxSeconds = 60; // Extend to 60s if user interacts
-                    startTimer();
-                }
+        timer = setInterval(() => {
+            maxSeconds--;
+            if (maxSeconds <= 0) {
+                dismiss();
             }
-        };
+        }, 1000);
+
+        // Keep at 10s without extending on interaction
+        this.onUserInteraction = () => {};
 
         if (this.identifySubmitBtn) {
             this.identifySubmitBtn.addEventListener("click", () => {
@@ -505,7 +496,7 @@ class ScheduleTracker {
         }
 
         if (this.identifySkipBtn) {
-            this.identifySkipBtn.addEventListener("click", () => dismiss());
+            this.identifySkipBtn.addEventListener("click", () => dismiss(""));
         }
 
         if (this.identifyInput) {
@@ -515,8 +506,6 @@ class ScheduleTracker {
                 }
             });
         }
-
-        startTimer();
     }
 
     setShowDeviceIDFlash(show) {
