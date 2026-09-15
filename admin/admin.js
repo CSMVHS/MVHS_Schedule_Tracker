@@ -539,6 +539,14 @@ function updateModalData(id, updateInputs = false) {
 // Modal Actions
 document.querySelector('.close-btn').onclick = () => controlModal.style.display = 'none';
 
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        if (controlModal && controlModal.style.display !== 'none') {
+            controlModal.style.display = 'none';
+        }
+    }
+});
+
 const saveAllDeviceBtn = document.getElementById('save-all-device-settings-btn');
 if (saveAllDeviceBtn) {
     saveAllDeviceBtn.onclick = () => {

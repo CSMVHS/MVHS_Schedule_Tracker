@@ -13,6 +13,17 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+input, textarea {
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
 }
 
 html, body {
@@ -129,9 +140,9 @@ html, body {
 
 .progress_container {
     position: relative;
-    height: clamp(5rem, 11vh, 9rem);
+    height: clamp(6.5rem, 15vh, 12rem);
     background: var(--bar-bg);
-    border-radius: clamp(2.5rem, 5.5vh, 4.5rem);
+    border-radius: clamp(3.25rem, 7.5vh, 6rem);
     overflow: hidden;
     box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5), 0 4px 15px rgba(0, 0, 0, 0.3);
 }
@@ -244,14 +255,14 @@ html, body {
 /* Timer Pill - Takes up most of height of progress bar background, keeping same padding on top/bottom as right side */
 .progress_time {
     position: absolute;
-    right: clamp(0.4rem, 0.8vh, 1rem);
-    top: clamp(0.4rem, 0.8vh, 1rem);
-    bottom: clamp(0.4rem, 0.8vh, 1rem);
+    right: clamp(0.5rem, 1vh, 1.25rem);
+    top: clamp(0.5rem, 1vh, 1.25rem);
+    bottom: clamp(0.5rem, 1vh, 1.25rem);
     display: flex;
     align-items: center;
     justify-content: center;
     font-family: 'Google Sans Flex', -apple-system, sans-serif;
-    font-size: clamp(1.4rem, 4.2vmin, 3.8rem);
+    font-size: clamp(2rem, 6.5vmin, 5.5rem);
     font-weight: 800;
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.05em;
@@ -259,7 +270,7 @@ html, body {
     text-shadow: var(--text-shadow);
     background: var(--pill-bg);
     backdrop-filter: blur(8px);
-    padding: 0 clamp(0.8rem, 1.8vw, 2rem);
+    padding: 0 clamp(1rem, 2.2vw, 2.5rem);
     border-radius: 9999px;
     border: 1.5px solid var(--pill-border);
     z-index: 20;
@@ -349,6 +360,13 @@ html, body {
     font-size: inherit !important;
     font-weight: 400 !important;
     opacity: 0.85 !important;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.device-id-credit:hover {
+    opacity: 1 !important;
+    text-decoration: underline;
 }
 
 /* Local Customize Modal */
@@ -439,15 +457,29 @@ html, body {
 .custom-select-wrapper {
     position: relative;
     display: inline-block;
+    width: 100%;
 }
 
 .custom-select-wrapper::after {
-    display: none !important;
+    content: '';
+    position: absolute;
+    right: 0.85rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0.5rem;
+    height: 0.5rem;
+    border-right: 2px solid #ffffff;
+    border-bottom: 2px solid #ffffff;
+    transform: translateY(-70%) rotate(45deg);
+    pointer-events: none;
+    opacity: 0.8;
 }
 
 .custom-select {
     appearance: none;
     -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 100%;
     padding: 0.5rem 2.2rem 0.5rem 0.85rem;
     border-radius: 8px;
     background: #1e293b;
@@ -648,26 +680,32 @@ html, body {
     .top-bar-item:nth-child(2) { grid-area: clock; text-align: center; }
 
     .progress_container {
-        height: 4.25rem;
-        border-radius: 2.125rem;
+        height: 5.5rem;
+        border-radius: 2.75rem;
     }
 
     .progress_time {
-        font-size: 1.15rem;
-        padding: 0.4rem 0.7rem;
+        font-size: 1.75rem;
+        padding: 0.4rem 0.9rem;
         right: 0.4rem;
         border-radius: 9999px;
     }
 
     .footer {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: center;
         gap: 0.5rem;
     }
 
     .credits {
-        align-self: flex-end;
-        margin-left: auto;
+        align-self: center;
+        margin-left: 0;
+        white-space: normal;
+        flex-wrap: wrap;
+        justify-content: center;
+        text-align: center;
+        width: 100%;
+        line-height: 1.4;
     }
 
     .identify-modal {

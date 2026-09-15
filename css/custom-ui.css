@@ -1,0 +1,59 @@
+/* Custom Color Palette Swatch UI Styles */
+.preset-color-palette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    margin-top: 4px;
+}
+
+.preset-swatch {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    cursor: pointer;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    position: relative;
+    padding: 0;
+    outline: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.preset-swatch:hover {
+    transform: scale(1.15);
+    border-color: #ffffff;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
+    z-index: 2;
+}
+
+.preset-swatch.active {
+    border-color: #ffffff;
+    transform: scale(1.15);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8), 0 3px 8px rgba(0, 0, 0, 0.5);
+}
+
+.preset-swatch.active::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -60%) rotate(45deg);
+    width: 4px;
+    height: 8px;
+    border: solid #ffffff;
+    border-width: 0 2px 2px 0;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.8));
+}
+
+.cust-row-palette {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+}
+
+.cust-row-palette label {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #e2e8f0;
+}
