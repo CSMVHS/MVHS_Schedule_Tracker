@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule Tracker</title>
+    <link rel="stylesheet" href="css/bar.css">
+    <link rel="icon" href="https://www.svgrepo.com/show/316531/calendar-link.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:ital,wght@0,100..900;1,100..900&family=Google+Sans+Flex:opsz,wght@6..144,1..1000&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="override-overlay" class="override-overlay">
+        <div id="override-text" class="override-text">MESSAGE</div>
+    </div>
+
+    <!-- First Time "Who's this?" Modal -->
+    <div id="user-identify-modal" class="identify-modal" style="display: none;">
+        <div class="identify-card">
+            <h3>Who's this?</h3>
+            <p class="identify-sub">Used only for fixing errors and applying changes dynamically.</p>
+            <div class="identify-input-row">
+                <input type="text" id="identify-input" placeholder="e.g. Room 102 TV, John's Laptop">
+                <button id="identify-submit-btn">Save</button>
+                <button id="identify-skip-btn" class="btn-skip">Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="background_container">
+        <header class="title_container">
+            <div class="left-header-group top-bar-item">
+                <span id="date-display">Mon --- --</span>
+                <span id="weather-display" class="weather-text">--°</span>
+            </div>
+            <div id="clock-display" class="top-bar-item">00:00:00</div>
+            <div class="right-header-placeholder top-bar-item"></div>
+        </header>
+
+        <main class="main-content">
+            <div id="end" class="end-message">Have a great day!</div>
+
+            <div class="schedule-wrapper">
+                <div class="tracker-item">
+                    <div class="text_container">
+                        <span class="period">---</span>
+                    </div>
+                    <div class="progress_container">
+                        <div class="progress_bar bar-style-liquid"></div>
+                        <span class="progress_time">--:--</span>
+                    </div>
+                </div>
+
+                <div class="tracker-item">
+                    <div class="text_container">
+                        <span class="period">---</span>
+                    </div>
+                    <div class="progress_container">
+                        <div class="progress_bar bar-style-liquid"></div>
+                        <span class="progress_time">--:--</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <div id="total-time-container" class="total-time-left">
+                <span class="total-time-remaining">0h 0m</span>
+            </div>
+            <span class="credits">
+                <span>Created by Austin Strong • </span>
+                <a href="mailto:strongar1+issues@s.dcsdk12.org?subject=Schedule%20Tracker%20Issue" class="report-issue-link" target="_blank" rel="noopener">Report an Issue</a>
+                <span> • Version 4.0.0 • </span>
+                <span id="device-id-display" class="device-id-credit">---</span>
+            </span>
+        </footer>
+    </div>
+
+    <!-- Firebase SDK (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+    <script src="js/bar.js"></script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+[Desktop Entry]
+Type=Application
+Name=Schedule Tracker
+Exec=/home/schedule/kiosk.sh

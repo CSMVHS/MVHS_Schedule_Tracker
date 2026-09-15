@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>MVHS Schedule Tracker</title>
+    <script src="js/bar.js"></script>
+    <link rel="stylesheet" href="css/bar.css">
+    <link rel="icon" href="images/calendar_today_black_24dp.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;700&family=Varela+Round&display=swap" rel="stylesheet">
+</head>
+
+<body>
+<div class="background_container">
+	<div class="title_container">
+		<div class="logo_container">
+			<!-- <img src="images/MVHS.png" id="mvhs-logo" alt="MVHS Logo"> -->
+		</div>
+<!--		<div class="img_container">
+			<img src="images/volcano.png" alt="Volcano" id="img">
+		</div> -->
+
+		<h3 id="clock">
+			<script>
+				var clockElement = document.getElementById("clock");
+				setInterval(function () {
+					var now = new Date();
+					var hours = now.getHours();
+					var minutes = now.getMinutes();
+					var seconds = now.getSeconds();
+			
+					// Convert to 12-hour format
+					hours = hours % 12 || 12;
+			
+					// Add leading zeros to minutes and seconds if needed
+					minutes = minutes < 10 ? '0' + minutes : minutes;
+					seconds = seconds < 10 ? '0' + seconds : seconds;
+			
+					var timeString = hours + ':' + minutes + ':' + seconds;
+					clockElement.innerHTML = timeString;
+				}, 1000);
+			</script>
+			
+			
+		</h3>
+	</div>
+	
+	
+	
+
+	<div class="text_container">
+    		<span class="date" id="date"></span>
+    		<span class="period">Period  </span>
+	</div>
+
+<!--Progress bar-->
+	<div class="progress_container">
+    		<div class="progress_bar"></div>
+    		<span class="progress_time">Have a great day! </span>
+	</div>
+
+	<div class="end_container">
+		<span class="end" id="end">Have a great day!</span>
+	</div>
+	
+<!--Second bar -->
+	<br>
+	<div class="text_container">
+    		<span class="bar-placeholder"></span>
+    		<span class="period">Period  </span>
+	</div>
+
+	<div class="progress_container">
+    		<div class="progress_bar"></div>
+    		<span class="progress_time">No timer running.</span>
+	</div>
+
+<!-- Announcement --><br>
+	<!-- <div class="footer_container">
+		<h4 style="margin-bottom: 0px;">Wish Week!!</h4>
+		<p style="margin:0px;padding:0px;">Scan the QR code for Wish Week information.</p>
+	</div> -->
+	<p class="total-time-remaining">XXh XXm</p>
+	<div>
+		<span class="names">Made by William Hooper & Aleksis Vilums (2022)  -  Edited & Optimized by Austin Strong (2028)</span>
+	</div> 
+
+</div>
+	<div class="id-wrap">
+	<p id="identification">no-valid-id</p>
+	</div>
+
+</body>
+<!-- <div class="qrcode-container">
+<img src="images/hoco26qr.png" class="qrcode" id="qrcode">
+</div> -->
+</html>
