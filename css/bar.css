@@ -327,19 +327,27 @@ html, body {
     font-size: clamp(0.8rem, 1.8vmin, 1.4rem);
     font-weight: 400 !important;
     font-family: 'Google Sans Flex', -apple-system, BlinkMacSystemFont, sans-serif;
-    white-space: nowrap;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 0.35em;
+    justify-content: flex-end;
+    gap: 0.35em 0.5em;
     margin-left: auto;
 }
 
-.credits span, .credits a, .credits button {
+.credit-item {
     color: inherit;
     font-family: inherit;
     font-size: inherit;
     font-weight: 400 !important;
     opacity: 0.55;
+    white-space: nowrap;
+    display: inline-block;
+}
+
+.credit-separator {
+    opacity: 0.4;
+    user-select: none;
 }
 
 .credits a.report-issue-link, .credits button.customize-link {
@@ -348,6 +356,10 @@ html, body {
     text-decoration: underline;
     cursor: pointer;
     padding: 0;
+    color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: 400 !important;
 }
 
 .credits a.report-issue-link:hover, .credits button.customize-link:hover {
@@ -700,12 +712,23 @@ html, body {
     .credits {
         align-self: center;
         margin-left: 0;
-        white-space: normal;
         flex-wrap: wrap;
         justify-content: center;
         text-align: center;
         width: 100%;
-        line-height: 1.4;
+        line-height: 1.5;
+        gap: 0.25rem 0.4rem;
+    }
+
+    .credit-separator {
+        display: none;
+    }
+
+    .credit-item.report-issue-wrapper {
+        display: block;
+        width: 100%;
+        text-align: center;
+        margin: 0.1rem 0;
     }
 
     .identify-modal {

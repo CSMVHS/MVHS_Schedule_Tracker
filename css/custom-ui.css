@@ -1,15 +1,20 @@
-/* Custom Color Palette Swatch UI Styles */
-.preset-color-palette {
+/* Custom Color Picker Swatch Palette & Canvas Picker Styles */
+.color-picker-container {
     display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
     align-items: center;
-    margin-top: 4px;
+    gap: 8px;
+    position: relative;
+}
+
+.preset-color-palette {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .preset-swatch {
-    width: 26px;
-    height: 26px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     border: 2px solid rgba(255, 255, 255, 0.25);
     cursor: pointer;
@@ -18,6 +23,9 @@
     padding: 0;
     outline: none;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .preset-swatch:hover {
@@ -35,15 +43,126 @@
 
 .preset-swatch.active::after {
     content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -60%) rotate(45deg);
     width: 4px;
     height: 8px;
     border: solid #ffffff;
     border-width: 0 2px 2px 0;
+    transform: translateY(-1px) rotate(45deg);
     filter: drop-shadow(0 1px 1px rgba(0,0,0,0.8));
+}
+
+.palette-trigger-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: #1e293b;
+    color: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.palette-trigger-btn:hover {
+    background: #334155;
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.palette-trigger-btn svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+}
+
+/* Custom 2D Color Picker Popover Popup */
+.custom-picker-popover {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    z-index: 100000;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 220px;
+}
+
+.sat-val-canvas-wrapper {
+    position: relative;
+    width: 100%;
+    height: 140px;
+    border-radius: 6px;
+    overflow: hidden;
+    cursor: crosshair;
+}
+
+.sat-val-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.sat-val-handle {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 4px rgba(0,0,0,0.8);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+.hue-slider-wrapper {
+    width: 100%;
+    height: 14px;
+}
+
+.hue-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 14px;
+    border-radius: 7px;
+    background: linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%);
+    outline: none;
+    cursor: pointer;
+}
+
+.hue-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 2px solid #000000;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.picker-hex-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.picker-hex-input {
+    flex: 1;
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #ffffff;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 0.85rem;
 }
 
 .cust-row-palette {
