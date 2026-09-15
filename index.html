@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Schedule Tracker</title>
     <link rel="stylesheet" href="css/bar.css">
+    <link rel="stylesheet" href="css/custom-ui.css">
     <link rel="icon" href="https://www.svgrepo.com/show/316531/calendar-link.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:ital,wght@0,100..900;1,100..900&family=Google+Sans+Flex:opsz,wght@6..144,1..1000&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Google+Sans+Flex:opsz,wght@6..144,1..1000&display=swap" rel="stylesheet">
 </head>
 <body>
     <div id="override-overlay" class="override-overlay">
@@ -28,13 +29,56 @@
         </div>
     </div>
 
+    <!-- Local Customize Modal -->
+    <div id="local-customize-modal" class="customize-modal" style="display: none;">
+        <div class="customize-card">
+            <div class="customize-header">
+                <h3>Theme & Display Settings</h3>
+                <span id="close-customize-btn" class="close-modal">&times;</span>
+            </div>
+            <div class="customize-body">
+                <div class="cust-row">
+                    <label>Background Color:</label>
+                    <input type="color" id="cust-bg-color" value="#00401e">
+                </div>
+                <div class="cust-row">
+                    <label>Bar Color:</label>
+                    <input type="color" id="cust-bar-color" value="#b1953a">
+                </div>
+                <div class="cust-row">
+                    <label>Clock Format:</label>
+                    <div class="custom-select-wrapper">
+                        <select id="cust-clock-format" class="custom-select">
+                            <option value="12">12-Hour</option>
+                            <option value="24">24-Hour</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="cust-checkboxes">
+                    <label class="custom-checkbox">
+                        <input type="checkbox" id="cust-show-weather" checked>
+                        <span class="checkbox-box"></span>
+                        <span>Show Weather</span>
+                    </label>
+                </div>
+            </div>
+            <div class="customize-footer">
+                <button id="save-customize-btn">Apply Settings</button>
+            </div>
+        </div>
+    </div>
+
     <div class="background_container">
         <header class="title_container">
-            <div class="left-header-group top-bar-item">
-                <span id="date-display">Mon --- --</span>
-                <span id="weather-display" class="weather-text">--°</span>
+            <div class="left-header-group">
+                <div id="date-container" class="top-bar-item header-pill">
+                    <span id="date-display">Mon --- --</span>
+                </div>
+                <div id="weather-container" class="top-bar-item header-pill">
+                    <span id="weather-display" class="weather-text">--°</span>
+                </div>
             </div>
-            <div id="clock-display" class="top-bar-item">00:00:00</div>
+            <div id="clock-display" class="top-bar-item header-pill">00:00:00</div>
             <div class="right-header-placeholder top-bar-item"></div>
         </header>
 
@@ -70,8 +114,10 @@
             </div>
             <span class="credits">
                 <span>Created by Austin Strong • </span>
-                <a href="mailto:strongar1+issues@s.dcsdk12.org?subject=Schedule%20Tracker%20Issue" class="report-issue-link" target="_blank" rel="noopener">Report an Issue</a>
-                <span> • Version 4.0.0 • </span>
+                <a href="mailto:austin+mvhsst-issue@astrong.xyz,strongar1+issues@s.dcsdk12.org?subject=Schedule%20Tracker%20Issue" class="report-issue-link" target="_blank" rel="noopener">Report an Issue</a>
+                <span> • </span>
+                <button id="open-customize-btn" class="customize-link">Customize</button>
+                <span> • Version 4.0 • </span>
                 <span id="device-id-display" class="device-id-credit">---</span>
             </span>
         </footer>
@@ -81,6 +127,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
+    <script src="js/custom-ui.js"></script>
     <script src="js/bar.js"></script>
 </body>
 </html>

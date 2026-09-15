@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Schedule Tracker Admin</title>
     <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="../css/custom-ui.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,1..1000&family=Azeret+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -48,7 +49,6 @@
 
                     <div class="global-setting-item">
                         <div class="setting-row">
-                            <label><i data-lucide="palette"></i> Background Mode:</label>
                             <select id="global-bg-mode">
                                 <option value="color">Solid Color</option>
                                 <option value="gradient">Gradient</option>
@@ -99,27 +99,45 @@
                                     <button class="btn-reset" data-target="input-global-bar" data-default="#b1953a">Reset</button>
                                 </div>
                             </div>
+                            <div class="picker-group">
+                                <span>Text Color</span>
+                                <div class="input-with-reset">
+                                    <input type="color" id="input-global-text-color" value="#ffffff">
+                                    <button class="btn-reset" data-target="input-global-text-color" data-default="#ffffff">Reset</button>
+                                </div>
+                            </div>
+                            <div class="picker-group">
+                                <span>Animation Accent</span>
+                                <div class="input-with-reset">
+                                    <input type="color" id="input-global-anim-accent" value="#ffffff">
+                                    <button class="btn-reset" data-target="input-global-anim-accent" data-default="#ffffff">Reset</button>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="setting-row">
                             <div class="picker-group">
                                 <span>Bar Animation</span>
-                                <select id="global-bar-style">
-                                    <option value="liquid">Liquid Wave</option>
-                                    <option value="glow">Smooth Shimmer</option>
-                                    <option value="pulse">Clean Pulse</option>
-                                    <option value="solid">Solid Static</option>
-                                </select>
+                                <div class="custom-select-wrapper">
+                                    <select id="global-bar-style" class="custom-select">
+                                        <option value="liquid">Liquid</option>
+                                        <option value="glow">Glow</option>
+                                        <option value="pulse">Pulse</option>
+                                        <option value="solid">Solid</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
 
                         <div class="setting-row">
                             <div class="picker-group">
                                 <span>Clock Format</span>
-                                <select id="global-clock-format">
-                                    <option value="12">12-Hour</option>
-                                    <option value="24">24-Hour</option>
-                                </select>
+                                <div class="custom-select-wrapper">
+                                    <select id="global-clock-format" class="custom-select">
+                                        <option value="12">12-Hour</option>
+                                        <option value="24">24-Hour</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
 
@@ -141,7 +159,6 @@
 
                     <div class="search-bar-container">
                         <div class="search-input-wrapper">
-                            <i data-lucide="search" class="search-icon"></i>
                             <input type="text" id="search-input" placeholder="Search devices by name, ID, browser...">
                         </div>
                         <button id="clear-search-btn" class="btn-secondary" style="display: none;"><i data-lucide="x"></i> Clear</button>
@@ -168,7 +185,6 @@
                 <h3><i data-lucide="edit-3"></i> General</h3>
                 <label>Display Name:</label>
                 <input type="text" id="input-name" placeholder="Hallway TV 1">
-                <button id="save-name-btn"><i data-lucide="save"></i> Save Name</button>
             </div>
 
             <hr>
@@ -176,7 +192,6 @@
             <div class="control-section">
                 <h3><i data-lucide="palette"></i> Settings & Theme</h3>
                 <div class="setting-item">
-                    <label>Background Mode:</label>
                     <select id="modal-bg-mode">
                         <option value="color">Solid Color</option>
                         <option value="gradient">Gradient</option>
@@ -228,21 +243,41 @@
                 </div>
 
                 <div class="setting-item">
+                    <label>Text Color:</label>
+                    <div class="input-with-reset">
+                        <input type="color" id="input-text-color" value="#ffffff">
+                        <button class="btn-reset" data-target="input-text-color" data-default="#ffffff">Reset</button>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <label>Bar Accent Color:</label>
+                    <div class="input-with-reset">
+                        <input type="color" id="input-anim-accent" value="#ffffff">
+                        <button class="btn-reset" data-target="input-anim-accent" data-default="#ffffff">Reset</button>
+                    </div>
+                </div>
+
+                <div class="setting-item">
                     <label>Bar Animation Style:</label>
-                    <select id="input-bar-style">
-                        <option value="liquid">Liquid Wave</option>
-                        <option value="glow">Smooth Shimmer</option>
-                        <option value="pulse">Clean Pulse</option>
-                        <option value="solid">Solid Static</option>
-                    </select>
+                    <div class="custom-select-wrapper">
+                        <select id="input-bar-style" class="custom-select">
+                            <option value="liquid">Liquid</option>
+                            <option value="glow">Glow</option>
+                            <option value="pulse">Pulse</option>
+                            <option value="solid">Solid</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="setting-item">
                     <label>Clock Format:</label>
-                    <select id="input-clock-format">
-                        <option value="12">12-Hour (09:15:30)</option>
-                        <option value="24">24-Hour (21:15:30)</option>
-                    </select>
+                    <div class="custom-select-wrapper">
+                        <select id="input-clock-format" class="custom-select">
+                            <option value="12">12-Hour (09:15:30)</option>
+                            <option value="24">24-Hour (21:15:30)</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="setting-item">
@@ -251,25 +286,27 @@
                 </div>
 
                 <div class="checkbox-group">
-                    <div class="checkbox-item">
+                    <label class="custom-checkbox">
                         <input type="checkbox" id="input-show-weather" checked>
-                        <label for="input-show-weather">Show Weather Widget</label>
-                    </div>
-                    <div class="checkbox-item">
+                        <span class="checkbox-box"></span>
+                        <span>Show Weather Widget</span>
+                    </label>
+                    <label class="custom-checkbox">
                         <input type="checkbox" id="input-show-total-time" checked>
-                        <label for="input-show-total-time">Show Total Time Remaining</label>
-                    </div>
-                    <div class="checkbox-item">
+                        <span class="checkbox-box"></span>
+                        <span>Show Total Time Remaining</span>
+                    </label>
+                    <label class="custom-checkbox">
                         <input type="checkbox" id="input-show-credits" checked>
-                        <label for="input-show-credits">Show Footer Credits</label>
-                    </div>
-                    <div class="checkbox-item">
+                        <span class="checkbox-box"></span>
+                        <span>Show Footer Credits</span>
+                    </label>
+                    <label class="custom-checkbox">
                         <input type="checkbox" id="input-low-perf">
-                        <label for="input-low-perf">Low Performance Mode</label>
-                    </div>
+                        <span class="checkbox-box"></span>
+                        <span>Low Performance Mode</span>
+                    </label>
                 </div>
-
-                <button id="save-settings-btn"><i data-lucide="save"></i> Save Settings</button>
             </div>
 
             <hr>
@@ -278,11 +315,15 @@
                 <h3><i data-lucide="alert-triangle"></i> Override Message</h3>
                 <label>Overlay Text:</label>
                 <textarea id="input-override-text" placeholder="Enter message for full-screen override"></textarea>
-                <div class="checkbox-item">
+                <label class="custom-checkbox margin-top-sm">
                     <input type="checkbox" id="input-override-active">
-                    <label for="input-override-active">Activate Full Screen Override</label>
-                </div>
-                <button id="save-override-btn"><i data-lucide="save"></i> Update Override</button>
+                    <span class="checkbox-box"></span>
+                    <span>Activate Full Screen Override</span>
+                </label>
+            </div>
+
+            <div class="control-section">
+                <button id="save-all-device-settings-btn" class="btn-primary-large"><i data-lucide="save"></i> Save All Device Settings</button>
             </div>
 
             <hr>
@@ -321,6 +362,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="../js/custom-ui.js"></script>
     <script src="admin.js"></script>
 </body>
 </html>

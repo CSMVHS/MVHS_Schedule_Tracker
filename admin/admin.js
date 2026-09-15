@@ -75,6 +75,9 @@ function initDashboard() {
     if (window.lucide) {
         window.lucide.createIcons();
     }
+    if (window.enhanceAllCustomUi) {
+        window.enhanceAllCustomUi(adminDashboard);
+    }
 
     const db = firebase.database();
 
@@ -107,24 +110,32 @@ function initDashboard() {
     // Hold to Show Device IDs logic
     const holdIdentifyBtn = document.getElementById('hold-identify-btn');
     if (holdIdentifyBtn) {
+        let isHolding = false;
         const setHoldState = (active) => {
+            if (isHolding === active) return;
+            isHolding = active;
             if (active) {
                 holdIdentifyBtn.classList.add('active');
-                db.ref('global/showDeviceIDs').set(true);
+                db.ref('global/showDeviceIDs').set(true)
+                    .catch(err => showToast("Failed to activate ID Flash: " + err.message, 'error'));
             } else {
                 holdIdentifyBtn.classList.remove('active');
-                db.ref('global/showDeviceIDs').set(false);
+                db.ref('global/showDeviceIDs').set(false)
+                    .catch(err => showToast("Failed to deactivate ID Flash: " + err.message, 'error'));
             }
         };
 
-        holdIdentifyBtn.addEventListener('mousedown', () => setHoldState(true));
-        holdIdentifyBtn.addEventListener('mouseup', () => setHoldState(false));
-        holdIdentifyBtn.addEventListener('mouseleave', () => setHoldState(false));
-        holdIdentifyBtn.addEventListener('touchstart', (e) => {
+        holdIdentifyBtn.addEventListener('pointerdown', (e) => {
             e.preventDefault();
+            holdIdentifyBtn.setPointerCapture(e.pointerId);
             setHoldState(true);
         });
-        holdIdentifyBtn.addEventListener('touchend', () => setHoldState(false));
+        holdIdentifyBtn.addEventListener('pointerup', (e) => {
+            e.preventDefault();
+            setHoldState(false);
+        });
+        holdIdentifyBtn.addEventListener('pointercancel', () => setHoldState(false));
+        holdIdentifyBtn.addEventListener('contextmenu', (e) => e.preventDefault());
     }
 
     // Filter Buttons
@@ -201,6 +212,8 @@ function initDashboard() {
         const gradDeg = document.getElementById('input-global-grad-deg').value || "135";
         const bgImage = document.getElementById('input-global-bg-image').value.trim();
         const bar = document.getElementById('input-global-bar').value;
+        const textColor = document.getElementById('input-global-text-color').value;
+        const animAccent = document.getElementById('input-global-anim-accent').value;
         const barStyle = document.getElementById('global-bar-style').value;
         const clock24h = document.getElementById('global-clock-format').value === '24';
 
@@ -214,6 +227,8 @@ function initDashboard() {
                 updates[`devices/${id}/settings/bgGradientAngle`] = gradDeg;
                 updates[`devices/${id}/settings/bgImage`] = bgImage;
                 updates[`devices/${id}/settings/barColor`] = bar;
+                updates[`devices/${id}/settings/textColor`] = textColor;
+                updates[`devices/${id}/settings/animAccentColor`] = animAccent;
                 updates[`devices/${id}/settings/barStyle`] = barStyle;
                 updates[`devices/${id}/settings/clock24h`] = clock24h;
             });
@@ -420,6 +435,9 @@ function openControlModal(id) {
     currentDeviceId = id;
     updateModalData(id, true);
     controlModal.style.display = 'flex';
+    if (window.enhanceAllCustomUi) {
+        window.enhanceAllCustomUi(controlModal);
+    }
 }
 
 function updateModalData(id, updateInputs = false) {
@@ -443,15 +461,29 @@ function updateModalData(id, updateInputs = false) {
         document.getElementById('modal-bg-gradient-group').style.display = mode === 'gradient' ? 'block' : 'none';
         document.getElementById('modal-bg-image-group').style.display = mode === 'image' ? 'block' : 'none';
 
-        document.getElementById('input-bg-color').value = settings.bgColor || "#00401e";
-        document.getElementById('input-bg-grad1').value = settings.bgGradient1 || "#00401e";
-        document.getElementById('input-bg-grad2').value = settings.bgGradient2 || "#001a0c";
+        const elBgColor = document.getElementById('input-bg-color');
+        const elGrad1 = document.getElementById('input-bg-grad1');
+        const elGrad2 = document.getElementById('input-bg-grad2');
+        const elBarColor = document.getElementById('input-bar-color');
+        const elTextColor = document.getElementById('input-text-color');
+        const elAnimAccent = document.getElementById('input-anim-accent');
+        const elBarStyle = document.getElementById('input-bar-style');
+        const elClockFmt = document.getElementById('input-clock-format');
+
+        elBgColor.value = settings.bgColor || "#00401e";
+        elGrad1.value = settings.bgGradient1 || "#00401e";
+        elGrad2.value = settings.bgGradient2 || "#001a0c";
         document.getElementById('input-bg-grad-deg').value = settings.bgGradientAngle || "135";
         document.getElementById('input-bg-image').value = settings.bgImage || "";
 
-        document.getElementById('input-bar-color').value = settings.barColor || "#b1953a";
-        document.getElementById('input-bar-style').value = settings.barStyle || "liquid";
-        document.getElementById('input-clock-format').value = settings.clock24h ? "24" : "12";
+        elBarColor.value = settings.barColor || "#b1953a";
+        if (elTextColor) elTextColor.value = settings.textColor || "#ffffff";
+        if (elAnimAccent) elAnimAccent.value = settings.animAccentColor || "#ffffff";
+        elBarStyle.value = settings.barStyle || "liquid";
+        elClockFmt.value = settings.clock24h ? "24" : "12";
+
+        [modalBgMode, elBarStyle, elClockFmt].forEach(el => { if (el && el._updateCustomSelect) el._updateCustomSelect(); });
+        [elBgColor, elGrad1, elGrad2, elBarColor, elTextColor, elAnimAccent].forEach(el => { if (el && el._updateCustomColor) el._updateCustomColor(); });
 
         document.getElementById('input-offset').value = settings.timeOffset || 0;
         document.getElementById('input-show-weather').checked = settings.showWeather !== false;
@@ -507,61 +539,60 @@ function updateModalData(id, updateInputs = false) {
 // Modal Actions
 document.querySelector('.close-btn').onclick = () => controlModal.style.display = 'none';
 
-document.getElementById('save-name-btn').onclick = () => {
-    const name = document.getElementById('input-name').value;
-    firebase.database().ref('devices').child(currentDeviceId).child('settings').update({ name: name })
-        .then(() => showToast("Device name updated!"))
+const saveAllDeviceBtn = document.getElementById('save-all-device-settings-btn');
+if (saveAllDeviceBtn) {
+    saveAllDeviceBtn.onclick = () => {
+        if (!currentDeviceId) return;
+
+        const name = document.getElementById('input-name').value;
+
+        const mode = document.getElementById('modal-bg-mode').value;
+        const bg = document.getElementById('input-bg-color').value;
+        const grad1 = document.getElementById('input-bg-grad1').value;
+        const grad2 = document.getElementById('input-bg-grad2').value;
+        const gradDeg = document.getElementById('input-bg-grad-deg').value || "135";
+        const bgImage = document.getElementById('input-bg-image').value.trim();
+
+        const bar = document.getElementById('input-bar-color').value;
+        const textColor = document.getElementById('input-text-color') ? document.getElementById('input-text-color').value : "#ffffff";
+        const animAccent = document.getElementById('input-anim-accent') ? document.getElementById('input-anim-accent').value : "#ffffff";
+        const barStyle = document.getElementById('input-bar-style').value;
+        const clock24h = document.getElementById('input-clock-format').value === '24';
+        const offset = document.getElementById('input-offset').value;
+
+        const showWeather = document.getElementById('input-show-weather').checked;
+        const showTotalTime = document.getElementById('input-show-total-time').checked;
+        const showCredits = document.getElementById('input-show-credits').checked;
+        const lowPerf = document.getElementById('input-low-perf').checked;
+
+        const overrideText = document.getElementById('input-override-text').value;
+        const overrideActive = document.getElementById('input-override-active').checked;
+
+        firebase.database().ref('devices').child(currentDeviceId).child('settings').update({
+            name: name,
+            bgMode: mode,
+            bgColor: bg,
+            bgGradient1: grad1,
+            bgGradient2: grad2,
+            bgGradientAngle: gradDeg,
+            bgImage: bgImage,
+            barColor: bar,
+            textColor: textColor,
+            animAccentColor: animAccent,
+            barStyle: barStyle,
+            clock24h: clock24h,
+            timeOffset: offset,
+            showWeather: showWeather,
+            showTotalTime: showTotalTime,
+            showCredits: showCredits,
+            lowPerf: lowPerf,
+            overrideText: overrideText,
+            overrideActive: overrideActive
+        })
+        .then(() => showToast("All device settings saved successfully!"))
         .catch(e => showToast("Error: " + e.message, 'error'));
-};
-
-document.getElementById('save-settings-btn').onclick = () => {
-    const mode = document.getElementById('modal-bg-mode').value;
-    const bg = document.getElementById('input-bg-color').value;
-    const grad1 = document.getElementById('input-bg-grad1').value;
-    const grad2 = document.getElementById('input-bg-grad2').value;
-    const gradDeg = document.getElementById('input-bg-grad-deg').value || "135";
-    const bgImage = document.getElementById('input-bg-image').value.trim();
-
-    const bar = document.getElementById('input-bar-color').value;
-    const barStyle = document.getElementById('input-bar-style').value;
-    const clock24h = document.getElementById('input-clock-format').value === '24';
-    const offset = document.getElementById('input-offset').value;
-
-    const showWeather = document.getElementById('input-show-weather').checked;
-    const showTotalTime = document.getElementById('input-show-total-time').checked;
-    const showCredits = document.getElementById('input-show-credits').checked;
-    const lowPerf = document.getElementById('input-low-perf').checked;
-
-    firebase.database().ref('devices').child(currentDeviceId).child('settings').update({
-        bgMode: mode,
-        bgColor: bg,
-        bgGradient1: grad1,
-        bgGradient2: grad2,
-        bgGradientAngle: gradDeg,
-        bgImage: bgImage,
-        barColor: bar,
-        barStyle: barStyle,
-        clock24h: clock24h,
-        timeOffset: offset,
-        showWeather: showWeather,
-        showTotalTime: showTotalTime,
-        showCredits: showCredits,
-        lowPerf: lowPerf
-    })
-    .then(() => showToast("Device settings saved!"))
-    .catch(e => showToast("Error: " + e.message, 'error'));
-};
-
-document.getElementById('save-override-btn').onclick = () => {
-    const text = document.getElementById('input-override-text').value;
-    const active = document.getElementById('input-override-active').checked;
-    firebase.database().ref('devices').child(currentDeviceId).child('settings').update({
-        overrideText: text,
-        overrideActive: active
-    })
-    .then(() => showToast("Override setting updated!"))
-    .catch(e => showToast("Error: " + e.message, 'error'));
-};
+    };
+}
 
 document.getElementById('refresh-device-btn').onclick = () => {
     firebase.database().ref('devices').child(currentDeviceId).child('command').set({

@@ -4,7 +4,7 @@ const CONFIG = {
     LAT: 39.5481,
     LON: -104.9739,
     SCHOOL_END_TIME: "14:50",
-    APP_VERSION: "4.0.0",
+    APP_VERSION: "4.0",
     AUTHOR_NAME: "Austin Strong",
     FIREBASE: {
         apiKey: "AIzaSyDbnzWXHsqr6rOXEq99FMYyJEgVp5QSUAo",
@@ -168,23 +168,44 @@ class RemoteManager {
                 const g2 = settings.bgGradient2 || '#001a0c';
                 const deg = settings.bgGradientAngle || '135';
                 document.body.style.background = `linear-gradient(${deg}deg, ${g1}, ${g2})`;
-                document.documentElement.style.setProperty('--text-color', this.getContrastColor(g1));
             } else if (bgMode === 'image' && settings.bgImage) {
                 document.body.style.backgroundImage = `url('${settings.bgImage}')`;
                 document.body.style.backgroundSize = 'cover';
                 document.body.style.backgroundPosition = 'center';
                 document.body.style.backgroundRepeat = 'no-repeat';
                 document.body.style.backgroundColor = settings.bgColor || '#00401e';
-                document.documentElement.style.setProperty('--text-color', '#ffffff');
             } else {
                 const bgColor = settings.bgColor || '#00401e';
                 document.body.style.background = bgColor;
                 document.documentElement.style.setProperty('--bg-color', bgColor);
-                document.documentElement.style.setProperty('--text-color', this.getContrastColor(bgColor));
             }
 
-            // Progress Bar Color
+            // Text Color & Smart Background Pill Adaptation
+            const textColor = settings.textColor || '#ffffff';
+            document.documentElement.style.setProperty('--text-color', textColor);
+
+            // Compute luminance of text color to adapt background pill contrast
+            if (textColor.length === 7 && textColor.startsWith('#')) {
+                const r = parseInt(textColor.slice(1, 3), 16);
+                const g = parseInt(textColor.slice(3, 5), 16);
+                const b = parseInt(textColor.slice(5, 7), 16);
+                const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                if (lum < 0.3) {
+                    // Dark text -> Light pill overlay
+                    document.documentElement.style.setProperty('--pill-bg', 'rgba(255, 255, 255, 0.75)');
+                    document.documentElement.style.setProperty('--pill-border', 'rgba(0, 0, 0, 0.2)');
+                    document.documentElement.style.setProperty('--text-shadow', '0 1px 3px rgba(255, 255, 255, 0.4)');
+                } else {
+                    // Light text -> Dark pill overlay
+                    document.documentElement.style.setProperty('--pill-bg', 'rgba(0, 0, 0, 0.55)');
+                    document.documentElement.style.setProperty('--pill-border', 'rgba(255, 255, 255, 0.2)');
+                    document.documentElement.style.setProperty('--text-shadow', '0 2px 8px rgba(0, 0, 0, 0.6)');
+                }
+            }
+
+            // Progress Bar Color & Accent Animation Color
             document.documentElement.style.setProperty('--bar-color', settings.barColor || '#b1953a');
+            document.documentElement.style.setProperty('--anim-accent-color', settings.animAccentColor || '#ffffff');
 
             // Apply Time Offset
             if (settings.timeOffset !== undefined) {
@@ -305,14 +326,22 @@ class ScheduleTracker {
         this.remote = new RemoteManager(this);
 
         // Cache DOM elements
+        this.dateContainer = document.getElementById("date-container");
         this.dateDisplay = document.getElementById("date-display");
         this.clockDisplay = document.getElementById("clock-display");
+        this.weatherContainer = document.getElementById("weather-container");
         this.weatherDisplay = document.getElementById("weather-display");
         this.endMessage = document.getElementById('end');
         this.scheduleWrapper = document.querySelector('.schedule-wrapper');
         this.totalTimeRemaining = document.querySelector(".total-time-remaining");
         this.totalTimeContainer = document.getElementById("total-time-container");
         this.deviceIdDisplay = document.getElementById("device-id-display");
+
+        // Customize Modal Elements
+        this.customizeModal = document.getElementById("local-customize-modal");
+        this.openCustomizeBtn = document.getElementById("open-customize-btn");
+        this.closeCustomizeBtn = document.getElementById("close-customize-btn");
+        this.saveCustomizeBtn = document.getElementById("save-customize-btn");
 
         // First Time User Prompt Elements
         this.identifyModal = document.getElementById("user-identify-modal");
@@ -339,12 +368,91 @@ class ScheduleTracker {
         this.updateDeviceIdDisplay();
         this.setupVisibilityHandler();
         this.setupFirstTimeIdentifyPrompt();
+        this.setupCustomizeModal();
     }
 
     async init() {
         this.setupWeather();
         this.loadSchedules();
+        this.loadLocalCustomizations();
         this.startUpdateLoop();
+    }
+
+    setupCustomizeModal() {
+        if (!this.openCustomizeBtn || !this.customizeModal) return;
+
+        this.openCustomizeBtn.addEventListener('click', () => {
+            this.customizeModal.style.display = 'flex';
+            if (window.enhanceAllCustomUi) {
+                window.enhanceAllCustomUi(this.customizeModal);
+            }
+        });
+
+        if (this.closeCustomizeBtn) {
+            this.closeCustomizeBtn.addEventListener('click', () => {
+                this.customizeModal.style.display = 'none';
+            });
+        }
+
+        if (this.saveCustomizeBtn) {
+            this.saveCustomizeBtn.addEventListener('click', () => {
+                const bg = document.getElementById('cust-bg-color').value;
+                const bar = document.getElementById('cust-bar-color').value;
+                const format = document.getElementById('cust-clock-format').value;
+                const weather = document.getElementById('cust-show-weather').checked;
+
+                const localSettings = { bg, bar, format, weather };
+                localStorage.setItem('mvhs_local_customizations', JSON.stringify(localSettings));
+
+                this.applyLocalSettings(localSettings);
+                this.customizeModal.style.display = 'none';
+            });
+        }
+    }
+
+    loadLocalCustomizations() {
+        const saved = localStorage.getItem('mvhs_local_customizations');
+        if (saved) {
+            try {
+                const settings = JSON.parse(saved);
+                this.applyLocalSettings(settings);
+            } catch (e) {
+                console.error("Failed to parse local customizations", e);
+            }
+        }
+    }
+
+    applyLocalSettings(settings) {
+        if (settings.bg) {
+            document.body.style.background = settings.bg;
+            document.documentElement.style.setProperty('--bg-color', settings.bg);
+            document.documentElement.style.setProperty('--text-color', this.remote.getContrastColor(settings.bg));
+            const bgInput = document.getElementById('cust-bg-color');
+            if (bgInput) {
+                bgInput.value = settings.bg;
+                if (bgInput._updateCustomColor) bgInput._updateCustomColor();
+            }
+        }
+        if (settings.bar) {
+            document.documentElement.style.setProperty('--bar-color', settings.bar);
+            const barInput = document.getElementById('cust-bar-color');
+            if (barInput) {
+                barInput.value = settings.bar;
+                if (barInput._updateCustomColor) barInput._updateCustomColor();
+            }
+        }
+        if (settings.style) {
+            this.setBarStyle(settings.style);
+        }
+        if (settings.format) {
+            this.setUse24HourClock(settings.format === '24');
+        }
+        if (settings.weather !== undefined) {
+            this.setWeatherVisible(settings.weather);
+        }
+        if (settings.totalTime !== undefined) {
+            this.setTotalTimeVisible(settings.totalTime);
+        }
     }
 
     setupFirstTimeIdentifyPrompt() {
@@ -524,19 +632,19 @@ class ScheduleTracker {
         switch (day) {
             case 1: // Monday
                 s1 = "7:00;Good Morning!;7:50,7:50;Period 1;9:25,9:25;Passing Period;9:30,9:30;Period 2;11:05,11:05;A Lunch;11:35,11:35;Passing Period;11:40,11:40;Period 3;13:15,13:15;Passing Period;13:20,13:20;Period 4;14:55";
-                s2 = "11:05;Passing Period;11:10,11:10;Period 3;12:45,12:45;B Lunch;13:15";
+                s2 = "11:05;Period 3;12:40,12:40;Passing Period;12:45,12:45;B Lunch;13:15";
                 break;
             case 2: // Tuesday
-                s1 = "7:00;Good Morning!;7:50,7:50;Period 5;9:25,9:25;Homeroom;9:35,9:35;Passing Period;9:40,9:40;SAS;10:10,10:10;Eagle Time;11:00,11:00;Passing Period;11:05,11:05;A Lunch;11:35,11:35;Passing Period;11:40,11:40;Period 6;13:15,13:15;Passing Period;13:20,13:20;Period 7;14:55";
-                s2 = "11:05;Period 6;12:40,12:40;Passing Period;12:45,12:45;B Lunch;13:15";
+                s1 = "7:00;Good Morning!;7:50,7:50;Period 5;9:25,9:25;Homeroom;9:35,9:35;Passing Period;9:40,9:40;SAS (9/10);10:10,10:10;Eagle Time (All);11:00,11:00;Passing Period;11:05,11:05;A Lunch;11:35,11:35;Passing Period;11:40,11:40;Period 6;13:15,13:15;Passing Period;13:20,13:20;Period 7;14:55";
+                s2 = "9:40;Eagle Time (11/12);10:10,11:05;Period 6;12:40,12:40;Passing Period;12:45,12:45;B Lunch;13:15";
                 break;
             case 3: // Wednesday
                 s1 = "7:00;Good Morning!;7:50,7:50;Period 1;9:25,9:25;Passing Period;9:30,9:30;Period 2;11:05,11:05;A Lunch;11:35,11:35;Passing Period;11:40,11:40;Period 3;13:15,13:15;Passing Period;13:20,13:20;Period 4;14:55";
-                s2 = "11:05;Passing Period;11:10,11:10;Period 3;12:45,12:45;B Lunch;13:15";
+                s2 = "11:05;Period 3;12:40,12:40;Passing Period;12:45,12:45;B Lunch;13:15";
                 break;
             case 4: // Thursday
-                s1 = "7:00;Good Morning!;7:50,7:50;Period 5;9:25,9:25;Homeroom;9:35,9:35;Passing Period;9:40,9:40;SAS;10:10,10:10;Eagle Time;11:00,11:00;Passing Period;11:05,11:05;A Lunch;11:35,11:35;Passing Period;11:40,11:40;Period 6;13:15,13:15;Passing Period;13:20,13:20;Period 7;14:55";
-                s2 = "11:05;Period 6;12:40,12:40;Passing Period;12:45,12:45;B Lunch;13:15";
+                s1 = "7:00;Good Morning!;7:50,7:50;Period 5;9:25,9:25;Homeroom;9:35,9:35;Passing Period;9:40,9:40;SAS (9/10);10:10,10:10;Eagle Time (All);11:00,11:00;Passing Period;11:05,11:05;A Lunch;11:35,11:35;Passing Period;11:40,11:40;Period 6;13:15,13:15;Passing Period;13:20,13:20;Period 7;14:55";
+                s2 = "9:40;Eagle Time (11/12);10:10,11:05;Period 6;12:40,12:40;Passing Period;12:45,12:45;B Lunch;13:15";
                 break;
             case 5: // Friday
                 s1 = "7:00;Happy Friday!;7:35,7:35;PLC;8:35,8:35;Period 1;9:20,9:20;Passing Period;9:25,9:25;Period 2;10:10,10:10;Passing Period;10:15,10:15;Period 3;11:00,11:00;Passing Period;11:05,11:05;A Lunch;11:35,11:35;Passing Period;11:40,11:40;Period 4;12:25,12:25;Passing Period;12:30,12:30;Period 5;13:15,13:15;Passing Period;13:20,13:20;Period 6;14:05,14:05;Passing Period;14:10,14:10;Period 7;14:55";
@@ -599,7 +707,7 @@ class ScheduleTracker {
         // 2. Main Clock / Device ID Flash
         if (this.clockDisplay) {
             if (this.showDeviceIDFlash) {
-                const flashStr = `[ ID: ${this.remote.id} ]`;
+                const flashStr = this.remote.id;
                 if (force || this.lastState.clockStr !== flashStr) {
                     this.clockDisplay.textContent = flashStr;
                     this.lastState.clockStr = flashStr;
@@ -785,14 +893,15 @@ class ScheduleTracker {
     }
 
     setWeatherVisible(visible) {
-        if (this.weatherDisplay) {
-            this.weatherDisplay.style.display = visible ? 'inline-block' : 'none';
+        if (this.weatherContainer) {
+            this.weatherContainer.style.display = visible ? 'inline-flex' : 'none';
         }
     }
 
     setTotalTimeVisible(visible) {
         if (this.totalTimeContainer) {
-            this.totalTimeContainer.style.visibility = visible ? 'visible' : 'hidden';
+            this.totalTimeContainer.style.display = visible ? 'flex' : 'none';
+            this.lastState.totalTimeVisible = visible;
         }
     }
 
