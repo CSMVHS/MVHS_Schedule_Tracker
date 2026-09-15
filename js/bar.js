@@ -578,3 +578,4 @@ document.addEventListener('DOMContentLoaded', () => {
     const tracker = new ScheduleTracker();
     tracker.init();
 });
+
