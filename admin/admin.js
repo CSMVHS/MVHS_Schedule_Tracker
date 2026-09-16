@@ -44,6 +44,16 @@ function showToast(message, type = 'info') {
     }, 3000);
 }
 
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 
@@ -407,7 +417,7 @@ function renderDevices() {
         card.className = `device-card ${statusClass}`;
         card.innerHTML = `
             <div class="status-badge"><i data-lucide="${statusIcon}"></i> ${statusText}</div>
-            <div class="device-name">${name}</div>
+            <div class="device-name">${escapeHtml(name)}</div>
 
             <div class="device-previews">
                 <div class="color-preview ${bgMode !== 'color' ? 'gradient-preview' : ''}" style="${bgStyle}" title="BG (${bgMode})"></div>
@@ -419,7 +429,7 @@ function renderDevices() {
                 ${isOverridden ? '<div class="overridden-badge">OVERRIDDEN</div>' : ''}
             </div>
 
-            <div class="device-id">${id}</div>
+            <div class="device-id">${escapeHtml(id)}</div>
             <div class="device-info">
                 <p><span>Total Time:</span> ${totalTimeStr}</p>
                 <p><span>Last Seen:</span> ${lastSeen}</p>

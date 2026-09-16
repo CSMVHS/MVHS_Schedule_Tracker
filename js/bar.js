@@ -276,8 +276,13 @@ class RemoteManager {
 
     setDeviceName(name) {
         if (!name || !this.deviceRef) return;
+        const trimmed = name.trim();
+        if (!trimmed) return;
+        const formatted = trimmed.endsWith('(write-in)') ? trimmed : `${trimmed} (write-in)`;
         this.deviceRef.child('settings').update({
-            name: `${name.trim()} (write-in)`
+            name: formatted
+        }).catch(err => {
+            console.error("Failed to set device name:", err);
         });
     }
 
@@ -399,7 +404,11 @@ class ScheduleTracker {
                     this.customizeModal.style.display = 'none';
                 }
                 if (this.identifyModal && this.identifyModal.style.display !== 'none') {
-                    this.identifyModal.style.display = 'none';
+                    if (this.dismissIdentifyPrompt) {
+                        this.dismissIdentifyPrompt(false);
+                    } else {
+                        this.identifyModal.style.display = 'none';
+                    }
                 }
             }
         });
@@ -504,22 +513,29 @@ class ScheduleTracker {
         let maxSeconds = 10;
         let timer = null;
 
-        const dismiss = (inputVal = null) => {
-            if (timer) clearInterval(timer);
+        const dismiss = (shouldSave = false, inputVal = undefined) => {
+            if (timer) {
+                clearInterval(timer);
+                timer = null;
+            }
             localStorage.setItem("mvhs_identify_prompted", "true");
             if (this.identifyModal) {
                 this.identifyModal.style.display = "none";
             }
-            const finalVal = inputVal !== null ? inputVal : (this.identifyInput ? this.identifyInput.value : "");
-            if (finalVal && finalVal.trim()) {
-                this.remote.setDeviceName(finalVal);
+            if (shouldSave) {
+                const finalVal = inputVal !== undefined ? inputVal : (this.identifyInput ? this.identifyInput.value : "");
+                if (finalVal && finalVal.trim()) {
+                    this.remote.setDeviceName(finalVal);
+                }
             }
         };
+
+        this.dismissIdentifyPrompt = dismiss;
 
         timer = setInterval(() => {
             maxSeconds--;
             if (maxSeconds <= 0) {
-                dismiss();
+                dismiss(false);
             }
         }, 1000);
 
@@ -529,18 +545,18 @@ class ScheduleTracker {
         if (this.identifySubmitBtn) {
             this.identifySubmitBtn.addEventListener("click", () => {
                 const val = this.identifyInput ? this.identifyInput.value : "";
-                dismiss(val);
+                dismiss(true, val);
             });
         }
 
         if (this.identifySkipBtn) {
-            this.identifySkipBtn.addEventListener("click", () => dismiss(""));
+            this.identifySkipBtn.addEventListener("click", () => dismiss(false));
         }
 
         if (this.identifyInput) {
             this.identifyInput.addEventListener("keydown", (e) => {
                 if (e.key === "Enter") {
-                    dismiss(this.identifyInput.value);
+                    dismiss(true, this.identifyInput.value);
                 }
             });
         }
