@@ -1,0 +1,299 @@
+/* Custom Color Picker Swatch Palette & Canvas Picker Styles */
+.color-picker-container {
+    display: inline-flex;
+    align-items: center;
+    position: relative;
+}
+
+.preset-color-palette {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+}
+
+.preset-swatch,
+.palette-trigger-btn {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+    margin: 0;
+    padding: 0;
+    flex-shrink: 0;
+    border-radius: 50%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    border: 1.5px solid rgba(255, 255, 255, 0.25);
+    outline: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    transition: border-color 0.15s ease, outline 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.preset-swatch:hover,
+.palette-trigger-btn:hover {
+    border-color: rgba(255, 255, 255, 0.6);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+}
+
+.preset-swatch.active,
+.palette-trigger-btn.active {
+    outline: 2px solid #ffffff;
+    outline-offset: 2.5px;
+    border-color: rgba(255, 255, 255, 0.8);
+}
+
+.preset-swatch .swatch-check {
+    width: 14px;
+    height: 14px;
+    display: none;
+    pointer-events: none;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.9));
+}
+
+.preset-swatch.active .swatch-check {
+    display: block;
+}
+
+.palette-trigger-btn {
+    background: #1e293b;
+    color: #f8fafc;
+}
+
+.palette-trigger-btn:hover {
+    background: #334155;
+}
+
+.palette-trigger-btn svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+    display: block;
+    pointer-events: none;
+}
+
+/* Custom 2D Color Picker Popover Popup */
+.custom-picker-popover {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    z-index: 100000;
+    background: #000000;
+    border: 1px solid #ffffff;
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.95);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 220px;
+}
+
+.sat-val-canvas-wrapper {
+    position: relative;
+    width: 100%;
+    height: 140px;
+    border-radius: 6px;
+    overflow: hidden;
+    cursor: crosshair;
+}
+
+.sat-val-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.sat-val-handle {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 4px rgba(0,0,0,0.8);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+.hue-slider-wrapper {
+    width: 100%;
+    height: 14px;
+}
+
+.hue-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 14px;
+    border-radius: 7px;
+    background: linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%);
+    outline: none;
+    cursor: pointer;
+}
+
+.hue-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 2px solid #000000;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.picker-hex-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.picker-hex-input {
+    flex: 1;
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #ffffff;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 0.85rem;
+}
+
+.cust-row-palette {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    min-height: 38px;
+}
+
+.cust-row-palette label {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #ffffff !important;
+    margin: 0;
+}
+
+/* Custom Dropdown UI */
+.custom-dropdown-container {
+    position: relative;
+    width: 100%;
+    display: inline-block;
+    box-sizing: border-box;
+}
+
+.custom-dropdown-trigger {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.55rem 0.85rem;
+    background: #000000;
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    user-select: none;
+    min-height: 38px;
+}
+
+.custom-dropdown-trigger:hover {
+    border-color: rgba(255, 255, 255, 0.7);
+}
+
+.custom-dropdown-container.open .custom-dropdown-trigger {
+    border-color: #ffffff;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25);
+}
+
+.custom-dropdown-label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
+    flex: 1;
+}
+
+.custom-dropdown-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 0.5rem;
+    transition: transform 0.2s ease;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.custom-dropdown-container.open .custom-dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.custom-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    z-index: 100002;
+    background: #000000;
+    border: 1px solid #ffffff;
+    border-radius: 10px;
+    padding: 0.35rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.95), 0 0 20px #000000;
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+    max-height: 240px;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+.custom-dropdown-container.open .custom-dropdown-menu {
+    display: flex;
+}
+
+.custom-dropdown-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.55rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #cbd5e1;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+    user-select: none;
+}
+
+.custom-dropdown-option:hover {
+    background: #1e293b;
+    color: #ffffff;
+}
+
+.custom-dropdown-option.selected {
+    background: #1e293b;
+    color: #ffffff;
+    font-weight: 700;
+}
+
+.custom-dropdown-option .option-check {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    margin-left: 0.5rem;
+}
+
+.custom-dropdown-option.selected .option-check {
+    display: inline-flex;
+}

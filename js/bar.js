@@ -124,6 +124,25 @@ class RemoteManager {
         return luminance > 0.5 ? '#000000' : '#ffffff';
     }
 
+    updateContrast(bgColor, barColor) {
+        if (bgColor) {
+            const contrastText = this.getContrastColor(bgColor);
+            document.documentElement.style.setProperty('--text-color', contrastText);
+
+            if (contrastText === '#000000') {
+                // Light background -> dark pill overlay & dark text shadow
+                document.documentElement.style.setProperty('--pill-bg', 'rgba(255, 255, 255, 0.85)');
+                document.documentElement.style.setProperty('--pill-border', 'rgba(0, 0, 0, 0.25)');
+                document.documentElement.style.setProperty('--text-shadow', '0 1px 3px rgba(255, 255, 255, 0.5)');
+            } else {
+                // Dark background -> dark translucent pill overlay & light text shadow
+                document.documentElement.style.setProperty('--pill-bg', 'rgba(0, 0, 0, 0.55)');
+                document.documentElement.style.setProperty('--pill-border', 'rgba(255, 255, 255, 0.2)');
+                document.documentElement.style.setProperty('--text-shadow', '0 2px 8px rgba(0, 0, 0, 0.6)');
+            }
+        }
+    }
+
     setupSync() {
         // Track time drift
         this.db.ref(".info/serverTimeOffset").on("value", (snap) => {
@@ -163,44 +182,41 @@ class RemoteManager {
             document.body.style.backgroundPosition = '';
             document.body.style.backgroundRepeat = '';
 
+            const effectiveBgColor = settings.bgColor || '#00401e';
+
             if (bgMode === 'gradient') {
                 const g1 = settings.bgGradient1 || '#00401e';
                 const g2 = settings.bgGradient2 || '#001a0c';
                 const deg = settings.bgGradientAngle || '135';
                 document.body.style.background = `linear-gradient(${deg}deg, ${g1}, ${g2})`;
+                this.updateContrast(g1);
             } else if (bgMode === 'image' && settings.bgImage) {
                 document.body.style.backgroundImage = `url('${settings.bgImage}')`;
                 document.body.style.backgroundSize = 'cover';
                 document.body.style.backgroundPosition = 'center';
                 document.body.style.backgroundRepeat = 'no-repeat';
-                document.body.style.backgroundColor = settings.bgColor || '#00401e';
+                document.body.style.backgroundColor = effectiveBgColor;
+                this.updateContrast(effectiveBgColor);
             } else {
-                const bgColor = settings.bgColor || '#00401e';
-                document.body.style.background = bgColor;
-                document.documentElement.style.setProperty('--bg-color', bgColor);
+                document.body.style.background = effectiveBgColor;
+                document.documentElement.style.setProperty('--bg-color', effectiveBgColor);
+                this.updateContrast(effectiveBgColor);
             }
 
-            // Text Color & Smart Background Pill Adaptation
-            const textColor = settings.textColor || '#ffffff';
-            document.documentElement.style.setProperty('--text-color', textColor);
+            // Check if local customizations apply contrast override
+            const savedLocal = localStorage.getItem('mvhs_local_customizations');
+            if (savedLocal) {
+                try {
+                    const localCustoms = JSON.parse(savedLocal);
+                    if (localCustoms.bg) {
+                        this.updateContrast(localCustoms.bg);
+                    }
+                } catch (e) {}
+            }
 
-            // Compute luminance of text color to adapt background pill contrast
-            if (textColor.length === 7 && textColor.startsWith('#')) {
-                const r = parseInt(textColor.slice(1, 3), 16);
-                const g = parseInt(textColor.slice(3, 5), 16);
-                const b = parseInt(textColor.slice(5, 7), 16);
-                const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-                if (lum < 0.3) {
-                    // Dark text -> Light pill overlay
-                    document.documentElement.style.setProperty('--pill-bg', 'rgba(255, 255, 255, 0.75)');
-                    document.documentElement.style.setProperty('--pill-border', 'rgba(0, 0, 0, 0.2)');
-                    document.documentElement.style.setProperty('--text-shadow', '0 1px 3px rgba(255, 255, 255, 0.4)');
-                } else {
-                    // Light text -> Dark pill overlay
-                    document.documentElement.style.setProperty('--pill-bg', 'rgba(0, 0, 0, 0.55)');
-                    document.documentElement.style.setProperty('--pill-border', 'rgba(255, 255, 255, 0.2)');
-                    document.documentElement.style.setProperty('--text-shadow', '0 2px 8px rgba(0, 0, 0, 0.6)');
-                }
+            // Text Color Override if explicitly provided
+            if (settings.textColor && settings.textColor !== '#ffffff') {
+                document.documentElement.style.setProperty('--text-color', settings.textColor);
             }
 
             // Progress Bar Color & Accent Animation Color
@@ -233,6 +249,9 @@ class RemoteManager {
             this.tracker.setTotalTimeVisible(settings.showTotalTime !== false);
             this.tracker.setCreditsVisible(settings.showCredits !== false);
             this.tracker.setBarStyle(settings.barStyle || 'liquid');
+
+            // Apply persistent local customizations if saved so local front-end changes override global settings
+            this.tracker.loadLocalCustomizations();
 
             // Handle Remote Commands
             if (data.command && data.command.type === 'REFRESH') {
@@ -365,10 +384,25 @@ class ScheduleTracker {
             items: [{}, {}]
         };
 
+        this.totalTimeSettingVisible = true;
         this.updateDeviceIdDisplay();
         this.setupVisibilityHandler();
         this.setupFirstTimeIdentifyPrompt();
         this.setupCustomizeModal();
+        this.setupEscKeyHandler();
+    }
+
+    setupEscKeyHandler() {
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (this.customizeModal && this.customizeModal.style.display !== 'none') {
+                    this.customizeModal.style.display = 'none';
+                }
+                if (this.identifyModal && this.identifyModal.style.display !== 'none') {
+                    this.identifyModal.style.display = 'none';
+                }
+            }
+        });
     }
 
     async init() {
@@ -426,7 +460,7 @@ class ScheduleTracker {
         if (settings.bg) {
             document.body.style.background = settings.bg;
             document.documentElement.style.setProperty('--bg-color', settings.bg);
-            document.documentElement.style.setProperty('--text-color', this.remote.getContrastColor(settings.bg));
+            this.remote.updateContrast(settings.bg);
             const bgInput = document.getElementById('cust-bg-color');
             if (bgInput) {
                 bgInput.value = settings.bg;
@@ -446,9 +480,13 @@ class ScheduleTracker {
         }
         if (settings.format) {
             this.setUse24HourClock(settings.format === '24');
+            const formatSelect = document.getElementById('cust-clock-format');
+            if (formatSelect) formatSelect.value = settings.format;
         }
         if (settings.weather !== undefined) {
             this.setWeatherVisible(settings.weather);
+            const weatherCheck = document.getElementById('cust-show-weather');
+            if (weatherCheck) weatherCheck.checked = settings.weather;
         }
         if (settings.totalTime !== undefined) {
             this.setTotalTimeVisible(settings.totalTime);
@@ -516,6 +554,19 @@ class ScheduleTracker {
     updateDeviceIdDisplay() {
         if (this.deviceIdDisplay) {
             this.deviceIdDisplay.textContent = this.remote.id;
+            this.deviceIdDisplay.title = "Click to copy Device ID";
+            this.deviceIdDisplay.addEventListener('click', () => {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(this.remote.id).catch(() => {});
+                } else {
+                    const temp = document.createElement('textarea');
+                    temp.value = this.remote.id;
+                    document.body.appendChild(temp);
+                    temp.select();
+                    try { document.execCommand('copy'); } catch(e) {}
+                    document.body.removeChild(temp);
+                }
+            });
         }
     }
 
@@ -532,6 +583,15 @@ class ScheduleTracker {
     }
 
     updateTotalTimeRemaining(now) {
+        if (!this.totalTimeRemaining || !this.totalTimeContainer) return;
+        if (this.totalTimeSettingVisible === false) {
+            if (this.lastState.totalTimeVisible !== false) {
+                this.totalTimeContainer.style.display = 'none';
+                this.lastState.totalTimeVisible = false;
+            }
+            return;
+        }
+
         let endTimeStr = CONFIG.SCHOOL_END_TIME;
         if (this.schedules[0] && this.schedules[0].length > 0) {
             endTimeStr = this.schedules[0][this.schedules[0].length - 1].end;
@@ -543,26 +603,22 @@ class ScheduleTracker {
 
         const diff = end - now;
 
-        if (this.totalTimeRemaining && this.totalTimeContainer) {
-            if (diff <= 0) {
-                if (this.lastState.totalTimeVisible !== false) {
-                    this.totalTimeContainer.style.display = 'none';
-                    this.lastState.totalTimeVisible = false;
-                }
-            } else {
-                if (this.lastState.totalTimeVisible !== true) {
-                    this.totalTimeContainer.style.display = 'flex';
-                    this.lastState.totalTimeVisible = true;
-                }
-                const totalMinutes = Math.ceil(diff / 60000);
-                const h = Math.floor(totalMinutes / 60);
-                const m = totalMinutes % 60;
-                const str = `${h}h ${m}m`;
-                if (this.lastState.totalTimeStr !== str) {
-                    this.totalTimeRemaining.textContent = str;
-                    this.lastState.totalTimeStr = str;
-                }
-            }
+        if (this.lastState.totalTimeVisible !== true) {
+            this.totalTimeContainer.style.display = 'flex';
+            this.lastState.totalTimeVisible = true;
+        }
+
+        let str = "0h 0m";
+        if (diff > 0) {
+            const totalMinutes = Math.ceil(diff / 60000);
+            const h = Math.floor(totalMinutes / 60);
+            const m = totalMinutes % 60;
+            str = `${h}h ${m}m`;
+        }
+
+        if (this.lastState.totalTimeStr !== str) {
+            this.totalTimeRemaining.textContent = str;
+            this.lastState.totalTimeStr = str;
         }
     }
 
@@ -655,22 +711,12 @@ class ScheduleTracker {
     }
 
     startUpdateLoop() {
-        const scheduleNextTick = () => {
-            if (document.hidden) {
-                setTimeout(scheduleNextTick, 1000);
-                return;
+        this.updateUI();
+        setInterval(() => {
+            if (!document.hidden) {
+                this.updateUI();
             }
-
-            this.updateUI();
-
-            if (this.lowPerf) {
-                setTimeout(scheduleNextTick, 1000);
-            } else {
-                requestAnimationFrame(scheduleNextTick);
-            }
-        };
-
-        scheduleNextTick();
+        }, 1000);
     }
 
     updateUI(force = false) {
@@ -888,6 +934,7 @@ class ScheduleTracker {
     }
 
     setTotalTimeVisible(visible) {
+        this.totalTimeSettingVisible = visible;
         if (this.totalTimeContainer) {
             this.totalTimeContainer.style.display = visible ? 'flex' : 'none';
             this.lastState.totalTimeVisible = visible;

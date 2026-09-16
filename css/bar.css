@@ -13,6 +13,17 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+input, textarea {
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
 }
 
 html, body {
@@ -129,9 +140,9 @@ html, body {
 
 .progress_container {
     position: relative;
-    height: clamp(5rem, 11vh, 9rem);
+    height: clamp(6.5rem, 15vh, 12rem);
     background: var(--bar-bg);
-    border-radius: clamp(2.5rem, 5.5vh, 4.5rem);
+    border-radius: clamp(3.25rem, 7.5vh, 6rem);
     overflow: hidden;
     box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5), 0 4px 15px rgba(0, 0, 0, 0.3);
 }
@@ -244,14 +255,14 @@ html, body {
 /* Timer Pill - Takes up most of height of progress bar background, keeping same padding on top/bottom as right side */
 .progress_time {
     position: absolute;
-    right: clamp(0.4rem, 0.8vh, 1rem);
-    top: clamp(0.4rem, 0.8vh, 1rem);
-    bottom: clamp(0.4rem, 0.8vh, 1rem);
+    right: clamp(0.5rem, 1vh, 1.25rem);
+    top: clamp(0.5rem, 1vh, 1.25rem);
+    bottom: clamp(0.5rem, 1vh, 1.25rem);
     display: flex;
     align-items: center;
     justify-content: center;
     font-family: 'Google Sans Flex', -apple-system, sans-serif;
-    font-size: clamp(1.4rem, 4.2vmin, 3.8rem);
+    font-size: clamp(2rem, 6.5vmin, 5.5rem);
     font-weight: 800;
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.05em;
@@ -259,7 +270,7 @@ html, body {
     text-shadow: var(--text-shadow);
     background: var(--pill-bg);
     backdrop-filter: blur(8px);
-    padding: 0 clamp(0.8rem, 1.8vw, 2rem);
+    padding: 0 clamp(1rem, 2.2vw, 2.5rem);
     border-radius: 9999px;
     border: 1.5px solid var(--pill-border);
     z-index: 20;
@@ -316,19 +327,27 @@ html, body {
     font-size: clamp(0.8rem, 1.8vmin, 1.4rem);
     font-weight: 400 !important;
     font-family: 'Google Sans Flex', -apple-system, BlinkMacSystemFont, sans-serif;
-    white-space: nowrap;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 0.35em;
+    justify-content: flex-end;
+    gap: 0.35em 0.5em;
     margin-left: auto;
 }
 
-.credits span, .credits a, .credits button {
+.credit-item {
     color: inherit;
     font-family: inherit;
     font-size: inherit;
     font-weight: 400 !important;
     opacity: 0.55;
+    white-space: nowrap;
+    display: inline-block;
+}
+
+.credit-separator {
+    opacity: 0.4;
+    user-select: none;
 }
 
 .credits a.report-issue-link, .credits button.customize-link {
@@ -337,18 +356,28 @@ html, body {
     text-decoration: underline;
     cursor: pointer;
     padding: 0;
+    color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: 400 !important;
 }
 
 .credits a.report-issue-link:hover, .credits button.customize-link:hover {
     opacity: 0.85;
 }
 
-/* Device ID - same font, size, weight, but 50% more visible (opacity 0.85 vs 0.55) */
+/* Device ID - same font, size, weight, color, and transparency as other parts of credits */
 .device-id-credit {
-    font-family: inherit !important;
-    font-size: inherit !important;
-    font-weight: 400 !important;
-    opacity: 0.85 !important;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    color: inherit;
+    cursor: pointer;
+    text-decoration: none !important;
+}
+
+.device-id-credit:hover {
+    text-decoration: none !important;
 }
 
 /* Local Customize Modal */
@@ -367,11 +396,11 @@ html, body {
 }
 
 .customize-card {
-    background: var(--pill-bg);
-    backdrop-filter: blur(8px);
-    color: var(--text-color);
-    border: 1.5px solid var(--pill-border);
+    background: #000000 !important;
+    color: #ffffff !important;
+    border: 1px solid #ffffff !important;
     border-radius: 1.25rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.95), 0 0 25px rgba(0, 0, 0, 0.9) !important;
     padding: 1.5rem;
     width: 90%;
     max-width: 400px;
@@ -389,11 +418,13 @@ html, body {
 .customize-header h3 {
     font-size: 1.2rem;
     font-weight: 700;
+    color: #ffffff !important;
 }
 
 .close-modal {
     font-size: 1.5rem;
     cursor: pointer;
+    color: #ffffff !important;
     opacity: 0.7;
 }
 
@@ -411,6 +442,7 @@ html, body {
     align-items: center;
     font-size: 0.9rem;
     font-weight: 600;
+    color: #ffffff !important;
 }
 
 /* Custom Pickers & Select Controls */
@@ -439,30 +471,12 @@ html, body {
 .custom-select-wrapper {
     position: relative;
     display: inline-block;
+    width: 100%;
 }
 
-.custom-select-wrapper::after {
-    display: none !important;
-}
-
-.custom-select {
-    appearance: none;
-    -webkit-appearance: none;
-    padding: 0.5rem 2.2rem 0.5rem 0.85rem;
-    border-radius: 8px;
-    background: #1e293b;
-    color: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    font-family: inherit;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: border-color 0.2s;
-}
-
-.custom-select:focus {
-    outline: none;
-    border-color: var(--bar-color);
+.cust-row .custom-select-wrapper {
+    width: 140px;
+    flex-shrink: 0;
 }
 
 .cust-checkboxes {
@@ -648,26 +662,43 @@ html, body {
     .top-bar-item:nth-child(2) { grid-area: clock; text-align: center; }
 
     .progress_container {
-        height: 4.25rem;
-        border-radius: 2.125rem;
+        height: 5.5rem;
+        border-radius: 2.75rem;
     }
 
     .progress_time {
-        font-size: 1.15rem;
-        padding: 0.4rem 0.7rem;
+        font-size: 1.75rem;
+        padding: 0.4rem 0.9rem;
         right: 0.4rem;
         border-radius: 9999px;
     }
 
     .footer {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: center;
         gap: 0.5rem;
     }
 
     .credits {
-        align-self: flex-end;
-        margin-left: auto;
+        align-self: center;
+        margin-left: 0;
+        flex-wrap: wrap;
+        justify-content: center;
+        text-align: center;
+        width: 100%;
+        line-height: 1.5;
+        gap: 0.25rem 0.4rem;
+    }
+
+    .credit-separator {
+        display: none;
+    }
+
+    .credit-item.report-issue-wrapper {
+        display: block;
+        width: 100%;
+        text-align: center;
+        margin: 0.1rem 0;
     }
 
     .identify-modal {

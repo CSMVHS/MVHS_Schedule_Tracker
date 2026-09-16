@@ -37,11 +37,11 @@
                 <span id="close-customize-btn" class="close-modal">&times;</span>
             </div>
             <div class="customize-body">
-                <div class="cust-row">
+                <div class="cust-row cust-row-palette">
                     <label>Background Color:</label>
                     <input type="color" id="cust-bg-color" value="#00401e">
                 </div>
-                <div class="cust-row">
+                <div class="cust-row cust-row-palette">
                     <label>Bar Color:</label>
                     <input type="color" id="cust-bar-color" value="#b1953a">
                 </div>
@@ -112,14 +112,17 @@
             <div id="total-time-container" class="total-time-left">
                 <span class="total-time-remaining">0h 0m</span>
             </div>
-            <span class="credits">
-                <span>Created by Austin Strong • </span>
-                <a href="mailto:austin+mvhsst-issue@astrong.xyz,strongar1+issues@s.dcsdk12.org?subject=Schedule%20Tracker%20Issue" class="report-issue-link" target="_blank" rel="noopener">Report an Issue</a>
-                <span> • </span>
-                <button id="open-customize-btn" class="customize-link">Customize</button>
-                <span> • Version 4.0 • </span>
-                <span id="device-id-display" class="device-id-credit">---</span>
-            </span>
+            <div class="credits">
+                <span class="credit-item">Created by Austin Strong</span>
+                <span class="credit-separator">•</span>
+                <span class="credit-item report-issue-wrapper"><a href="mailto:austin+mvhsst-issue@astrong.xyz,strongar1+issues@s.dcsdk12.org?subject=Schedule%20Tracker%20Issue" class="report-issue-link" target="_blank" rel="noopener">Report an Issue</a></span>
+                <span class="credit-separator">•</span>
+                <span class="credit-item"><button id="open-customize-btn" class="customize-link">Customize</button></span>
+                <span class="credit-separator">•</span>
+                <span class="credit-item">Version 4.0</span>
+                <span class="credit-separator">•</span>
+                <span class="credit-item"><span id="device-id-display" class="device-id-credit">---</span></span>
+            </div>
         </footer>
     </div>
 

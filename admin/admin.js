@@ -247,6 +247,11 @@ function initDashboard() {
             const targetEl = document.getElementById(targetId);
             if (targetEl) {
                 targetEl.value = defaultValue;
+                targetEl.dispatchEvent(new Event('input', { bubbles: true }));
+                targetEl.dispatchEvent(new Event('change', { bubbles: true }));
+                if (targetEl._updateCustomColor) {
+                    targetEl._updateCustomColor();
+                }
             }
         });
     });
@@ -538,6 +543,14 @@ function updateModalData(id, updateInputs = false) {
 
 // Modal Actions
 document.querySelector('.close-btn').onclick = () => controlModal.style.display = 'none';
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        if (controlModal && controlModal.style.display !== 'none') {
+            controlModal.style.display = 'none';
+        }
+    }
+});
 
 const saveAllDeviceBtn = document.getElementById('save-all-device-settings-btn');
 if (saveAllDeviceBtn) {
