@@ -448,10 +448,10 @@ h3 {
     max-height: 88vh;
     overflow-y: auto;
     position: relative;
-    background: #0f172a;
-    border: 1px solid #334155;
+    background: #000000 !important;
+    border: 1px solid #ffffff !important;
     color: #ffffff;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.95), 0 0 30px #000000 !important;
 }
 
 .modal-header {
@@ -522,21 +522,28 @@ textarea {
 .setting-item {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.85rem;
+    min-height: 38px;
 }
 
 .setting-item.flex-column {
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.25rem;
+    gap: 0.35rem;
 }
 
 .setting-item label {
     font-size: 0.88rem;
     font-weight: 600;
-    min-width: 150px;
+    min-width: 160px;
     color: #e2e8f0;
+}
+
+.setting-item .custom-select-wrapper {
+    max-width: 220px;
+    width: 100%;
 }
 
 .checkbox-group {
@@ -636,6 +643,11 @@ button:hover {
     color: #94a3b8;
 }
 
+.picker-group .custom-select-wrapper {
+    max-width: 280px;
+    width: 100%;
+}
+
 /* Custom Pickers for Admin Panel */
 .picker-group input[type="color"], .setting-item input[type="color"] {
     -webkit-appearance: none;
@@ -665,50 +677,13 @@ button:hover {
     width: 100%;
 }
 
-.custom-select-wrapper::after {
-    content: '';
-    position: absolute;
-    right: 0.85rem;
-    top: 50%;
-    transform: translateY(-70%) rotate(45deg);
-    width: 0.5rem;
-    height: 0.5rem;
-    border-right: 2px solid #94a3b8;
-    border-bottom: 2px solid #94a3b8;
-    pointer-events: none;
-}
-
-.custom-select {
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    width: 100%;
-    padding: 0.65rem 2.25rem 0.65rem 0.85rem;
-    border-radius: 8px;
-    background: #1e293b;
-    color: #ffffff;
-    border: 1px solid #334155;
-    font-family: inherit;
-    font-size: 0.88rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: border-color 0.2s;
-}
-
-.custom-select:focus {
-    outline: none;
-    border-color: var(--primary);
-}
-
 .custom-checkbox {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
     cursor: pointer;
     user-select: none;
-    font-size: 0.85rem;
     font-weight: 600;
-    color: #ffffff;
 }
 
 .custom-checkbox input[type="checkbox"] {
@@ -764,23 +739,32 @@ button:hover {
 }
 
 .btn-reset {
-    font-size: 0.7rem;
-    padding: 0.25rem 0.5rem;
-    background: #334155;
+    font-size: 0.72rem;
+    font-weight: 600;
+    height: 28px;
+    padding: 0 10px;
+    background: #1e293b;
+    border: 1px solid #334155;
     color: #ffffff;
-    border-radius: 4px;
-    border: none;
+    border-radius: 6px;
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    box-sizing: border-box;
+    flex-shrink: 0;
 }
 
 .btn-reset:hover {
-    background: #475569;
+    background: #334155;
+    border-color: rgba(255, 255, 255, 0.5);
 }
 
 .input-with-reset {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.65rem;
 }
 
 .metadata-grid {

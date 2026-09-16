@@ -77,6 +77,12 @@
             swatch.className = 'preset-swatch';
             swatch.style.backgroundColor = preset.hex;
             swatch.title = preset.name;
+            swatch.dataset.hex = preset.hex.toLowerCase();
+            swatch.innerHTML = `
+                <svg class="swatch-check" viewBox="0 0 24 24">
+                    <path d="M5 13l4 4L19 7" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            `;
 
             swatch.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -95,13 +101,13 @@
         triggerBtn.className = 'palette-trigger-btn';
         triggerBtn.title = 'Open Custom Color Canvas';
         triggerBtn.innerHTML = `
-            <svg viewBox="0 0 24 24">
-                <path d="M12 3a9 9 0 0 0-9 9c0 4.97 4.03 9 9 9 1.15 0 2.24-.22 3.24-.62.4-.16.64-.58.55-1-.1-.47-.53-.88-1.02-.88h-1.27a2.5 2.5 0 0 1-2.5-2.5v-.29c0-.41.17-.8.47-1.08l1.45-1.38c.67-.64.67-1.72 0-2.36C13.23 10.23 12.37 10 11.5 10H11a1 1 0 0 1 0-2h.5c1.83 0 3.5.76 4.71 1.97A6.63 6.63 0 0 1 18 14.5c0 .28.22.5.5.5s.5-.22.5-.5c0-4.97-4.03-9-9-9zm-5.5 8a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm3-4a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/>
+            <svg viewBox="0 0 24 24" class="palette-icon">
+                <path d="M12 3c-4.97 0-9 4.03-9 9 0 4.97 4.03 9 9 9 .83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4c-.83 0-1.5-.67-1.5-1.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
             </svg>
         `;
 
+        paletteContainer.appendChild(triggerBtn);
         wrapper.appendChild(paletteContainer);
-        wrapper.appendChild(triggerBtn);
 
         colorInput.parentNode.insertBefore(wrapper, colorInput.nextSibling);
 
@@ -110,17 +116,23 @@
         let hsv = { h: 120, s: 1, v: 0.5 };
 
         const updateActiveState = () => {
-            const val = colorInput.value.toLowerCase();
+            const rawVal = (colorInput.value || '').trim().toLowerCase();
+            let matchedPreset = false;
+
             paletteContainer.querySelectorAll('.preset-swatch').forEach(sw => {
-                const bg = sw.style.backgroundColor;
-                const rgb = hexToRgb(val);
-                const swatchHex = rgbToHex(rgb.r, rgb.g, rgb.b).toLowerCase();
-                if (swatchHex === val) {
+                if (sw.dataset.hex && sw.dataset.hex === rawVal) {
                     sw.classList.add('active');
+                    matchedPreset = true;
                 } else {
                     sw.classList.remove('active');
                 }
             });
+
+            if (!matchedPreset) {
+                triggerBtn.classList.add('active');
+            } else {
+                triggerBtn.classList.remove('active');
+            }
         };
 
         colorInput._updateCustomColor = updateActiveState;
@@ -263,9 +275,167 @@
         });
     }
 
+    /* Custom Dropdown / Select Component */
+    function setupCustomSelect(selectEl) {
+        if (!selectEl) return;
+        if (selectEl.dataset.customSelectInitialized) {
+            if (selectEl._updateCustomSelect) selectEl._updateCustomSelect();
+            return;
+        }
+        selectEl.dataset.customSelectInitialized = "true";
+
+        // Hide native select
+        selectEl.style.display = 'none';
+
+        // Create custom dropdown container
+        const container = document.createElement('div');
+        container.className = 'custom-dropdown-container';
+
+        // Trigger button
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'custom-dropdown-trigger';
+        trigger.setAttribute('aria-haspopup', 'listbox');
+        trigger.setAttribute('aria-expanded', 'false');
+
+        const labelSpan = document.createElement('span');
+        labelSpan.className = 'custom-dropdown-label';
+
+        const arrowSpan = document.createElement('span');
+        arrowSpan.className = 'custom-dropdown-arrow';
+        arrowSpan.innerHTML = `
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+        `;
+
+        trigger.appendChild(labelSpan);
+        trigger.appendChild(arrowSpan);
+        container.appendChild(trigger);
+
+        // Options dropdown list
+        const menu = document.createElement('div');
+        menu.className = 'custom-dropdown-menu';
+        menu.setAttribute('role', 'listbox');
+
+        const renderOptions = () => {
+            menu.innerHTML = '';
+            Array.from(selectEl.options).forEach(opt => {
+                const item = document.createElement('div');
+                item.className = 'custom-dropdown-option';
+                item.setAttribute('role', 'option');
+                item.dataset.value = opt.value;
+
+                if (opt.value === selectEl.value) {
+                    item.classList.add('selected');
+                    item.setAttribute('aria-selected', 'true');
+                    labelSpan.textContent = opt.textContent;
+                } else {
+                    item.setAttribute('aria-selected', 'false');
+                }
+
+                item.innerHTML = `
+                    <span class="option-text">${opt.textContent}</span>
+                    <span class="option-check">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </span>
+                `;
+
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectEl.value = opt.value;
+                    selectEl.dispatchEvent(new Event('input', { bubbles: true }));
+                    selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+                    syncFromNative();
+                    closeMenu();
+                });
+
+                menu.appendChild(item);
+            });
+        };
+
+        container.appendChild(menu);
+        selectEl.parentNode.insertBefore(container, selectEl.nextSibling);
+
+        const syncFromNative = () => {
+            const currentVal = selectEl.value;
+            const currentOpt = Array.from(selectEl.options).find(o => o.value === currentVal) || selectEl.options[0];
+            if (currentOpt) {
+                labelSpan.textContent = currentOpt.textContent;
+            }
+            menu.querySelectorAll('.custom-dropdown-option').forEach(item => {
+                if (item.dataset.value === currentVal) {
+                    item.classList.add('selected');
+                    item.setAttribute('aria-selected', 'true');
+                } else {
+                    item.classList.remove('selected');
+                    item.setAttribute('aria-selected', 'false');
+                }
+            });
+        };
+
+        selectEl._updateCustomSelect = () => {
+            renderOptions();
+            syncFromNative();
+        };
+
+        selectEl.addEventListener('change', syncFromNative);
+
+        const openMenu = () => {
+            document.querySelectorAll('.custom-dropdown-container.open').forEach(c => {
+                if (c !== container) {
+                    c.classList.remove('open');
+                    const t = c.querySelector('.custom-dropdown-trigger');
+                    if (t) t.setAttribute('aria-expanded', 'false');
+                }
+            });
+            container.classList.add('open');
+            trigger.setAttribute('aria-expanded', 'true');
+        };
+
+        const closeMenu = () => {
+            container.classList.remove('open');
+            trigger.setAttribute('aria-expanded', 'false');
+        };
+
+        const toggleMenu = () => {
+            if (container.classList.contains('open')) {
+                closeMenu();
+            } else {
+                openMenu();
+            }
+        };
+
+        trigger.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleMenu();
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!container.contains(e.target)) {
+                closeMenu();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && container.classList.contains('open')) {
+                closeMenu();
+            }
+        });
+
+        renderOptions();
+        syncFromNative();
+    }
+
     function enhanceAllCustomUi(root = document) {
         const colorInputs = root.querySelectorAll('input[type="color"]');
         colorInputs.forEach(input => setupColorPicker(input));
+
+        const selects = root.querySelectorAll('select.custom-select, .custom-select-wrapper select');
+        selects.forEach(select => setupCustomSelect(select));
     }
 
     window.enhanceAllCustomUi = enhanceAllCustomUi;

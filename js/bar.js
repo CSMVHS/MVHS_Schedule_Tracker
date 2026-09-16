@@ -384,6 +384,7 @@ class ScheduleTracker {
             items: [{}, {}]
         };
 
+        this.totalTimeSettingVisible = true;
         this.updateDeviceIdDisplay();
         this.setupVisibilityHandler();
         this.setupFirstTimeIdentifyPrompt();
@@ -582,6 +583,15 @@ class ScheduleTracker {
     }
 
     updateTotalTimeRemaining(now) {
+        if (!this.totalTimeRemaining || !this.totalTimeContainer) return;
+        if (this.totalTimeSettingVisible === false) {
+            if (this.lastState.totalTimeVisible !== false) {
+                this.totalTimeContainer.style.display = 'none';
+                this.lastState.totalTimeVisible = false;
+            }
+            return;
+        }
+
         let endTimeStr = CONFIG.SCHOOL_END_TIME;
         if (this.schedules[0] && this.schedules[0].length > 0) {
             endTimeStr = this.schedules[0][this.schedules[0].length - 1].end;
@@ -593,26 +603,22 @@ class ScheduleTracker {
 
         const diff = end - now;
 
-        if (this.totalTimeRemaining && this.totalTimeContainer) {
-            if (diff <= 0) {
-                if (this.lastState.totalTimeVisible !== false) {
-                    this.totalTimeContainer.style.display = 'none';
-                    this.lastState.totalTimeVisible = false;
-                }
-            } else {
-                if (this.lastState.totalTimeVisible !== true) {
-                    this.totalTimeContainer.style.display = 'flex';
-                    this.lastState.totalTimeVisible = true;
-                }
-                const totalMinutes = Math.ceil(diff / 60000);
-                const h = Math.floor(totalMinutes / 60);
-                const m = totalMinutes % 60;
-                const str = `${h}h ${m}m`;
-                if (this.lastState.totalTimeStr !== str) {
-                    this.totalTimeRemaining.textContent = str;
-                    this.lastState.totalTimeStr = str;
-                }
-            }
+        if (this.lastState.totalTimeVisible !== true) {
+            this.totalTimeContainer.style.display = 'flex';
+            this.lastState.totalTimeVisible = true;
+        }
+
+        let str = "0h 0m";
+        if (diff > 0) {
+            const totalMinutes = Math.ceil(diff / 60000);
+            const h = Math.floor(totalMinutes / 60);
+            const m = totalMinutes % 60;
+            str = `${h}h ${m}m`;
+        }
+
+        if (this.lastState.totalTimeStr !== str) {
+            this.totalTimeRemaining.textContent = str;
+            this.lastState.totalTimeStr = str;
         }
     }
 
@@ -928,6 +934,7 @@ class ScheduleTracker {
     }
 
     setTotalTimeVisible(visible) {
+        this.totalTimeSettingVisible = visible;
         if (this.totalTimeContainer) {
             this.totalTimeContainer.style.display = visible ? 'flex' : 'none';
             this.lastState.totalTimeVisible = visible;

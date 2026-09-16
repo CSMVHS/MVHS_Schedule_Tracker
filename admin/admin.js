@@ -247,6 +247,11 @@ function initDashboard() {
             const targetEl = document.getElementById(targetId);
             if (targetEl) {
                 targetEl.value = defaultValue;
+                targetEl.dispatchEvent(new Event('input', { bubbles: true }));
+                targetEl.dispatchEvent(new Event('change', { bubbles: true }));
+                if (targetEl._updateCustomColor) {
+                    targetEl._updateCustomColor();
+                }
             }
         });
     });

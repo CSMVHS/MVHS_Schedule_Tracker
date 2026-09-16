@@ -1,80 +1,80 @@
 /* Custom Color Picker Swatch Palette & Canvas Picker Styles */
 .color-picker-container {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 8px;
     position: relative;
 }
 
 .preset-color-palette {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
 }
 
-.preset-swatch {
+.preset-swatch,
+.palette-trigger-btn {
     width: 28px;
     height: 28px;
-    border-radius: 50%;
-    border: 2px solid rgba(255, 255, 255, 0.25);
-    cursor: pointer;
-    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-    position: relative;
+    min-width: 28px;
+    min-height: 28px;
+    margin: 0;
     padding: 0;
-    outline: none;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
+    border-radius: 50%;
+    box-sizing: border-box;
     display: flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
+    position: relative;
+    border: 1.5px solid rgba(255, 255, 255, 0.25);
+    outline: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    transition: border-color 0.15s ease, outline 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
 }
 
-.preset-swatch:hover {
-    transform: scale(1.15);
-    border-color: #ffffff;
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
-    z-index: 2;
+.preset-swatch:hover,
+.palette-trigger-btn:hover {
+    border-color: rgba(255, 255, 255, 0.6);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
 }
 
-.preset-swatch.active {
-    border-color: #ffffff;
-    transform: scale(1.15);
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8), 0 3px 8px rgba(0, 0, 0, 0.5);
+.preset-swatch.active,
+.palette-trigger-btn.active {
+    outline: 2px solid #ffffff;
+    outline-offset: 2.5px;
+    border-color: rgba(255, 255, 255, 0.8);
 }
 
-.preset-swatch.active::after {
-    content: '';
-    width: 4px;
-    height: 8px;
-    border: solid #ffffff;
-    border-width: 0 2px 2px 0;
-    transform: translateY(-1px) rotate(45deg);
-    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.8));
+.preset-swatch .swatch-check {
+    width: 14px;
+    height: 14px;
+    display: none;
+    pointer-events: none;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.9));
+}
+
+.preset-swatch.active .swatch-check {
+    display: block;
 }
 
 .palette-trigger-btn {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.25);
     background: #1e293b;
     color: #f8fafc;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    padding: 0;
 }
 
 .palette-trigger-btn:hover {
     background: #334155;
-    border-color: rgba(255, 255, 255, 0.5);
 }
 
 .palette-trigger-btn svg {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     fill: currentColor;
+    display: block;
+    pointer-events: none;
 }
 
 /* Custom 2D Color Picker Popover Popup */
@@ -83,11 +83,11 @@
     top: calc(100% + 8px);
     left: 0;
     z-index: 100000;
-    background: #0f172a;
-    border: 1px solid #334155;
+    background: #000000;
+    border: 1px solid #ffffff;
     border-radius: 12px;
     padding: 12px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.95);
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -166,13 +166,134 @@
 }
 
 .cust-row-palette {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.35rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    min-height: 38px;
 }
 
 .cust-row-palette label {
     font-size: 0.88rem;
     font-weight: 600;
-    color: #e2e8f0;
+    color: #ffffff !important;
+    margin: 0;
+}
+
+/* Custom Dropdown UI */
+.custom-dropdown-container {
+    position: relative;
+    width: 100%;
+    display: inline-block;
+    box-sizing: border-box;
+}
+
+.custom-dropdown-trigger {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.55rem 0.85rem;
+    background: #000000;
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    user-select: none;
+    min-height: 38px;
+}
+
+.custom-dropdown-trigger:hover {
+    border-color: rgba(255, 255, 255, 0.7);
+}
+
+.custom-dropdown-container.open .custom-dropdown-trigger {
+    border-color: #ffffff;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25);
+}
+
+.custom-dropdown-label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
+    flex: 1;
+}
+
+.custom-dropdown-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 0.5rem;
+    transition: transform 0.2s ease;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.custom-dropdown-container.open .custom-dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.custom-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    z-index: 100002;
+    background: #000000;
+    border: 1px solid #ffffff;
+    border-radius: 10px;
+    padding: 0.35rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.95), 0 0 20px #000000;
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+    max-height: 240px;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+.custom-dropdown-container.open .custom-dropdown-menu {
+    display: flex;
+}
+
+.custom-dropdown-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.55rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #cbd5e1;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+    user-select: none;
+}
+
+.custom-dropdown-option:hover {
+    background: #1e293b;
+    color: #ffffff;
+}
+
+.custom-dropdown-option.selected {
+    background: #1e293b;
+    color: #ffffff;
+    font-weight: 700;
+}
+
+.custom-dropdown-option .option-check {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    margin-left: 0.5rem;
+}
+
+.custom-dropdown-option.selected .option-check {
+    display: inline-flex;
 }

@@ -366,19 +366,18 @@ html, body {
     opacity: 0.85;
 }
 
-/* Device ID - same font, size, weight, but 50% more visible (opacity 0.85 vs 0.55) */
+/* Device ID - same font, size, weight, color, and transparency as other parts of credits */
 .device-id-credit {
-    font-family: inherit !important;
-    font-size: inherit !important;
-    font-weight: 400 !important;
-    opacity: 0.85 !important;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    color: inherit;
     cursor: pointer;
-    transition: opacity 0.2s ease;
+    text-decoration: none !important;
 }
 
 .device-id-credit:hover {
-    opacity: 1 !important;
-    text-decoration: underline;
+    text-decoration: none !important;
 }
 
 /* Local Customize Modal */
@@ -397,11 +396,11 @@ html, body {
 }
 
 .customize-card {
-    background: var(--pill-bg);
-    backdrop-filter: blur(8px);
-    color: var(--text-color);
-    border: 1.5px solid var(--pill-border);
+    background: #000000 !important;
+    color: #ffffff !important;
+    border: 1px solid #ffffff !important;
     border-radius: 1.25rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.95), 0 0 25px rgba(0, 0, 0, 0.9) !important;
     padding: 1.5rem;
     width: 90%;
     max-width: 400px;
@@ -419,11 +418,13 @@ html, body {
 .customize-header h3 {
     font-size: 1.2rem;
     font-weight: 700;
+    color: #ffffff !important;
 }
 
 .close-modal {
     font-size: 1.5rem;
     cursor: pointer;
+    color: #ffffff !important;
     opacity: 0.7;
 }
 
@@ -441,6 +442,7 @@ html, body {
     align-items: center;
     font-size: 0.9rem;
     font-weight: 600;
+    color: #ffffff !important;
 }
 
 /* Custom Pickers & Select Controls */
@@ -472,41 +474,9 @@ html, body {
     width: 100%;
 }
 
-.custom-select-wrapper::after {
-    content: '';
-    position: absolute;
-    right: 0.85rem;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 0.5rem;
-    height: 0.5rem;
-    border-right: 2px solid #ffffff;
-    border-bottom: 2px solid #ffffff;
-    transform: translateY(-70%) rotate(45deg);
-    pointer-events: none;
-    opacity: 0.8;
-}
-
-.custom-select {
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    width: 100%;
-    padding: 0.5rem 2.2rem 0.5rem 0.85rem;
-    border-radius: 8px;
-    background: #1e293b;
-    color: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    font-family: inherit;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: border-color 0.2s;
-}
-
-.custom-select:focus {
-    outline: none;
-    border-color: var(--bar-color);
+.cust-row .custom-select-wrapper {
+    width: 140px;
+    flex-shrink: 0;
 }
 
 .cust-checkboxes {
