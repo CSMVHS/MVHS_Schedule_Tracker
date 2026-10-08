@@ -703,14 +703,9 @@ class ScheduleTracker {
                 break;
             
             case 3: // Wednesday
-              //  s1 = "7:00;Good Morning!;7:50,7:50;Period 1;9:25,9:25;Passing Period;9:30,9:30;Period 2;11:05,11:05;A Lunch;11:35,11:35;Passing Period;11:40,11:40;Period 3;13:15,13:15;Passing Period;13:20,13:20;Period 4;14:55";
-              //  s2 = "11:05;Period 3;12:40,12:40;Passing Period;12:45,12:45;B Lunch;13:15";
-
-    s1 = "7:00;Good Morning!;7:50,7:50;PSAT/NMSQT;11:15,11:15;Lunch;11:45,11:45;Passing Period;11:50,11:50;Period 1;12:12,12:12;Passing Period;12:17,12:17;Period 2;12:39,12:39;Passing Period;12:44,12:44;Period 3;13:06,13:06;Passing Period;13:11,13:11;Period 4;13:33,13:33;Passing Period;13:38,13:38;Period 5;14:00,14:00;Passing Period;14:05,14:05;Period 6;14:27,14:27;Passing Period;14:32,14:32;Period 7;14:55";
-    s2 = "0:00;Inactive;0:05";
-    
-
-                break;
+                s1 = "7:00;Good Morning!;7:50,7:50;Period 1;9:25,9:25;Passing Period;9:30,9:30;Period 2;11:05,11:05;A Lunch;11:35,11:35;Passing Period;11:40,11:40;Period 3;13:15,13:15;Passing Period;13:20,13:20;Period 4;14:55";
+                s2 = "11:05;Period 3;12:40,12:40;Passing Period;12:45,12:45;B Lunch;13:15";
+              break;
             
             case 4: // Thursday
                 s1 = "7:00;Good Morning!;7:50,7:50;Period 5;9:25,9:25;Homeroom;9:35,9:35;Passing Period;9:40,9:40;SAS (9/10);10:10,10:10;Eagle Time (All);11:00,11:00;Passing Period;11:05,11:05;A Lunch;11:35,11:35;Passing Period;11:40,11:40;Period 6;13:15,13:15;Passing Period;13:20,13:20;Period 7;14:55";
