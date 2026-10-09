@@ -717,7 +717,7 @@ class ScheduleTracker {
                 // s2 = "11:05;Period 4;11:50,11:50;Passing Period;11:55,11:55;B Lunch;12:25";
                 // break;
                 s1 = "7:30;Happy Friday!;8:30,8:30;Passing Period;8:35,8:35;Period 1;9:55,9:55;Passing Period;10:00,10:00;Period 2;11:20,11:20;A Lunch;12:05,12:05;Passing Period;12:10,12:10;Period 3;13:30,13:30;Passing Period;13:35,13:35;Period 4;14:55";
-                s2 = "11:20;Passing Period;11:25,11:25;Period 3;12:45,12:45;Passing Period;12:50,12:50;B Lunch;1:30";
+                s2 = "11:20;Passing Period;11:25,11:25;Period 3;12:45,12:45;Passing Period;12:50,12:50;B Lunch;13:30";
                 break;
             
             
