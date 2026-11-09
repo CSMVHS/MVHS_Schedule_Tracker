@@ -32,6 +32,7 @@ class RemoteManager {
         this.lowPerf = false;
         this.statusInterval = null;
         this.uptimeInterval = null;
+        this.deviceName = localStorage.getItem('mvhs_device_name') || null;
 
         // Activity tracking
         this.totalInteractions = parseInt(localStorage.getItem('mvhs_total_interactions') || '0', 10) || 0;
@@ -214,6 +215,12 @@ class RemoteManager {
             if (!data) return;
 
             const settings = data.settings || {};
+            if (settings.name && settings.name !== this.deviceName) {
+                this.deviceName = settings.name;
+                try {
+                    localStorage.setItem('mvhs_device_name', settings.name);
+                } catch (e) {}
+            }
             const bgMode = settings.bgMode || 'color';
 
             // Reset body background properties
@@ -322,15 +329,25 @@ class RemoteManager {
     }
 
     setDeviceName(name) {
-        if (!name || !this.deviceRef) return;
+        if (!name) return;
         const trimmed = name.trim();
         if (!trimmed) return;
         const formatted = trimmed.endsWith('(write-in)') ? trimmed : `${trimmed} (write-in)`;
-        this.deviceRef.child('settings').update({
-            name: formatted
-        }).catch(err => {
-            console.error("Failed to set device name:", err);
-        });
+        this.deviceName = formatted;
+        try {
+            localStorage.setItem('mvhs_device_name', formatted);
+        } catch (e) {}
+
+        if (this.deviceRef) {
+            this.deviceRef.child('status').update({
+                name: formatted
+            }).catch(err => {
+                console.error("Failed to set device name in status:", err);
+            });
+            this.deviceRef.child('settings').update({
+                name: formatted
+            }).catch(() => {});
+        }
     }
 
     setupIntervals() {
@@ -361,7 +378,7 @@ class RemoteManager {
         if (!this.connected) return;
         this.flushActivity();
         const currentUptime = Math.floor((Date.now() - this.sessionStart) / 1000);
-        this.deviceRef.child('status').update({
+        const statusData = {
             lastSeen: firebase.database.ServerValue.TIMESTAMP,
             currentPeriod: (this.tracker && typeof this.tracker.getCurrentPeriodName === 'function') ? this.tracker.getCurrentPeriodName() : (this.tracker.currentPeriodName || "None"),
             id: this.id,
@@ -374,7 +391,11 @@ class RemoteManager {
             drift: this.serverOffset,
             totalInteractions: this.totalInteractions,
             lastInteraction: this.lastInteraction
-        });
+        };
+        if (this.deviceName) {
+            statusData.name = this.deviceName;
+        }
+        this.deviceRef.child('status').update(statusData);
     }
 }
 
@@ -563,8 +584,25 @@ class ScheduleTracker {
             this.identifyModal.style.display = "block";
         }
 
-        let maxSeconds = 10;
+        let maxSeconds = 15;
         let timer = null;
+        let isUserTyping = false;
+
+        const pauseTimerOnInteraction = () => {
+            if (!isUserTyping) {
+                isUserTyping = true;
+                if (timer) {
+                    clearInterval(timer);
+                    timer = null;
+                }
+            }
+        };
+
+        if (this.identifyInput) {
+            this.identifyInput.addEventListener("focus", pauseTimerOnInteraction);
+            this.identifyInput.addEventListener("input", pauseTimerOnInteraction);
+            this.identifyInput.addEventListener("click", pauseTimerOnInteraction);
+        }
 
         const dismiss = (shouldSave = false, inputVal = undefined) => {
             if (timer) {
@@ -586,14 +624,16 @@ class ScheduleTracker {
         this.dismissIdentifyPrompt = dismiss;
 
         timer = setInterval(() => {
+            if (isUserTyping) {
+                clearInterval(timer);
+                timer = null;
+                return;
+            }
             maxSeconds--;
             if (maxSeconds <= 0) {
                 dismiss(false);
             }
         }, 1000);
-
-        // Keep at 10s without extending on interaction
-        this.onUserInteraction = () => {};
 
         if (this.identifySubmitBtn) {
             this.identifySubmitBtn.addEventListener("click", () => {
