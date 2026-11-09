@@ -313,7 +313,7 @@ function renderDevices() {
 
             const searchTargets = [
                 id,
-                settings.name,
+                settings.name || status.name,
                 status.browser,
                 status.isOnline ? "online" : "offline",
                 status.battery,
@@ -381,7 +381,7 @@ function renderDevices() {
             }
         }
 
-        const name = device.settings?.name || "Unnamed Device";
+        const name = device.settings?.name || device.status?.name || "Unnamed Device";
         const lastSeenTs = device.status?.lastSeen || 0;
         const lastSeen = lastSeenTs ? new Date(lastSeenTs).toLocaleString() : "Never";
         const firstSeenTs = device.status?.firstSeen || 0;
@@ -462,11 +462,11 @@ function updateModalData(id, updateInputs = false) {
     const settings = device.settings || {};
     const status = device.status || {};
 
-    document.getElementById('modal-device-name').textContent = settings.name || "Unnamed Device";
+    document.getElementById('modal-device-name').textContent = settings.name || status.name || "Unnamed Device";
     document.getElementById('modal-device-id').textContent = id;
 
     if (updateInputs) {
-        document.getElementById('input-name').value = settings.name || "";
+        document.getElementById('input-name').value = settings.name || status.name || "";
 
         const mode = settings.bgMode || "color";
         const modalBgMode = document.getElementById('modal-bg-mode');

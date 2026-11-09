@@ -32,10 +32,19 @@ class RemoteManager {
         this.lowPerf = false;
         this.statusInterval = null;
         this.uptimeInterval = null;
+        this.deviceName = localStorage.getItem('mvhs_device_name') || null;
 
         // Activity tracking
-        this.totalInteractions = parseInt(localStorage.getItem('mvhs_total_interactions') || '0');
-        this.lastInteraction = parseInt(localStorage.getItem('mvhs_last_interaction') || '0');
+        this.totalInteractions = parseInt(localStorage.getItem('mvhs_total_interactions') || '0', 10) || 0;
+        this.lastInteraction = parseInt(localStorage.getItem('mvhs_last_interaction') || '0', 10) || 0;
+        this._activityDirty = false;
+        this._activitySaveTimeout = null;
+        this._lastContrastBg = null;
+        this._lastBgKey = null;
+        this._lastTextColor = null;
+        this._lastBarColor = null;
+        this._lastAnimAccentColor = null;
+        this._lastSettingsJson = null;
         this.setupActivityTracking();
 
         this.db = null;
@@ -56,11 +65,40 @@ class RemoteManager {
         const record = () => {
             this.totalInteractions++;
             this.lastInteraction = Date.now();
-            localStorage.setItem('mvhs_total_interactions', this.totalInteractions);
-            localStorage.setItem('mvhs_last_interaction', this.lastInteraction);
-            if (this.tracker) this.tracker.onUserInteraction();
+            this._activityDirty = true;
+
+            if (this.tracker && typeof this.tracker.onUserInteraction === 'function') {
+                this.tracker.onUserInteraction();
+            }
+
+            if (!this._activitySaveTimeout) {
+                this._activitySaveTimeout = setTimeout(() => {
+                    this._activitySaveTimeout = null;
+                    this.flushActivity();
+                }, 3000);
+            }
         };
+
         events.forEach(e => window.addEventListener(e, record, { passive: true }));
+
+        const flush = () => this.flushActivity();
+        window.addEventListener('beforeunload', flush);
+        window.addEventListener('pagehide', flush);
+    }
+
+    flushActivity() {
+        if (!this._activityDirty) return;
+        this._activityDirty = false;
+        if (this._activitySaveTimeout) {
+            clearTimeout(this._activitySaveTimeout);
+            this._activitySaveTimeout = null;
+        }
+        try {
+            localStorage.setItem('mvhs_total_interactions', this.totalInteractions.toString());
+            localStorage.setItem('mvhs_last_interaction', this.lastInteraction.toString());
+        } catch (e) {
+            console.error("Failed to save activity tracking:", e);
+        }
     }
 
     async setupBatteryTracking() {
@@ -125,21 +163,21 @@ class RemoteManager {
     }
 
     updateContrast(bgColor, barColor) {
-        if (bgColor) {
-            const contrastText = this.getContrastColor(bgColor);
-            document.documentElement.style.setProperty('--text-color', contrastText);
+        if (!bgColor || this._lastContrastBg === bgColor) return;
+        this._lastContrastBg = bgColor;
+        const contrastText = this.getContrastColor(bgColor);
+        document.documentElement.style.setProperty('--text-color', contrastText);
 
-            if (contrastText === '#000000') {
-                // Light background -> dark pill overlay & dark text shadow
-                document.documentElement.style.setProperty('--pill-bg', 'rgba(255, 255, 255, 0.85)');
-                document.documentElement.style.setProperty('--pill-border', 'rgba(0, 0, 0, 0.25)');
-                document.documentElement.style.setProperty('--text-shadow', '0 1px 3px rgba(255, 255, 255, 0.5)');
-            } else {
-                // Dark background -> dark translucent pill overlay & light text shadow
-                document.documentElement.style.setProperty('--pill-bg', 'rgba(0, 0, 0, 0.55)');
-                document.documentElement.style.setProperty('--pill-border', 'rgba(255, 255, 255, 0.2)');
-                document.documentElement.style.setProperty('--text-shadow', '0 2px 8px rgba(0, 0, 0, 0.6)');
-            }
+        if (contrastText === '#000000') {
+            // Light background -> dark pill overlay & dark text shadow
+            document.documentElement.style.setProperty('--pill-bg', 'rgba(255, 255, 255, 0.85)');
+            document.documentElement.style.setProperty('--pill-border', 'rgba(0, 0, 0, 0.25)');
+            document.documentElement.style.setProperty('--text-shadow', '0 1px 3px rgba(255, 255, 255, 0.5)');
+        } else {
+            // Dark background -> dark translucent pill overlay & light text shadow
+            document.documentElement.style.setProperty('--pill-bg', 'rgba(0, 0, 0, 0.55)');
+            document.documentElement.style.setProperty('--pill-border', 'rgba(255, 255, 255, 0.2)');
+            document.documentElement.style.setProperty('--text-shadow', '0 2px 8px rgba(0, 0, 0, 0.6)');
         }
     }
 
@@ -148,6 +186,10 @@ class RemoteManager {
         this.db.ref(".info/serverTimeOffset").on("value", (snap) => {
             this.serverOffset = snap.val() || 0;
             this.tracker.serverOffset = this.serverOffset;
+            if (this.tracker && this.tracker.updateTimer !== null && typeof this.tracker.scheduleNextTick === 'function') {
+                this.tracker.updateUI(true);
+                this.tracker.scheduleNextTick();
+            }
         });
 
         // Track global "Hold to Show Device IDs" state
@@ -174,6 +216,15 @@ class RemoteManager {
             if (!data) return;
 
             const settings = data.settings || {};
+            const currentSettingsJson = JSON.stringify(settings);
+            const settingsChanged = currentSettingsJson !== this._lastSettingsJson;
+
+            if (settings.name && settings.name !== this.deviceName) {
+                this.deviceName = settings.name;
+                try {
+                    localStorage.setItem('mvhs_device_name', settings.name);
+                } catch (e) {}
+            }
             const bgMode = settings.bgMode || 'color';
 
             // Reset body background properties
@@ -225,7 +276,14 @@ class RemoteManager {
 
             // Apply Time Offset
             if (settings.timeOffset !== undefined) {
-                this.tracker.timeOffset = parseInt(settings.timeOffset) || 0;
+                const newOffset = parseInt(settings.timeOffset, 10) || 0;
+                if (this.tracker.timeOffset !== newOffset) {
+                    this.tracker.timeOffset = newOffset;
+                    if (this.tracker.updateTimer !== null && typeof this.tracker.scheduleNextTick === 'function') {
+                        this.tracker.updateUI(true);
+                        this.tracker.scheduleNextTick();
+                    }
+                }
             }
 
             // Apply Override
@@ -243,15 +301,19 @@ class RemoteManager {
                 this.tracker.setLowPerf(this.lowPerf);
             }
 
-            // Customization Options
-            this.tracker.setUse24HourClock(!!settings.clock24h);
-            this.tracker.setWeatherVisible(settings.showWeather !== false);
-            this.tracker.setTotalTimeVisible(settings.showTotalTime !== false);
-            this.tracker.setCreditsVisible(settings.showCredits !== false);
-            this.tracker.setBarStyle(settings.barStyle || 'liquid');
+            if (settingsChanged) {
+                this._lastSettingsJson = currentSettingsJson;
 
-            // Apply persistent local customizations if saved so local front-end changes override global settings
-            this.tracker.loadLocalCustomizations();
+                // Customization Options
+                this.tracker.setUse24HourClock(!!settings.clock24h);
+                this.tracker.setWeatherVisible(settings.showWeather !== false);
+                this.tracker.setTotalTimeVisible(settings.showTotalTime !== false);
+                this.tracker.setCreditsVisible(settings.showCredits !== false);
+                this.tracker.setBarStyle(settings.barStyle || 'liquid');
+
+                // Apply persistent local customizations if saved so local front-end changes override global settings
+                this.tracker.loadLocalCustomizations();
+            }
 
             // Handle Remote Commands
             if (data.command && data.command.type === 'REFRESH') {
@@ -275,15 +337,25 @@ class RemoteManager {
     }
 
     setDeviceName(name) {
-        if (!name || !this.deviceRef) return;
+        if (!name) return;
         const trimmed = name.trim();
         if (!trimmed) return;
         const formatted = trimmed.endsWith('(write-in)') ? trimmed : `${trimmed} (write-in)`;
-        this.deviceRef.child('settings').update({
-            name: formatted
-        }).catch(err => {
-            console.error("Failed to set device name:", err);
-        });
+        this.deviceName = formatted;
+        try {
+            localStorage.setItem('mvhs_device_name', formatted);
+        } catch (e) {}
+
+        if (this.deviceRef) {
+            this.deviceRef.child('status').update({
+                name: formatted
+            }).catch(err => {
+                console.error("Failed to set device name in status:", err);
+            });
+            this.deviceRef.child('settings').update({
+                name: formatted
+            }).catch(() => {});
+        }
     }
 
     setupIntervals() {
@@ -312,10 +384,11 @@ class RemoteManager {
 
     updateStatus() {
         if (!this.connected) return;
+        this.flushActivity();
         const currentUptime = Math.floor((Date.now() - this.sessionStart) / 1000);
-        this.deviceRef.child('status').update({
+        const statusData = {
             lastSeen: firebase.database.ServerValue.TIMESTAMP,
-            currentPeriod: this.tracker.currentPeriodName || "None",
+            currentPeriod: (this.tracker && typeof this.tracker.getCurrentPeriodName === 'function') ? this.tracker.getCurrentPeriodName() : (this.tracker.currentPeriodName || "None"),
             id: this.id,
             browser: this.browserInfo,
             firstSeen: this.firstSeen,
@@ -326,7 +399,11 @@ class RemoteManager {
             drift: this.serverOffset,
             totalInteractions: this.totalInteractions,
             lastInteraction: this.lastInteraction
-        });
+        };
+        if (this.deviceName) {
+            statusData.name = this.deviceName;
+        }
+        this.deviceRef.child('status').update(statusData);
     }
 }
 
@@ -345,6 +422,11 @@ class ScheduleTracker {
         this.lowPerf = false;
         this.showDeviceIDFlash = false;
         this.hasUserInteracted = false;
+        this.updateTimer = null;
+        this.lastDateDay = -1;
+        this.lastDayOfWeek = -1;
+        this._barStyleApplied = false;
+        this._lowPerfApplied = false;
 
         // Remote Management
         this.remote = new RemoteManager(this);
@@ -384,7 +466,7 @@ class ScheduleTracker {
             dateStr: "",
             clockStr: "",
             totalTimeStr: "",
-            totalTimeVisible: true,
+            totalTimeVisible: false,
             endVisible: false,
             items: [{}, {}]
         };
@@ -393,8 +475,32 @@ class ScheduleTracker {
         this.updateDeviceIdDisplay();
         this.setupVisibilityHandler();
         this.setupFirstTimeIdentifyPrompt();
-        this.setupCustomizeModal();
         this.setupEscKeyHandler();
+        this.lastActivePeriods = [null, null];
+        this.setupRippleListeners();
+    }
+
+    setupRippleListeners() {
+        this.trackerItems.forEach((item, idx) => {
+            if (item.time) {
+                item.time.title = "Click to trigger ripple";
+                item.time.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.triggerRipple(idx);
+                });
+            }
+        });
+    }
+
+    triggerRipple(idx) {
+        const item = this.trackerItems[idx];
+        if (!item || !item.bar) return;
+        item.bar.classList.remove('ripple-active');
+        void item.bar.offsetWidth; // Force reflow
+        item.bar.classList.add('ripple-active');
+        setTimeout(() => {
+            if (item.bar) item.bar.classList.remove('ripple-active');
+        }, 950);
     }
 
     setupEscKeyHandler() {
@@ -510,8 +616,25 @@ class ScheduleTracker {
             this.identifyModal.style.display = "block";
         }
 
-        let maxSeconds = 10;
+        let maxSeconds = 15;
         let timer = null;
+        let isUserTyping = false;
+
+        const pauseTimerOnInteraction = () => {
+            if (!isUserTyping) {
+                isUserTyping = true;
+                if (timer) {
+                    clearInterval(timer);
+                    timer = null;
+                }
+            }
+        };
+
+        if (this.identifyInput) {
+            this.identifyInput.addEventListener("focus", pauseTimerOnInteraction);
+            this.identifyInput.addEventListener("input", pauseTimerOnInteraction);
+            this.identifyInput.addEventListener("click", pauseTimerOnInteraction);
+        }
 
         const dismiss = (shouldSave = false, inputVal = undefined) => {
             if (timer) {
@@ -533,14 +656,16 @@ class ScheduleTracker {
         this.dismissIdentifyPrompt = dismiss;
 
         timer = setInterval(() => {
+            if (isUserTyping) {
+                clearInterval(timer);
+                timer = null;
+                return;
+            }
             maxSeconds--;
             if (maxSeconds <= 0) {
                 dismiss(false);
             }
         }, 1000);
-
-        // Keep at 10s without extending on interaction
-        this.onUserInteraction = () => {};
 
         if (this.identifySubmitBtn) {
             this.identifySubmitBtn.addEventListener("click", () => {
@@ -590,6 +715,11 @@ class ScheduleTracker {
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
                 this.updateUI(true);
+                this.scheduleNextTick();
+            } else {
+                if (this.remote && typeof this.remote.flushActivity === 'function') {
+                    this.remote.flushActivity();
+                }
             }
         });
     }
@@ -608,29 +738,49 @@ class ScheduleTracker {
             return;
         }
 
-        let endTimeStr = CONFIG.SCHOOL_END_TIME;
-        if (this.schedules[0] && this.schedules[0].length > 0) {
-            endTimeStr = this.schedules[0][this.schedules[0].length - 1].end;
+        // Hide on weekends or when there are no scheduled periods
+        const dayOfWeek = now.getDay();
+        if (dayOfWeek === 0 || dayOfWeek === 6 || !this.schedules[0] || this.schedules[0].length === 0) {
+            if (this.lastState.totalTimeVisible !== false) {
+                this.totalTimeContainer.style.display = 'none';
+                this.lastState.totalTimeVisible = false;
+            }
+            return;
         }
 
-        const [endH, endM] = endTimeStr.split(':').map(Number);
-        const end = new Date(now);
-        end.setHours(endH, endM, 0, 0);
+        let endH = 14, endM = 50;
+        const lastPeriod = this.schedules[0][this.schedules[0].length - 1];
+        if (lastPeriod.endH !== undefined) {
+            endH = lastPeriod.endH;
+            endM = lastPeriod.endM;
+        } else if (lastPeriod.end) {
+            const colonIdx = lastPeriod.end.indexOf(':');
+            endH = parseInt(lastPeriod.end.substring(0, colonIdx), 10);
+            endM = parseInt(lastPeriod.end.substring(colonIdx + 1), 10);
+        }
 
-        const diff = end - now;
+        const nowSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+        const endSec = endH * 3600 + endM * 60;
+        const diffSec = endSec - nowSec;
+
+        // Hide total time remaining pill once it reaches 0h 0m or when school day has ended
+        if (diffSec <= 0) {
+            if (this.lastState.totalTimeVisible !== false) {
+                this.totalTimeContainer.style.display = 'none';
+                this.lastState.totalTimeVisible = false;
+            }
+            return;
+        }
 
         if (this.lastState.totalTimeVisible !== true) {
             this.totalTimeContainer.style.display = 'flex';
             this.lastState.totalTimeVisible = true;
         }
 
-        let str = "0h 0m";
-        if (diff > 0) {
-            const totalMinutes = Math.ceil(diff / 60000);
-            const h = Math.floor(totalMinutes / 60);
-            const m = totalMinutes % 60;
-            str = `${h}h ${m}m`;
-        }
+        const totalMinutes = Math.ceil(diffSec / 60);
+        const h = Math.floor(totalMinutes / 60);
+        const m = totalMinutes % 60;
+        const str = `${h}h ${m}m`;
 
         if (this.lastState.totalTimeStr !== str) {
             this.totalTimeRemaining.textContent = str;
@@ -679,9 +829,37 @@ class ScheduleTracker {
         return str.split(',').map(p => {
             const parts = p.split(';');
             if (parts.length === 3) {
-                return { start: parts[0], name: parts[1], end: parts[2] };
+                const colonStart = parts[0].indexOf(':');
+                const startH = parseInt(parts[0].substring(0, colonStart), 10);
+                const startM = parseInt(parts[0].substring(colonStart + 1), 10);
+                const colonEnd = parts[2].indexOf(':');
+                const endH = parseInt(parts[2].substring(0, colonEnd), 10);
+                const endM = parseInt(parts[2].substring(colonEnd + 1), 10);
+                return {
+                    start: parts[0],
+                    name: parts[1],
+                    end: parts[2],
+                    startH,
+                    startM,
+                    endH,
+                    endM
+                };
             } else if (parts.length === 2) {
-                return { start: parts[0], name: "Period", end: parts[1] };
+                const colonStart = parts[0].indexOf(':');
+                const startH = parseInt(parts[0].substring(0, colonStart), 10);
+                const startM = parseInt(parts[0].substring(colonStart + 1), 10);
+                const colonEnd = parts[1].indexOf(':');
+                const endH = parseInt(parts[1].substring(0, colonEnd), 10);
+                const endM = parseInt(parts[1].substring(colonEnd + 1), 10);
+                return {
+                    start: parts[0],
+                    name: "Period",
+                    end: parts[1],
+                    startH,
+                    startM,
+                    endH,
+                    endM
+                };
             }
             return null;
         }).filter(p => p !== null);
@@ -732,19 +910,53 @@ class ScheduleTracker {
 
     parseTime(timeStr, baseDate) {
         if (!timeStr) return null;
-        const [h, m] = timeStr.split(':').map(Number);
-        const d = new Date(baseDate);
+        const colonIdx = timeStr.indexOf(':');
+        const h = parseInt(timeStr.substring(0, colonIdx), 10);
+        const m = parseInt(timeStr.substring(colonIdx + 1), 10);
+        const d = new Date(baseDate ? (baseDate.getTime ? baseDate.getTime() : baseDate) : Date.now());
         d.setHours(h, m, 0, 0);
         return d;
     }
 
+    getCurrentPeriodName() {
+        const now = this.getExactNow();
+        if (this.schedules && this.schedules[0]) {
+            const currentSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+            const currentPeriod = this.schedules[0].find(p => {
+                const startSec = p.startH * 3600 + p.startM * 60;
+                const endSec = p.endH * 3600 + p.endM * 60;
+                return currentSeconds >= startSec && currentSeconds < endSec;
+            });
+            if (currentPeriod) return currentPeriod.name;
+        }
+        return this.currentPeriodName || "None";
+    }
+
     startUpdateLoop() {
-        this.updateUI();
-        setInterval(() => {
+        this.updateUI(true);
+        this.scheduleNextTick();
+    }
+
+    scheduleNextTick() {
+        if (this.updateTimer) {
+            clearTimeout(this.updateTimer);
+            this.updateTimer = null;
+        }
+
+        const currentMs = Date.now() + this.serverOffset + (this.timeOffset * 60000);
+        const msIntoSecond = ((currentMs % 1000) + 1000) % 1000;
+        // Calibrate delay so the timer wakes up right as the second rolls over.
+        // If msIntoSecond is 0, wait 1000ms.
+        // Otherwise wait (1000 - msIntoSecond + 1)ms to land 1ms into the next second,
+        // preventing premature firing in the current second due to timer jitter.
+        const delay = msIntoSecond === 0 ? 1000 : (1000 - msIntoSecond + 1);
+
+        this.updateTimer = setTimeout(() => {
             if (!document.hidden) {
                 this.updateUI();
             }
-        }, 1000);
+            this.scheduleNextTick();
+        }, delay);
     }
 
     updateUI(force = false) {
@@ -758,12 +970,18 @@ class ScheduleTracker {
 
         // 1. Date with Day of Week (e.g. Mon Sep 14)
         if (this.dateDisplay) {
-            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-            const dayName = days[now.getDay()];
-            const dateStr = `${dayName} ${now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-            if (force || this.lastState.dateStr !== dateStr) {
-                this.dateDisplay.textContent = dateStr;
-                this.lastState.dateStr = dateStr;
+            const dayOfWeek = now.getDay();
+            const dateNum = now.getDate();
+            if (force || this.lastDateDay !== dateNum || this.lastDayOfWeek !== dayOfWeek) {
+                const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                const dayName = days[dayOfWeek];
+                const dateStr = `${dayName} ${now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+                if (force || this.lastState.dateStr !== dateStr) {
+                    this.dateDisplay.textContent = dateStr;
+                    this.lastState.dateStr = dateStr;
+                }
+                this.lastDateDay = dateNum;
+                this.lastDayOfWeek = dayOfWeek;
             }
         }
 
@@ -799,6 +1017,8 @@ class ScheduleTracker {
 
         // 4. Period Updates
         let anyVisible = false;
+        const currentSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+        const currentMs = now.getTime();
 
         this.schedules.forEach((periods, idx) => {
             const item = this.trackerItems[idx];
@@ -811,6 +1031,8 @@ class ScheduleTracker {
             const state = this.lastState.items[idx];
 
             if (periods.length === 0) {
+                this.lastActivePeriods[idx] = null;
+                if (timeEl) timeEl.classList.remove('urgent-minute', 'pill-translucent');
                 if (state.display !== 'none') {
                     container.style.display = 'none';
                     state.display = 'none';
@@ -818,17 +1040,19 @@ class ScheduleTracker {
                 return;
             }
 
-            const startTime = this.parseTime(periods[0].start, now);
-            const endTime = this.parseTime(periods[periods.length - 1].end, now);
+            const dayStartSec = periods[0].startH * 3600 + periods[0].startM * 60;
+            const dayEndSec = periods[periods.length - 1].endH * 3600 + periods[periods.length - 1].endM * 60;
 
             let shouldDisplay = true;
-            if (idx === 1 && (now < startTime || now >= endTime)) {
+            if (idx === 1 && (currentSeconds < dayStartSec || currentSeconds >= dayEndSec)) {
                 shouldDisplay = false;
-            } else if (idx === 0 && now >= endTime) {
+            } else if (idx === 0 && currentSeconds >= dayEndSec) {
                 shouldDisplay = false;
             }
 
             if (!shouldDisplay) {
+                this.lastActivePeriods[idx] = null;
+                if (timeEl) timeEl.classList.remove('urgent-minute', 'pill-translucent');
                 if (state.display !== 'none') {
                     container.style.display = 'none';
                     state.display = 'none';
@@ -843,9 +1067,9 @@ class ScheduleTracker {
 
             if (state.display === 'flex') {
                 const currentPeriod = periods.find(p => {
-                    const start = this.parseTime(p.start, now);
-                    const end = this.parseTime(p.end, now);
-                    return now >= start && now < end;
+                    const startSec = p.startH * 3600 + p.startM * 60;
+                    const endSec = p.endH * 3600 + p.endM * 60;
+                    return currentSeconds >= startSec && currentSeconds < endSec;
                 });
 
                 if (currentPeriod) {
@@ -855,25 +1079,51 @@ class ScheduleTracker {
                     }
                     if (idx === 0) this.currentPeriodName = currentPeriod.name;
 
-                    const start = this.parseTime(currentPeriod.start, now);
-                    const end = this.parseTime(currentPeriod.end, now);
-                    const total = end - start;
-                    const elapsed = now - start;
-                    const percent = Math.min(100, Math.max(0, (elapsed / total) * 100)).toFixed(2);
+                    // Trigger ripple at the start of a new period
+                    if (this.lastActivePeriods[idx] !== currentPeriod.name) {
+                        this.lastActivePeriods[idx] = currentPeriod.name;
+                        this.triggerRipple(idx);
+                    }
+
+                    const startMs = this.parseTime(currentPeriod.start, now).getTime();
+                    const endMs = this.parseTime(currentPeriod.end, now).getTime();
+                    const total = endMs - startMs;
+                    const elapsed = currentMs - startMs;
+                    const percent = total > 0 ? Math.min(100, Math.max(0, (elapsed / total) * 100)).toFixed(2) : "0.00";
 
                     if (state.width !== percent) {
                         barEl.style.width = `${percent}%`;
                         state.width = percent;
                     }
 
-                    const remaining = Math.max(0, Math.ceil((end - now) / 1000));
+                    const remaining = Math.max(0, Math.ceil((endMs - currentMs) / 1000));
                     const timeStr = this.formatTimeRemaining(remaining);
                     if (state.time !== timeStr) {
                         timeEl.textContent = timeStr;
                         state.time = timeStr;
                     }
+
+                    // Thicker and more white border when less than 1 minute remains
+                    const isUnderMinute = remaining > 0 && remaining <= 60;
+                    if (isUnderMinute) {
+                        if (!timeEl.classList.contains('urgent-minute')) timeEl.classList.add('urgent-minute');
+                    } else {
+                        if (timeEl.classList.contains('urgent-minute')) timeEl.classList.remove('urgent-minute');
+                    }
+
+                    // More clear/translucent pill at <= 5% time left in the period so the end of the bar is visible
+                    const isLast5Percent = total > 0 && (elapsed / total >= 0.95);
+                    if (isLast5Percent) {
+                        if (!timeEl.classList.contains('pill-translucent')) timeEl.classList.add('pill-translucent');
+                    } else {
+                        if (timeEl.classList.contains('pill-translucent')) timeEl.classList.remove('pill-translucent');
+                    }
                 } else {
-                    const nextPeriod = periods.find(p => this.parseTime(p.start, now) > now);
+                    this.lastActivePeriods[idx] = null;
+                    if (timeEl.classList.contains('urgent-minute')) timeEl.classList.remove('urgent-minute');
+                    if (timeEl.classList.contains('pill-translucent')) timeEl.classList.remove('pill-translucent');
+                    if (idx === 0) this.currentPeriodName = "None";
+                    const nextPeriod = periods.find(p => (p.startH * 3600 + p.startM * 60) > currentSeconds);
                     if (nextPeriod) {
                         const nextTitle = `Next: ${nextPeriod.name}`;
                         if (state.title !== nextTitle) {
@@ -884,8 +1134,8 @@ class ScheduleTracker {
                             barEl.style.width = '0%';
                             state.width = '0';
                         }
-                        const start = this.parseTime(nextPeriod.start, now);
-                        const remaining = Math.max(0, Math.floor((start - now) / 1000));
+                        const startMs = this.parseTime(nextPeriod.start, now).getTime();
+                        const remaining = Math.max(0, Math.floor((startMs - currentMs) / 1000));
                         const timeStr = this.formatTimeRemaining(remaining);
                         if (state.time !== timeStr) {
                             timeEl.textContent = timeStr;
@@ -940,7 +1190,9 @@ class ScheduleTracker {
     }
 
     setLowPerf(active) {
+        if (this.lowPerf === active && this._lowPerfApplied) return;
         this.lowPerf = active;
+        this._lowPerfApplied = true;
         this.trackerItems.forEach(item => {
             if (active) {
                 item.bar.classList.add('low-perf');
@@ -962,10 +1214,15 @@ class ScheduleTracker {
     }
 
     setTotalTimeVisible(visible) {
-        this.totalTimeSettingVisible = visible;
-        if (this.totalTimeContainer) {
-            this.totalTimeContainer.style.display = visible ? 'flex' : 'none';
-            this.lastState.totalTimeVisible = visible;
+        this.totalTimeSettingVisible = !!visible;
+        if (!this.totalTimeContainer) return;
+        if (!this.totalTimeSettingVisible) {
+            if (this.lastState.totalTimeVisible !== false) {
+                this.totalTimeContainer.style.display = 'none';
+                this.lastState.totalTimeVisible = false;
+            }
+        } else {
+            this.updateTotalTimeRemaining(this.getExactNow());
         }
     }
 
@@ -979,7 +1236,9 @@ class ScheduleTracker {
     setBarStyle(style) {
         const validStyles = ['liquid', 'glow', 'pulse', 'solid'];
         const chosen = validStyles.includes(style) ? style : 'liquid';
+        if (this.barStyle === chosen && this._barStyleApplied) return;
         this.barStyle = chosen;
+        this._barStyleApplied = true;
 
         this.trackerItems.forEach(item => {
             validStyles.forEach(s => item.bar.classList.remove(`bar-style-${s}`));

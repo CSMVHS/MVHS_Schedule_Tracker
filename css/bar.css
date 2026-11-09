@@ -152,62 +152,80 @@ html, body {
     left: 0;
     top: 0;
     height: 100%;
-    background: var(--bar-color);
+    background-color: var(--bar-color);
+    background-image:
+        linear-gradient(
+            to bottom,
+            rgba(255, 255, 255, 0.42) 0%,
+            rgba(255, 255, 255, 0.15) 32%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.25) 100%
+        );
     border-radius: inherit;
     width: 0%;
     will-change: width;
     overflow: hidden;
+    contain: paint;
+    box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.5), inset 0 -3px 8px rgba(0, 0, 0, 0.35);
     transition: width 0.3s ease-out;
 }
 
-/* Progress Bar Style: Liquid Wave (Default) */
-.progress_bar.bar-style-liquid::before,
-.progress_bar.bar-style-liquid::after {
+/* Ripple Animation across the 3D bar */
+.progress_bar::before {
     content: '';
     position: absolute;
-    top: -50%;
-    left: -50%;
-    right: -50%;
-    bottom: -50%;
-    filter: blur(1.5vh);
+    top: 0;
+    left: 0;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.15) 30%,
+        rgba(255, 255, 255, 0.8) 50%,
+        rgba(255, 255, 255, 0.15) 70%,
+        transparent 100%
+    );
     border-radius: inherit;
+    pointer-events: none;
+    display: none;
+    z-index: 10;
 }
 
-.progress_bar.bar-style-liquid::before {
-    background:
-        radial-gradient(circle at 20% 35%, var(--anim-accent-color) 0%, transparent 40%),
-        radial-gradient(circle at 70% 65%, var(--anim-accent-color) 0%, transparent 45%);
-    background-size: 100vh 100%;
-    background-repeat: repeat-x;
-    animation: liquidFlow1 20s linear infinite;
-    opacity: 0.5;
+.progress_bar.ripple-active::before {
+    display: block !important;
+    animation: barRipple 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-.progress_bar.bar-style-liquid::after {
-    background:
-        radial-gradient(circle at 40% 70%, var(--anim-accent-color) 0%, transparent 40%),
-        radial-gradient(circle at 80% 30%, var(--anim-accent-color) 0%, transparent 50%);
-    background-size: 85vh 100%;
-    background-repeat: repeat-x;
-    animation: liquidFlow2 15s linear infinite reverse;
-    opacity: 0.4;
+@keyframes barRipple {
+    0% {
+        transform: translate3d(-120%, 0, 0);
+        opacity: 0.9;
+    }
+    100% {
+        transform: translate3d(260%, 0, 0);
+        opacity: 0;
+    }
 }
 
-/* Progress Bar Style: Glow / Shimmer */
 .progress_bar.bar-style-glow::after {
     content: '';
     position: absolute;
     top: 0;
-    left: -100%;
+    left: 0;
     width: 60%;
     height: 100%;
     background: linear-gradient(90deg, transparent, var(--anim-accent-color), transparent);
-    animation: barShimmer 3s infinite;
+    animation: barShimmer 3s ease-in-out infinite;
+    pointer-events: none;
+    will-change: transform;
+    transform: translate3d(-120%, 0, 0);
 }
 
 /* Progress Bar Style: Clean Pulse (Efficient Animation) */
 .progress_bar.bar-style-pulse {
     animation: barPulse 2s ease-in-out infinite alternate;
+    will-change: filter;
 }
 
 /* Progress Bar Style: Solid Static */
@@ -225,6 +243,7 @@ html, body {
         rgba(0, 0, 0, 0.2) 100%
     ) !important;
     animation: barPulse 3s ease-in-out infinite alternate !important;
+    will-change: filter;
 }
 
 .progress_bar.low-perf::before,
@@ -232,19 +251,10 @@ html, body {
     display: none !important;
 }
 
-@keyframes liquidFlow1 {
-    from { transform: translateX(0); }
-    to { transform: translateX(50vh); }
-}
-
-@keyframes liquidFlow2 {
-    from { transform: translateX(0); }
-    to { transform: translateX(-40vh); }
-}
 
 @keyframes barShimmer {
-    0% { left: -100%; }
-    100% { left: 200%; }
+    0% { transform: translate3d(-120%, 0, 0); }
+    100% { transform: translate3d(200%, 0, 0); }
 }
 
 @keyframes barPulse {
@@ -270,27 +280,65 @@ html, body {
     text-shadow: var(--text-shadow);
     background: var(--pill-bg);
     backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     padding: 0 clamp(1rem, 2.2vw, 2.5rem);
     border-radius: 9999px;
     border: 1.5px solid var(--pill-border);
     z-index: 20;
     line-height: 1;
     white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: border 0.3s ease, background 0.3s ease, backdrop-filter 0.3s ease, -webkit-backdrop-filter 0.3s ease, box-shadow 0.3s ease, transform 0.1s ease;
+}
+
+.progress_time:active {
+    transform: scale(0.97);
+}
+
+/* Thicker, more white border when less than 1 minute remains */
+.progress_time.urgent-minute {
+    border: 3.5px solid rgba(255, 255, 255, 0.95) !important;
+    box-shadow: 0 0 14px rgba(255, 255, 255, 0.4);
+}
+
+/* Translucent pill at <= 5% time left in period so the end of the bar is clearly visible */
+.progress_time.pill-translucent {
+    background: rgba(0, 0, 0, 0.15) !important;
+    backdrop-filter: blur(2px) !important;
+    -webkit-backdrop-filter: blur(2px) !important;
 }
 
 .end-message {
     display: none;
     text-align: center;
-    font-size: clamp(3rem, 12vmin, 10rem);
+    font-size: clamp(2.4rem, 9.6vmin, 8rem);
     font-weight: 800;
     color: var(--text-color);
     text-shadow: var(--text-shadow);
     background: var(--pill-bg);
     backdrop-filter: blur(8px);
-    padding: 6vh 4vw;
-    border-radius: 4rem;
+    padding: clamp(1.5rem, 4.8vh, 4rem) clamp(1.5rem, 3.2vw, 3.5rem);
+    border-radius: 3.2rem;
     border: 2px solid var(--pill-border);
-    margin: auto 0;
+    margin: auto;
+    max-width: 90%;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    animation: endBannerFloat 6s ease-in-out infinite;
+    will-change: transform;
+}
+
+@keyframes endBannerFloat {
+    0% {
+        transform: translateY(0) scale(1);
+    }
+    50% {
+        transform: translateY(-8px) scale(1.008);
+    }
+    100% {
+        transform: translateY(0) scale(1);
+    }
 }
 
 /* Footer Section */
