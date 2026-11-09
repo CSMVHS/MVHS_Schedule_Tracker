@@ -44,6 +44,7 @@ class RemoteManager {
         this._lastTextColor = null;
         this._lastBarColor = null;
         this._lastAnimAccentColor = null;
+        this._lastSettingsJson = null;
         this.setupActivityTracking();
 
         this.db = null;
@@ -215,6 +216,9 @@ class RemoteManager {
             if (!data) return;
 
             const settings = data.settings || {};
+            const currentSettingsJson = JSON.stringify(settings);
+            const settingsChanged = currentSettingsJson !== this._lastSettingsJson;
+
             if (settings.name && settings.name !== this.deviceName) {
                 this.deviceName = settings.name;
                 try {
@@ -297,15 +301,19 @@ class RemoteManager {
                 this.tracker.setLowPerf(this.lowPerf);
             }
 
-            // Customization Options
-            this.tracker.setUse24HourClock(!!settings.clock24h);
-            this.tracker.setWeatherVisible(settings.showWeather !== false);
-            this.tracker.setTotalTimeVisible(settings.showTotalTime !== false);
-            this.tracker.setCreditsVisible(settings.showCredits !== false);
-            this.tracker.setBarStyle(settings.barStyle || 'liquid');
+            if (settingsChanged) {
+                this._lastSettingsJson = currentSettingsJson;
 
-            // Apply persistent local customizations if saved so local front-end changes override global settings
-            this.tracker.loadLocalCustomizations();
+                // Customization Options
+                this.tracker.setUse24HourClock(!!settings.clock24h);
+                this.tracker.setWeatherVisible(settings.showWeather !== false);
+                this.tracker.setTotalTimeVisible(settings.showTotalTime !== false);
+                this.tracker.setCreditsVisible(settings.showCredits !== false);
+                this.tracker.setBarStyle(settings.barStyle || 'liquid');
+
+                // Apply persistent local customizations if saved so local front-end changes override global settings
+                this.tracker.loadLocalCustomizations();
+            }
 
             // Handle Remote Commands
             if (data.command && data.command.type === 'REFRESH') {
@@ -458,7 +466,7 @@ class ScheduleTracker {
             dateStr: "",
             clockStr: "",
             totalTimeStr: "",
-            totalTimeVisible: true,
+            totalTimeVisible: false,
             endVisible: false,
             items: [{}, {}]
         };
@@ -730,17 +738,25 @@ class ScheduleTracker {
             return;
         }
 
-        let endH = 14, endM = 50;
-        if (this.schedules[0] && this.schedules[0].length > 0) {
-            const lastPeriod = this.schedules[0][this.schedules[0].length - 1];
-            if (lastPeriod.endH !== undefined) {
-                endH = lastPeriod.endH;
-                endM = lastPeriod.endM;
-            } else {
-                const colonIdx = lastPeriod.end.indexOf(':');
-                endH = parseInt(lastPeriod.end.substring(0, colonIdx), 10);
-                endM = parseInt(lastPeriod.end.substring(colonIdx + 1), 10);
+        // Hide on weekends or when there are no scheduled periods
+        const dayOfWeek = now.getDay();
+        if (dayOfWeek === 0 || dayOfWeek === 6 || !this.schedules[0] || this.schedules[0].length === 0) {
+            if (this.lastState.totalTimeVisible !== false) {
+                this.totalTimeContainer.style.display = 'none';
+                this.lastState.totalTimeVisible = false;
             }
+            return;
+        }
+
+        let endH = 14, endM = 50;
+        const lastPeriod = this.schedules[0][this.schedules[0].length - 1];
+        if (lastPeriod.endH !== undefined) {
+            endH = lastPeriod.endH;
+            endM = lastPeriod.endM;
+        } else if (lastPeriod.end) {
+            const colonIdx = lastPeriod.end.indexOf(':');
+            endH = parseInt(lastPeriod.end.substring(0, colonIdx), 10);
+            endM = parseInt(lastPeriod.end.substring(colonIdx + 1), 10);
         }
 
         const nowSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
@@ -1198,10 +1214,15 @@ class ScheduleTracker {
     }
 
     setTotalTimeVisible(visible) {
-        this.totalTimeSettingVisible = visible;
-        if (this.totalTimeContainer) {
-            this.totalTimeContainer.style.display = visible ? 'flex' : 'none';
-            this.lastState.totalTimeVisible = visible;
+        this.totalTimeSettingVisible = !!visible;
+        if (!this.totalTimeContainer) return;
+        if (!this.totalTimeSettingVisible) {
+            if (this.lastState.totalTimeVisible !== false) {
+                this.totalTimeContainer.style.display = 'none';
+                this.lastState.totalTimeVisible = false;
+            }
+        } else {
+            this.updateTotalTimeRemaining(this.getExactNow());
         }
     }
 
