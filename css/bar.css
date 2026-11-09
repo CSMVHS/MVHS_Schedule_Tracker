@@ -157,6 +157,7 @@ html, body {
     width: 0%;
     will-change: width;
     overflow: hidden;
+    contain: paint;
     transition: width 0.3s ease-out;
 }
 
@@ -165,18 +166,24 @@ html, body {
 .progress_bar.bar-style-liquid::after {
     content: '';
     position: absolute;
-    top: -50%;
-    left: -50%;
-    right: -50%;
-    bottom: -50%;
-    filter: blur(1.5vh);
+    top: 0;
+    bottom: 0;
+    left: -100vh;
+    width: calc(100% + 200vh);
+    height: 100%;
     border-radius: inherit;
+    pointer-events: none;
+    will-change: transform;
+    transform: translate3d(0, 0, 0);
 }
 
 .progress_bar.bar-style-liquid::before {
     background:
-        radial-gradient(circle at 20% 35%, var(--anim-accent-color) 0%, transparent 40%),
-        radial-gradient(circle at 70% 65%, var(--anim-accent-color) 0%, transparent 45%);
+        radial-gradient(ellipse 35vh 70% at 20% 35%, var(--anim-accent-color) 0%, 20%, transparent 70%),
+        radial-gradient(ellipse 40vh 75% at 70% 65%, var(--anim-accent-color) 0%, 20%, transparent 70%);
+    background:
+        radial-gradient(ellipse 35vh 70% at 20% 35%, var(--anim-accent-color) 0%, color-mix(in srgb, var(--anim-accent-color) 65%, transparent) 20%, color-mix(in srgb, var(--anim-accent-color) 25%, transparent) 45%, color-mix(in srgb, var(--anim-accent-color) 5%, transparent) 65%, transparent 75%),
+        radial-gradient(ellipse 40vh 75% at 70% 65%, var(--anim-accent-color) 0%, color-mix(in srgb, var(--anim-accent-color) 65%, transparent) 20%, color-mix(in srgb, var(--anim-accent-color) 25%, transparent) 45%, color-mix(in srgb, var(--anim-accent-color) 5%, transparent) 65%, transparent 75%);
     background-size: 100vh 100%;
     background-repeat: repeat-x;
     animation: liquidFlow1 20s linear infinite;
@@ -185,11 +192,14 @@ html, body {
 
 .progress_bar.bar-style-liquid::after {
     background:
-        radial-gradient(circle at 40% 70%, var(--anim-accent-color) 0%, transparent 40%),
-        radial-gradient(circle at 80% 30%, var(--anim-accent-color) 0%, transparent 50%);
+        radial-gradient(ellipse 32vh 75% at 40% 70%, var(--anim-accent-color) 0%, 20%, transparent 70%),
+        radial-gradient(ellipse 36vh 70% at 80% 30%, var(--anim-accent-color) 0%, 20%, transparent 70%);
+    background:
+        radial-gradient(ellipse 32vh 75% at 40% 70%, var(--anim-accent-color) 0%, color-mix(in srgb, var(--anim-accent-color) 65%, transparent) 20%, color-mix(in srgb, var(--anim-accent-color) 25%, transparent) 45%, color-mix(in srgb, var(--anim-accent-color) 5%, transparent) 65%, transparent 75%),
+        radial-gradient(ellipse 36vh 70% at 80% 30%, var(--anim-accent-color) 0%, color-mix(in srgb, var(--anim-accent-color) 65%, transparent) 20%, color-mix(in srgb, var(--anim-accent-color) 25%, transparent) 45%, color-mix(in srgb, var(--anim-accent-color) 5%, transparent) 65%, transparent 75%);
     background-size: 85vh 100%;
     background-repeat: repeat-x;
-    animation: liquidFlow2 15s linear infinite reverse;
+    animation: liquidFlow2 15s linear infinite;
     opacity: 0.4;
 }
 
@@ -198,16 +208,20 @@ html, body {
     content: '';
     position: absolute;
     top: 0;
-    left: -100%;
+    left: 0;
     width: 60%;
     height: 100%;
     background: linear-gradient(90deg, transparent, var(--anim-accent-color), transparent);
-    animation: barShimmer 3s infinite;
+    animation: barShimmer 3s ease-in-out infinite;
+    pointer-events: none;
+    will-change: transform;
+    transform: translate3d(-120%, 0, 0);
 }
 
 /* Progress Bar Style: Clean Pulse (Efficient Animation) */
 .progress_bar.bar-style-pulse {
     animation: barPulse 2s ease-in-out infinite alternate;
+    will-change: filter;
 }
 
 /* Progress Bar Style: Solid Static */
@@ -225,6 +239,7 @@ html, body {
         rgba(0, 0, 0, 0.2) 100%
     ) !important;
     animation: barPulse 3s ease-in-out infinite alternate !important;
+    will-change: filter;
 }
 
 .progress_bar.low-perf::before,
@@ -233,18 +248,18 @@ html, body {
 }
 
 @keyframes liquidFlow1 {
-    from { transform: translateX(0); }
-    to { transform: translateX(50vh); }
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(100vh, 0, 0); }
 }
 
 @keyframes liquidFlow2 {
-    from { transform: translateX(0); }
-    to { transform: translateX(-40vh); }
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(-85vh, 0, 0); }
 }
 
 @keyframes barShimmer {
-    0% { left: -100%; }
-    100% { left: 200%; }
+    0% { transform: translate3d(-120%, 0, 0); }
+    100% { transform: translate3d(200%, 0, 0); }
 }
 
 @keyframes barPulse {

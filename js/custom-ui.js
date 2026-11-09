@@ -214,17 +214,21 @@
             };
 
             let isDragging = false;
+            let cachedRect = null;
             const handleSatValMove = (e) => {
-                const rect = canvas.getBoundingClientRect();
-                const x = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
-                const y = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
-                hsv.s = x / rect.width;
-                hsv.v = 1 - (y / rect.height);
+                if (!cachedRect) {
+                    cachedRect = canvas.getBoundingClientRect();
+                }
+                const x = Math.max(0, Math.min(cachedRect.width, e.clientX - cachedRect.left));
+                const y = Math.max(0, Math.min(cachedRect.height, e.clientY - cachedRect.top));
+                hsv.s = x / cachedRect.width;
+                hsv.v = 1 - (y / cachedRect.height);
                 applyHsvChange();
             };
 
             canvas.addEventListener('pointerdown', (e) => {
                 isDragging = true;
+                cachedRect = canvas.getBoundingClientRect();
                 canvas.setPointerCapture(e.pointerId);
                 handleSatValMove(e);
             });
@@ -233,9 +237,13 @@
                 if (isDragging) handleSatValMove(e);
             });
 
-            canvas.addEventListener('pointerup', (e) => {
+            const stopDrag = () => {
                 isDragging = false;
-            });
+                cachedRect = null;
+            };
+
+            canvas.addEventListener('pointerup', stopDrag);
+            canvas.addEventListener('pointercancel', stopDrag);
 
             hueSlider.addEventListener('input', () => {
                 hsv.h = parseFloat(hueSlider.value);
