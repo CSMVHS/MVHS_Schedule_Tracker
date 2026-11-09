@@ -296,16 +296,32 @@ html, body {
 .end-message {
     display: none;
     text-align: center;
-    font-size: clamp(3rem, 12vmin, 10rem);
+    font-size: clamp(2.4rem, 9.6vmin, 8rem);
     font-weight: 800;
     color: var(--text-color);
     text-shadow: var(--text-shadow);
     background: var(--pill-bg);
     backdrop-filter: blur(8px);
-    padding: 6vh 4vw;
-    border-radius: 4rem;
+    padding: clamp(1.5rem, 4.8vh, 4rem) clamp(1.5rem, 3.2vw, 3.5rem);
+    border-radius: 3.2rem;
     border: 2px solid var(--pill-border);
-    margin: auto 0;
+    margin: auto;
+    max-width: 90%;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    animation: endBannerFloat 6s ease-in-out infinite;
+    will-change: transform;
+}
+
+@keyframes endBannerFloat {
+    0% {
+        transform: translateY(0) scale(1);
+    }
+    50% {
+        transform: translateY(-8px) scale(1.008);
+    }
+    100% {
+        transform: translateY(0) scale(1);
+    }
 }
 
 /* Footer Section */
