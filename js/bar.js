@@ -467,8 +467,7 @@ class ScheduleTracker {
         this.updateDeviceIdDisplay();
         this.setupVisibilityHandler();
         this.setupFirstTimeIdentifyPrompt();
-        this.setupCustomizeModal();
-        this.setupEscKeyHandler();
+                this.setupEscKeyHandler();
     }
 
     setupEscKeyHandler() {
@@ -723,18 +722,24 @@ class ScheduleTracker {
         const endSec = endH * 3600 + endM * 60;
         const diffSec = endSec - nowSec;
 
+        // Hide total time remaining pill once it reaches 0h 0m or when school day has ended
+        if (diffSec <= 0) {
+            if (this.lastState.totalTimeVisible !== false) {
+                this.totalTimeContainer.style.display = 'none';
+                this.lastState.totalTimeVisible = false;
+            }
+            return;
+        }
+
         if (this.lastState.totalTimeVisible !== true) {
             this.totalTimeContainer.style.display = 'flex';
             this.lastState.totalTimeVisible = true;
         }
 
-        let str = "0h 0m";
-        if (diffSec > 0) {
-            const totalMinutes = Math.ceil(diffSec / 60);
-            const h = Math.floor(totalMinutes / 60);
-            const m = totalMinutes % 60;
-            str = `${h}h ${m}m`;
-        }
+        const totalMinutes = Math.ceil(diffSec / 60);
+        const h = Math.floor(totalMinutes / 60);
+        const m = totalMinutes % 60;
+        const str = `${h}h ${m}m`;
 
         if (this.lastState.totalTimeStr !== str) {
             this.totalTimeRemaining.textContent = str;
