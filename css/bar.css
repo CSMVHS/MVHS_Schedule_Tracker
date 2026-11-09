@@ -152,58 +152,30 @@ html, body {
     left: 0;
     top: 0;
     height: 100%;
-    background: var(--bar-color);
+    background-color: var(--bar-color);
+    background-image:
+        linear-gradient(
+            to bottom,
+            rgba(255, 255, 255, 0.42) 0%,
+            rgba(255, 255, 255, 0.15) 32%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.25) 100%
+        );
     border-radius: inherit;
     width: 0%;
     will-change: width;
     overflow: hidden;
     contain: paint;
+    box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.5), inset 0 -3px 8px rgba(0, 0, 0, 0.35);
     transition: width 0.3s ease-out;
 }
 
-/* Progress Bar Style: Liquid Wave (Default) */
-.progress_bar.bar-style-liquid {
-    background-image: linear-gradient(
-        to bottom,
-        rgba(255, 255, 255, 0.2) 0%,
-        transparent 45%,
-        rgba(0, 0, 0, 0.15) 100%
-    );
-}
-
+/* Progress Bar Style: Static 3D (Default - High Performance) */
 .progress_bar.bar-style-liquid::before,
-.progress_bar.bar-style-liquid::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 200%;
-    height: 100%;
-    border-radius: inherit;
-    pointer-events: none;
-    will-change: transform;
-}
-
-.progress_bar.bar-style-liquid::before {
-    background:
-        radial-gradient(ellipse 20% 65% at 25% 40%, rgba(255, 255, 255, 0.45) 0%, transparent 65%),
-        radial-gradient(ellipse 20% 65% at 75% 40%, rgba(255, 255, 255, 0.45) 0%, transparent 65%);
-    background:
-        radial-gradient(ellipse 20% 65% at 25% 40%, var(--anim-accent-color) 0%, color-mix(in srgb, var(--anim-accent-color) 45%, transparent) 25%, color-mix(in srgb, var(--anim-accent-color) 12%, transparent) 50%, transparent 65%),
-        radial-gradient(ellipse 20% 65% at 75% 40%, var(--anim-accent-color) 0%, color-mix(in srgb, var(--anim-accent-color) 45%, transparent) 25%, color-mix(in srgb, var(--anim-accent-color) 12%, transparent) 50%, transparent 65%);
-    opacity: 0.55;
-    animation: liquidFlow1 12s linear infinite;
-}
-
-.progress_bar.bar-style-liquid::after {
-    background:
-        radial-gradient(ellipse 22% 60% at 25% 65%, rgba(255, 255, 255, 0.35) 0%, transparent 65%),
-        radial-gradient(ellipse 22% 60% at 75% 65%, rgba(255, 255, 255, 0.35) 0%, transparent 65%);
-    background:
-        radial-gradient(ellipse 22% 60% at 25% 65%, var(--anim-accent-color) 0%, color-mix(in srgb, var(--anim-accent-color) 35%, transparent) 25%, color-mix(in srgb, var(--anim-accent-color) 10%, transparent) 50%, transparent 65%),
-        radial-gradient(ellipse 22% 60% at 75% 65%, var(--anim-accent-color) 0%, color-mix(in srgb, var(--anim-accent-color) 35%, transparent) 25%, color-mix(in srgb, var(--anim-accent-color) 10%, transparent) 50%, transparent 65%);
-    opacity: 0.45;
-    animation: liquidFlow2 8s linear infinite reverse;
+.progress_bar.bar-style-liquid::after,
+.progress_bar.bar-style-solid::before,
+.progress_bar.bar-style-solid::after {
+    display: none !important;
 }
 
 /* Progress Bar Style: Glow / Shimmer */
