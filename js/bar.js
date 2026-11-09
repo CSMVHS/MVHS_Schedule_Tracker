@@ -467,7 +467,32 @@ class ScheduleTracker {
         this.updateDeviceIdDisplay();
         this.setupVisibilityHandler();
         this.setupFirstTimeIdentifyPrompt();
-                this.setupEscKeyHandler();
+        this.setupEscKeyHandler();
+        this.lastActivePeriods = [null, null];
+        this.setupRippleListeners();
+    }
+
+    setupRippleListeners() {
+        this.trackerItems.forEach((item, idx) => {
+            if (item.time) {
+                item.time.title = "Click to trigger ripple";
+                item.time.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.triggerRipple(idx);
+                });
+            }
+        });
+    }
+
+    triggerRipple(idx) {
+        const item = this.trackerItems[idx];
+        if (!item || !item.bar) return;
+        item.bar.classList.remove('ripple-active');
+        void item.bar.offsetWidth; // Force reflow
+        item.bar.classList.add('ripple-active');
+        setTimeout(() => {
+            if (item.bar) item.bar.classList.remove('ripple-active');
+        }, 950);
     }
 
     setupEscKeyHandler() {
@@ -990,6 +1015,8 @@ class ScheduleTracker {
             const state = this.lastState.items[idx];
 
             if (periods.length === 0) {
+                this.lastActivePeriods[idx] = null;
+                if (timeEl) timeEl.classList.remove('urgent-minute', 'pill-translucent');
                 if (state.display !== 'none') {
                     container.style.display = 'none';
                     state.display = 'none';
@@ -1008,6 +1035,8 @@ class ScheduleTracker {
             }
 
             if (!shouldDisplay) {
+                this.lastActivePeriods[idx] = null;
+                if (timeEl) timeEl.classList.remove('urgent-minute', 'pill-translucent');
                 if (state.display !== 'none') {
                     container.style.display = 'none';
                     state.display = 'none';
@@ -1034,6 +1063,12 @@ class ScheduleTracker {
                     }
                     if (idx === 0) this.currentPeriodName = currentPeriod.name;
 
+                    // Trigger ripple at the start of a new period
+                    if (this.lastActivePeriods[idx] !== currentPeriod.name) {
+                        this.lastActivePeriods[idx] = currentPeriod.name;
+                        this.triggerRipple(idx);
+                    }
+
                     const startMs = this.parseTime(currentPeriod.start, now).getTime();
                     const endMs = this.parseTime(currentPeriod.end, now).getTime();
                     const total = endMs - startMs;
@@ -1051,7 +1086,26 @@ class ScheduleTracker {
                         timeEl.textContent = timeStr;
                         state.time = timeStr;
                     }
+
+                    // Thicker and more white border when less than 1 minute remains
+                    const isUnderMinute = remaining > 0 && remaining <= 60;
+                    if (isUnderMinute) {
+                        if (!timeEl.classList.contains('urgent-minute')) timeEl.classList.add('urgent-minute');
+                    } else {
+                        if (timeEl.classList.contains('urgent-minute')) timeEl.classList.remove('urgent-minute');
+                    }
+
+                    // More clear/translucent pill at <= 5% time left in the period so the end of the bar is visible
+                    const isLast5Percent = total > 0 && (elapsed / total >= 0.95);
+                    if (isLast5Percent) {
+                        if (!timeEl.classList.contains('pill-translucent')) timeEl.classList.add('pill-translucent');
+                    } else {
+                        if (timeEl.classList.contains('pill-translucent')) timeEl.classList.remove('pill-translucent');
+                    }
                 } else {
+                    this.lastActivePeriods[idx] = null;
+                    if (timeEl.classList.contains('urgent-minute')) timeEl.classList.remove('urgent-minute');
+                    if (timeEl.classList.contains('pill-translucent')) timeEl.classList.remove('pill-translucent');
                     if (idx === 0) this.currentPeriodName = "None";
                     const nextPeriod = periods.find(p => (p.startH * 3600 + p.startM * 60) > currentSeconds);
                     if (nextPeriod) {
