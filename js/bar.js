@@ -200,42 +200,23 @@ class RemoteManager {
 
         // Track global snow override ('auto' | 'on' | 'off')
         this.db.ref("global/snowOverride").on("value", (snap) => {
-            this.tracker.setGlobalSnowOverride(snap.val() || 'auto');
+            const val = snap.val();
+            if (val !== null) {
+                this.tracker.setGlobalSnowOverride(val);
+            }
         });
 
         // Track global lower-bar announcement
         this.db.ref("global/announcement").on("value", (snap) => {
-            this.tracker.setGlobalAnnouncement(snap.val());
+            const val = snap.val();
+            if (val !== null) {
+                this.tracker.setGlobalAnnouncement(val);
+            }
         });
 
         // Track global "Clear All Device Names" reset timestamp
         this.db.ref("global/resetNamesTs").on("value", (snap) => {
-            const ts = parseInt(snap.val(), 10) || 0;
-            if (ts <= 0) return;
-            const lastSeenReset = parseInt(localStorage.getItem('mvhs_last_name_reset_ts') || '0', 10) || 0;
-            if (ts > lastSeenReset) {
-                const hadPromptedOrNamed = !!(
-                    localStorage.getItem('mvhs_identify_prompted') ||
-                    localStorage.getItem('mvhs_device_name')
-                );
-                const approxServerNow = Date.now() + this.serverOffset;
-                const isRecentReset = ts >= (this.sessionStart + this.serverOffset - 5000);
-                try {
-                    localStorage.setItem('mvhs_last_name_reset_ts', String(ts));
-                } catch (e) {}
-
-                if (hadPromptedOrNamed || isRecentReset) {
-                    try {
-                        localStorage.removeItem('mvhs_device_name');
-                        localStorage.removeItem('mvhs_identify_prompted');
-                    } catch (e) {}
-                    this.deviceName = null;
-                    this._hadRemoteName = false;
-                    if (this.tracker && typeof this.tracker.reopenIdentifyPrompt === 'function') {
-                        this.tracker.reopenIdentifyPrompt();
-                    }
-                }
-            }
+            this.handleNameResetTimestamp(snap.val());
         });
 
         // Handle connections/disconnections
@@ -359,6 +340,12 @@ class RemoteManager {
                 if (localStorage.getItem('mvhs_clock_24h') === null) {
                     this.tracker.setUse24HourClock(!!settings.clock24h);
                 }
+                if (settings.globalSnowOverride !== undefined) {
+                    this.tracker.setGlobalSnowOverride(settings.globalSnowOverride || 'auto');
+                }
+                if (settings.globalAnnouncement !== undefined) {
+                    this.tracker.setGlobalAnnouncement(settings.globalAnnouncement);
+                }
                 this.tracker.setWeatherVisible(settings.showWeather !== false);
                 this.tracker.setTotalTimeVisible(settings.showTotalTime !== false);
                 this.tracker.setCreditsVisible(settings.showCredits !== false);
@@ -386,9 +373,44 @@ class RemoteManager {
                     window.location.href = window.location.pathname + '?v=' + Date.now();
                 }
             }
+
+            if (data.command && data.command.type === 'RESET_NAME') {
+                this.handleNameResetTimestamp(data.command.ts);
+            }
         });
 
         this.setupIntervals();
+    }
+
+    handleNameResetTimestamp(tsVal) {
+        const ts = parseInt(tsVal, 10) || 0;
+        if (ts <= 0) return;
+        const lastSeenReset = parseInt(localStorage.getItem('mvhs_last_name_reset_ts') || '0', 10) || 0;
+        if (ts <= lastSeenReset) return;
+
+        const hadPromptedOrNamed = !!(
+            localStorage.getItem('mvhs_identify_prompted') ||
+            localStorage.getItem('mvhs_device_name')
+        );
+        const isRecentReset = ts >= (this.sessionStart + this.serverOffset - 5000);
+        try {
+            localStorage.setItem('mvhs_last_name_reset_ts', String(ts));
+        } catch (e) {}
+
+        if (hadPromptedOrNamed || isRecentReset) {
+            try {
+                localStorage.removeItem('mvhs_device_name');
+                localStorage.removeItem('mvhs_identify_prompted');
+            } catch (e) {}
+            this.deviceName = null;
+            this._hadRemoteName = false;
+            if (this.deviceRef) {
+                this.deviceRef.child('status/name').remove().catch(() => {});
+            }
+            if (this.tracker && typeof this.tracker.reopenIdentifyPrompt === 'function') {
+                this.tracker.reopenIdentifyPrompt();
+            }
+        }
     }
 
     setDeviceName(name) {

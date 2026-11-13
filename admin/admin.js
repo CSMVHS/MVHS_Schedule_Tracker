@@ -357,6 +357,22 @@ function initDashboard() {
         holdIdentifyBtn.addEventListener('contextmenu', (e) => e.preventDefault());
     }
 
+    const applyUpdatesToDevices = (buildDeviceUpdates, bestEffortGlobal) => {
+        const dataStore = window.devicesData || devicesData || {};
+        const deviceIds = Object.keys(dataStore);
+        const updates = {};
+        deviceIds.forEach(id => buildDeviceUpdates(updates, id, dataStore[id]));
+
+        if (typeof bestEffortGlobal === 'function') {
+            Promise.resolve(bestEffortGlobal()).catch(() => {});
+        }
+
+        if (Object.keys(updates).length === 0) {
+            return Promise.resolve({ count: 0, deviceIds, dataStore });
+        }
+        return db.ref().update(updates).then(() => ({ count: deviceIds.length, deviceIds, dataStore }));
+    };
+
     // Clear All Device Names & Re-Prompt "Who's this?"
     const clearAllNamesBtn = document.getElementById('clear-all-names-btn');
     if (clearAllNamesBtn) {
@@ -366,14 +382,30 @@ function initDashboard() {
             if (!confirm(`Clear ALL device names (${deviceIds.length} devices) and ask everyone "Who's this?" again?`)) {
                 return;
             }
-            const updates = {};
-            deviceIds.forEach(id => {
-                updates[`devices/${id}/settings/name`] = null;
-                updates[`devices/${id}/status/name`] = null;
-            });
-            updates['global/resetNamesTs'] = Date.now();
-            db.ref().update(updates)
-                .then(() => showToast("All device names cleared! Displays will re-prompt."))
+            const ts = Date.now();
+            applyUpdatesToDevices(
+                (updates, id, device) => {
+                    updates[`devices/${id}/settings/name`] = null;
+                    if (device && device.status && device.status.name !== undefined) {
+                        updates[`devices/${id}/status/name`] = null;
+                    }
+                    updates[`devices/${id}/command`] = { type: 'RESET_NAME', ts };
+                },
+                () => db.ref('global/resetNamesTs').set(ts)
+            )
+                .then(({ dataStore: store, deviceIds: ids }) => {
+                    ids.forEach(id => {
+                        const dev = store[id];
+                        if (!dev) return;
+                        if (dev.settings) delete dev.settings.name;
+                        if (dev.status) delete dev.status.name;
+                    });
+                    renderDevices({ preserveScroll: true });
+                    if (currentDeviceId) {
+                        updateModalData(currentDeviceId, true);
+                    }
+                    showToast("All device names cleared! Displays will re-prompt.");
+                })
                 .catch(e => showToast("Error: " + e.message, 'error'));
         });
     }
@@ -387,27 +419,34 @@ function initDashboard() {
             if (!confirm(`Reset global snow override and restore default green/gold MVHS theme on ALL (${deviceIds.length}) displays?`)) {
                 return;
             }
-            const updates = {
-                'global/snowOverride': 'auto'
-            };
-            deviceIds.forEach(id => {
-                updates[`devices/${id}/settings/bgMode`] = 'color';
-                updates[`devices/${id}/settings/bgColor`] = '#00401e';
-                updates[`devices/${id}/settings/bgGradient1`] = '#00401e';
-                updates[`devices/${id}/settings/bgGradient2`] = '#001a0c';
-                updates[`devices/${id}/settings/bgGradientAngle`] = '135';
-                updates[`devices/${id}/settings/bgImage`] = '';
-                updates[`devices/${id}/settings/barColor`] = '#b1953a';
-                updates[`devices/${id}/settings/textColor`] = '#ffffff';
-                updates[`devices/${id}/settings/animAccentColor`] = '#ffffff';
-                updates[`devices/${id}/settings/barStyle`] = 'liquid';
-                updates[`devices/${id}/settings/clock24h`] = false;
-                updates[`devices/${id}/settings/snowOverride`] = 'global';
-                updates[`devices/${id}/settings/announcementMode`] = 'global';
-            });
-
-            db.ref().update(updates)
+            const ts = Date.now();
+            const resetAnnPayload = { enabled: false, text: '', updatedAt: ts };
+            applyUpdatesToDevices(
+                (updates, id) => {
+                    updates[`devices/${id}/settings/bgMode`] = 'color';
+                    updates[`devices/${id}/settings/bgColor`] = '#00401e';
+                    updates[`devices/${id}/settings/bgGradient1`] = '#00401e';
+                    updates[`devices/${id}/settings/bgGradient2`] = '#001a0c';
+                    updates[`devices/${id}/settings/bgGradientAngle`] = '135';
+                    updates[`devices/${id}/settings/bgImage`] = '';
+                    updates[`devices/${id}/settings/barColor`] = '#b1953a';
+                    updates[`devices/${id}/settings/textColor`] = '#ffffff';
+                    updates[`devices/${id}/settings/animAccentColor`] = '#ffffff';
+                    updates[`devices/${id}/settings/barStyle`] = 'liquid';
+                    updates[`devices/${id}/settings/clock24h`] = false;
+                    updates[`devices/${id}/settings/snowOverride`] = 'global';
+                    updates[`devices/${id}/settings/announcementMode`] = 'global';
+                    updates[`devices/${id}/settings/globalSnowOverride`] = 'auto';
+                    updates[`devices/${id}/settings/globalAnnouncement`] = resetAnnPayload;
+                },
+                () => Promise.all([
+                    db.ref('global/snowOverride').set('auto').catch(() => {}),
+                    db.ref('global/announcement').set(resetAnnPayload).catch(() => {})
+                ])
+            )
                 .then(() => {
+                    updateSnowButtonsUI('auto');
+                    updateAnnouncementUI(resetAnnPayload);
                     document.querySelectorAll('.btn-reset').forEach(b => b.click());
                     globalBgMode.value = 'color';
                     syncGlobalBgModeFields();
@@ -427,6 +466,7 @@ function initDashboard() {
 
     // Snow Override Segmented Control
     const snowBtns = document.querySelectorAll('.seg-btn[data-snow]');
+    let hasGlobalSnowFromRoot = false;
     const updateSnowButtonsUI = (mode) => {
         const valid = ['auto', 'on', 'off'];
         currentGlobalSnow = valid.includes(mode) ? mode : 'auto';
@@ -445,14 +485,23 @@ function initDashboard() {
     };
 
     db.ref('global/snowOverride').on('value', (snap) => {
-        updateSnowButtonsUI(snap.val() || 'auto');
+        const val = snap.val();
+        if (val !== null) {
+            hasGlobalSnowFromRoot = true;
+            updateSnowButtonsUI(val);
+        }
     });
 
     snowBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const mode = btn.getAttribute('data-snow');
             updateSnowButtonsUI(mode);
-            db.ref('global/snowOverride').set(mode)
+            applyUpdatesToDevices(
+                (updates, id) => {
+                    updates[`devices/${id}/settings/globalSnowOverride`] = mode;
+                },
+                () => db.ref('global/snowOverride').set(mode)
+            )
                 .then(() => showToast(`Snow override set to: ${mode.toUpperCase()}`))
                 .catch(e => showToast("Error: " + e.message, 'error'));
         });
@@ -463,6 +512,7 @@ function initDashboard() {
     const annTextEl = document.getElementById('input-announcement-text');
     const saveAnnBtn = document.getElementById('save-announcement-btn');
     const clearAnnBtn = document.getElementById('clear-announcement-btn');
+    let hasGlobalAnnFromRoot = false;
 
     const updateAnnouncementCounter = () => {
         const len = annTextEl ? annTextEl.value.length : 0;
@@ -495,7 +545,11 @@ function initDashboard() {
     }
 
     db.ref('global/announcement').on('value', (snap) => {
-        updateAnnouncementUI(snap.val());
+        const val = snap.val();
+        if (val !== null) {
+            hasGlobalAnnFromRoot = true;
+            updateAnnouncementUI(val);
+        }
     });
 
     if (saveAnnBtn) {
@@ -504,7 +558,12 @@ function initDashboard() {
             const text = annTextEl ? annTextEl.value.trim() : '';
             const payload = { enabled, text, updatedAt: Date.now() };
             updateAnnouncementUI(payload);
-            db.ref('global/announcement').set(payload)
+            applyUpdatesToDevices(
+                (updates, id) => {
+                    updates[`devices/${id}/settings/globalAnnouncement`] = payload;
+                },
+                () => db.ref('global/announcement').set(payload)
+            )
                 .then(() => showToast(enabled && text ? "Announcement saved & enabled!" : "Announcement saved."))
                 .catch(e => showToast("Error: " + e.message, 'error'));
         });
@@ -516,7 +575,12 @@ function initDashboard() {
             if (annTextEl) annTextEl.value = '';
             const payload = { enabled: false, text: '', updatedAt: Date.now() };
             updateAnnouncementUI(payload);
-            db.ref('global/announcement').set(payload)
+            applyUpdatesToDevices(
+                (updates, id) => {
+                    updates[`devices/${id}/settings/globalAnnouncement`] = payload;
+                },
+                () => db.ref('global/announcement').set(payload)
+            )
                 .then(() => showToast("Announcement cleared."))
                 .catch(e => showToast("Error: " + e.message, 'error'));
         });
@@ -666,6 +730,28 @@ function initDashboard() {
         devicesData = snap.val() || {};
         window.devicesData = devicesData;
         isHydrating = false;
+
+        if (!hasGlobalSnowFromRoot || !hasGlobalAnnFromRoot) {
+            let fallbackSnow = null;
+            let fallbackAnn = null;
+            for (const dev of Object.values(devicesData)) {
+                const s = dev && dev.settings;
+                if (!s) continue;
+                if (!fallbackSnow && s.globalSnowOverride !== undefined) {
+                    fallbackSnow = s.globalSnowOverride;
+                }
+                if (!fallbackAnn && s.globalAnnouncement && typeof s.globalAnnouncement === 'object') {
+                    fallbackAnn = s.globalAnnouncement;
+                }
+                if (fallbackSnow && fallbackAnn) break;
+            }
+            if (!hasGlobalSnowFromRoot && fallbackSnow) {
+                updateSnowButtonsUI(fallbackSnow);
+            }
+            if (!hasGlobalAnnFromRoot && fallbackAnn) {
+                updateAnnouncementUI(fallbackAnn);
+            }
+        }
 
         updateSummaryStats();
         renderDevices();
