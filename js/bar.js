@@ -1,8 +1,8 @@
 const CONFIG = {
     WEATHER_API_KEY: "7a08aa9c10a1a7edae637fa85fc3ecae",
     CITY: "Highlands Ranch, CO",
-    LAT: 39.5481,
-    LON: -104.9739,
+    LAT: 39.522644613,
+    LON: -104.965323092,
     SCHOOL_END_TIME: "14:50",
     APP_VERSION: "4.0",
     AUTHOR_NAME: "Austin Strong",
@@ -33,6 +33,7 @@ class RemoteManager {
         this.statusInterval = null;
         this.uptimeInterval = null;
         this.deviceName = localStorage.getItem('mvhs_device_name') || null;
+        this._hadRemoteName = false;
 
         // Activity tracking
         this.totalInteractions = parseInt(localStorage.getItem('mvhs_total_interactions') || '0', 10) || 0;
@@ -197,6 +198,46 @@ class RemoteManager {
             this.tracker.setShowDeviceIDFlash(!!snap.val());
         });
 
+        // Track global snow override ('auto' | 'on' | 'off')
+        this.db.ref("global/snowOverride").on("value", (snap) => {
+            this.tracker.setGlobalSnowOverride(snap.val() || 'auto');
+        });
+
+        // Track global lower-bar announcement
+        this.db.ref("global/announcement").on("value", (snap) => {
+            this.tracker.setGlobalAnnouncement(snap.val());
+        });
+
+        // Track global "Clear All Device Names" reset timestamp
+        this.db.ref("global/resetNamesTs").on("value", (snap) => {
+            const ts = parseInt(snap.val(), 10) || 0;
+            if (ts <= 0) return;
+            const lastSeenReset = parseInt(localStorage.getItem('mvhs_last_name_reset_ts') || '0', 10) || 0;
+            if (ts > lastSeenReset) {
+                const hadPromptedOrNamed = !!(
+                    localStorage.getItem('mvhs_identify_prompted') ||
+                    localStorage.getItem('mvhs_device_name')
+                );
+                const approxServerNow = Date.now() + this.serverOffset;
+                const isRecentReset = ts >= (this.sessionStart + this.serverOffset - 5000);
+                try {
+                    localStorage.setItem('mvhs_last_name_reset_ts', String(ts));
+                } catch (e) {}
+
+                if (hadPromptedOrNamed || isRecentReset) {
+                    try {
+                        localStorage.removeItem('mvhs_device_name');
+                        localStorage.removeItem('mvhs_identify_prompted');
+                    } catch (e) {}
+                    this.deviceName = null;
+                    this._hadRemoteName = false;
+                    if (this.tracker && typeof this.tracker.reopenIdentifyPrompt === 'function') {
+                        this.tracker.reopenIdentifyPrompt();
+                    }
+                }
+            }
+        });
+
         // Handle connections/disconnections
         const connectedRef = this.db.ref(".info/connected");
         connectedRef.on("value", (snap) => {
@@ -218,6 +259,16 @@ class RemoteManager {
             const settings = data.settings || {};
             const currentSettingsJson = JSON.stringify(settings);
             const settingsChanged = currentSettingsJson !== this._lastSettingsJson;
+
+            if (settings.name || (data.status && data.status.name)) {
+                this._hadRemoteName = true;
+            } else if (this._hadRemoteName && this.deviceName) {
+                this._hadRemoteName = false;
+                this.deviceName = null;
+                try {
+                    localStorage.removeItem('mvhs_device_name');
+                } catch (e) {}
+            }
 
             if (settings.name && settings.name !== this.deviceName) {
                 this.deviceName = settings.name;
@@ -310,6 +361,8 @@ class RemoteManager {
                 this.tracker.setTotalTimeVisible(settings.showTotalTime !== false);
                 this.tracker.setCreditsVisible(settings.showCredits !== false);
                 this.tracker.setBarStyle(settings.barStyle || 'liquid');
+                this.tracker.setDeviceSnowOverride(settings.snowOverride || 'global');
+                this.tracker.setDeviceAnnouncement(settings.announcementMode || 'global', settings.announcementText || '');
 
                 // Apply persistent local customizations if saved so local front-end changes override global settings
                 this.tracker.loadLocalCustomizations();
@@ -342,6 +395,7 @@ class RemoteManager {
         if (!trimmed) return;
         const formatted = trimmed.endsWith('(write-in)') ? trimmed : `${trimmed} (write-in)`;
         this.deviceName = formatted;
+        this._hadRemoteName = true;
         try {
             localStorage.setItem('mvhs_device_name', formatted);
         } catch (e) {}
@@ -436,12 +490,65 @@ class ScheduleTracker {
         this.dateDisplay = document.getElementById("date-display");
         this.clockDisplay = document.getElementById("clock-display");
         this.weatherContainer = document.getElementById("weather-container");
+        this.weatherIconEl = document.getElementById("weather-icon");
         this.weatherDisplay = document.getElementById("weather-display");
         this.endMessage = document.getElementById('end');
         this.scheduleWrapper = document.querySelector('.schedule-wrapper');
+        this.announcementContainer = document.getElementById("announcement-container");
+        this.announcementTextEl = document.getElementById("announcement-text");
+        this.snowCanvas = document.getElementById("snow-canvas");
         this.totalTimeRemaining = document.querySelector(".total-time-remaining");
         this.totalTimeContainer = document.getElementById("total-time-container");
         this.deviceIdDisplay = document.getElementById("device-id-display");
+
+        // Weather, NWS Alert, Snow & Announcement State
+        this.globalSnowOverride = "auto";
+        this.deviceSnowOverride = "global";
+        this.isWeatherSnowing = false;
+        this.hasNwsAlert = false;
+        this.nwsAlertLabel = "";
+        this.lastNwsFetchTs = 0;
+        this.lastWeatherCode = null;
+        this.lastWeatherIconCode = null;
+        this.globalAnnouncement = { enabled: false, text: "" };
+        this.deviceAnnouncementMode = "global";
+        this.deviceAnnouncementText = "";
+        this._announcementVisible = false;
+        this._lastFittedText = null;
+        this._lastFittedWidth = 0;
+        this._lastFittedHeight = 0;
+        this._perfThrottled = false;
+        this._snowRaf = null;
+        this._snowParticles = [];
+        this._snowLastTs = 0;
+        this._snowSlowFrames = 0;
+        this._snowCanvasWidth = 0;
+        this._snowCanvasHeight = 0;
+        this._identifyCleanup = null;
+
+        window.addEventListener('resize', () => {
+            this.fitAnnouncementText();
+            this.resizeSnowCanvas();
+        });
+
+        if (window.ResizeObserver && this.announcementContainer) {
+            this._announcementObserver = new ResizeObserver(() => {
+                if (this._announcementVisible) {
+                    this.fitAnnouncementText();
+                }
+            });
+            this._announcementObserver.observe(this.announcementContainer);
+        }
+
+        if (window.matchMedia) {
+            const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+            const onMotionChange = () => this.updateSnowState();
+            if (motionQuery.addEventListener) {
+                motionQuery.addEventListener('change', onMotionChange);
+            } else if (motionQuery.addListener) {
+                motionQuery.addListener(onMotionChange);
+            }
+        }
 
         // Customize Modal Elements
         this.customizeModal = document.getElementById("local-customize-modal");
@@ -608,38 +715,37 @@ class ScheduleTracker {
         }
     }
 
-    setupFirstTimeIdentifyPrompt() {
-        const hasPrompted = localStorage.getItem("mvhs_identify_prompted");
-        if (hasPrompted) return;
+    reopenIdentifyPrompt() {
+        if (this._identifyCleanup) {
+            this._identifyCleanup();
+        }
+        if (this.identifyInput) {
+            this.identifyInput.value = "";
+        }
+        this.setupFirstTimeIdentifyPrompt(true);
+    }
+
+    setupFirstTimeIdentifyPrompt(forceReopen = false) {
+        if (!forceReopen) {
+            const hasPrompted = localStorage.getItem("mvhs_identify_prompted");
+            if (hasPrompted) return;
+        }
+
+        if (this._identifyCleanup) {
+            this._identifyCleanup();
+        }
 
         if (this.identifyModal) {
             this.identifyModal.style.display = "block";
         }
 
-        let maxSeconds = 15;
-        let timer = null;
-        let isUserTyping = false;
-
-        const pauseTimerOnInteraction = () => {
-            if (!isUserTyping) {
-                isUserTyping = true;
-                if (timer) {
-                    clearInterval(timer);
-                    timer = null;
-                }
-            }
-        };
-
-        if (this.identifyInput) {
-            this.identifyInput.addEventListener("focus", pauseTimerOnInteraction);
-            this.identifyInput.addEventListener("input", pauseTimerOnInteraction);
-            this.identifyInput.addEventListener("click", pauseTimerOnInteraction);
-        }
+        const INITIAL_TIMEOUT_MS = 15000;
+        const INTERACTION_TIMEOUT_MS = 30000;
+        let dismissTimeout = null;
 
         const dismiss = (shouldSave = false, inputVal = undefined) => {
-            if (timer) {
-                clearInterval(timer);
-                timer = null;
+            if (this._identifyCleanup) {
+                this._identifyCleanup();
             }
             localStorage.setItem("mvhs_identify_prompted", "true");
             if (this.identifyModal) {
@@ -655,36 +761,86 @@ class ScheduleTracker {
 
         this.dismissIdentifyPrompt = dismiss;
 
-        timer = setInterval(() => {
-            if (isUserTyping) {
-                clearInterval(timer);
-                timer = null;
-                return;
+        // 15s initial timeout if untouched; clicking, focusing, or typing keeps it open and resets a 30s inactivity timeout
+        const scheduleDismiss = (ms) => {
+            if (dismissTimeout) clearTimeout(dismissTimeout);
+            dismissTimeout = setTimeout(() => dismiss(false), ms);
+        };
+
+        const onInteract = () => {
+            scheduleDismiss(INTERACTION_TIMEOUT_MS);
+        };
+
+        scheduleDismiss(INITIAL_TIMEOUT_MS);
+
+        const onSubmitClick = () => {
+            const val = this.identifyInput ? this.identifyInput.value : "";
+            dismiss(true, val);
+        };
+
+        const onSkipClick = () => dismiss(false);
+
+        const onInputKeyDown = (e) => {
+            if (e.key === "Enter") {
+                dismiss(true, this.identifyInput ? this.identifyInput.value : "");
+            } else {
+                onInteract();
             }
-            maxSeconds--;
-            if (maxSeconds <= 0) {
-                dismiss(false);
+        };
+
+        const onModalKeyDown = (e) => {
+            if (e.key !== "Enter") {
+                onInteract();
             }
-        }, 1000);
+        };
+
+        if (this.identifyInput) {
+            this.identifyInput.addEventListener("focus", onInteract);
+            this.identifyInput.addEventListener("input", onInteract);
+            this.identifyInput.addEventListener("click", onInteract);
+            this.identifyInput.addEventListener("pointerdown", onInteract);
+            this.identifyInput.addEventListener("keydown", onInputKeyDown);
+        }
+
+        if (this.identifyModal) {
+            this.identifyModal.addEventListener("pointerdown", onInteract);
+            this.identifyModal.addEventListener("click", onInteract);
+            this.identifyModal.addEventListener("keydown", onModalKeyDown);
+        }
 
         if (this.identifySubmitBtn) {
-            this.identifySubmitBtn.addEventListener("click", () => {
-                const val = this.identifyInput ? this.identifyInput.value : "";
-                dismiss(true, val);
-            });
+            this.identifySubmitBtn.addEventListener("click", onSubmitClick);
         }
 
         if (this.identifySkipBtn) {
-            this.identifySkipBtn.addEventListener("click", () => dismiss(false));
+            this.identifySkipBtn.addEventListener("click", onSkipClick);
         }
 
-        if (this.identifyInput) {
-            this.identifyInput.addEventListener("keydown", (e) => {
-                if (e.key === "Enter") {
-                    dismiss(true, this.identifyInput.value);
-                }
-            });
-        }
+        this._identifyCleanup = () => {
+            if (dismissTimeout) {
+                clearTimeout(dismissTimeout);
+                dismissTimeout = null;
+            }
+            if (this.identifyInput) {
+                this.identifyInput.removeEventListener("focus", onInteract);
+                this.identifyInput.removeEventListener("input", onInteract);
+                this.identifyInput.removeEventListener("click", onInteract);
+                this.identifyInput.removeEventListener("pointerdown", onInteract);
+                this.identifyInput.removeEventListener("keydown", onInputKeyDown);
+            }
+            if (this.identifyModal) {
+                this.identifyModal.removeEventListener("pointerdown", onInteract);
+                this.identifyModal.removeEventListener("click", onInteract);
+                this.identifyModal.removeEventListener("keydown", onModalKeyDown);
+            }
+            if (this.identifySubmitBtn) {
+                this.identifySubmitBtn.removeEventListener("click", onSubmitClick);
+            }
+            if (this.identifySkipBtn) {
+                this.identifySkipBtn.removeEventListener("click", onSkipClick);
+            }
+            this._identifyCleanup = null;
+        };
     }
 
     setShowDeviceIDFlash(show) {
@@ -714,6 +870,7 @@ class ScheduleTracker {
     setupVisibilityHandler() {
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
+                this._snowLastTs = performance.now();
                 this.updateUI(true);
                 this.scheduleNextTick();
             } else {
@@ -788,35 +945,177 @@ class ScheduleTracker {
         }
     }
 
+    filterNwsAlerts(features) {
+        if (!Array.isArray(features)) return [];
+        return features.filter(f => {
+            const props = f && f.properties;
+            if (!props) return false;
+            const status = String(props.status || '').toLowerCase();
+            const msgType = String(props.messageType || '').toLowerCase();
+            const event = String(props.event || '').toLowerCase();
+            if (status !== 'actual' || msgType === 'cancel') return false;
+            return (event.includes('warning') || event.includes('advisory')) && !event.includes('watch');
+        });
+    }
+
     async setupWeather() {
         const fetchWeather = async () => {
             if (CONFIG.WEATHER_API_KEY === "YOUR_OPENWEATHERMAP_API_KEY") {
                 if (this.weatherDisplay) this.weatherDisplay.textContent = "72°";
+                this.lastWeatherCode = null;
+                this.lastWeatherIconCode = null;
+                this.isWeatherSnowing = false;
+                this.hasNwsAlert = false;
+                this.nwsAlertLabel = "";
                 this.lastWeatherFetchTs = Date.now();
+                this.updateWeatherIcon();
+                this.updateSnowState();
                 return;
             }
             try {
                 const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${CONFIG.LAT}&lon=${CONFIG.LON}&appid=${CONFIG.WEATHER_API_KEY}&units=imperial`);
+                if (!res.ok) {
+                    throw new Error(`Weather HTTP ${res.status}`);
+                }
                 const data = await res.json();
-                if (this.weatherDisplay && data.main) {
+                if (this.weatherDisplay && data && data.main && typeof data.main.temp === 'number') {
                     this.weatherDisplay.textContent = `${Math.round(data.main.temp)}°`;
                     this.weatherDisplay.style.display = 'inline-block';
                     this.lastWeatherFetchTs = Date.now();
+
+                    const w = Array.isArray(data.weather) && data.weather.length > 0 ? data.weather[0] : null;
+                    this.lastWeatherCode = w && typeof w.id === 'number' ? w.id : null;
+                    this.lastWeatherIconCode = w && typeof w.icon === 'string' ? w.icon : null;
+                    this.isWeatherSnowing = this.lastWeatherCode !== null && this.lastWeatherCode >= 600 && this.lastWeatherCode < 700;
+                } else {
+                    this.lastWeatherCode = null;
+                    this.lastWeatherIconCode = null;
+                    this.isWeatherSnowing = false;
                 }
             } catch (e) {
                 console.error("Weather fetch failed", e);
+                this.lastWeatherCode = null;
+                this.lastWeatherIconCode = null;
+                this.isWeatherSnowing = false;
             }
+
+            // Query active NWS Warnings and Advisories for the school's coordinates (exclude Watches)
+            try {
+                const nwsRes = await fetch(`https://api.weather.gov/alerts/active?point=${CONFIG.LAT},${CONFIG.LON}`, {
+                    headers: { 'Accept': 'application/geo+json' }
+                });
+                if (nwsRes.ok) {
+                    const nwsData = await nwsRes.json();
+                    const activeWarningsOrAdvisories = this.filterNwsAlerts(nwsData && nwsData.features);
+                    this.hasNwsAlert = activeWarningsOrAdvisories.length > 0;
+                    this.nwsAlertLabel = activeWarningsOrAdvisories
+                        .map(f => f.properties && f.properties.event)
+                        .filter(Boolean)
+                        .join(', ');
+                    this.lastNwsFetchTs = Date.now();
+                }
+            } catch (e) {
+                console.warn("NWS alert fetch failed", e);
+            }
+
+            this.updateWeatherIcon(this.lastWeatherCode, this.lastWeatherIconCode);
+            this.updateSnowState();
         };
 
         fetchWeather();
         this.weatherInterval = setInterval(fetchWeather, 600000); // 10 mins
     }
 
+    getWeatherSvg(code, iconCode) {
+        if (typeof code !== 'number' || Number.isNaN(code)) return null;
+        const isNight = typeof iconCode === 'string' && iconCode.endsWith('n');
+
+        // Thunderstorm (200-232)
+        if (code >= 200 && code <= 232) {
+            return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 16.9A5 5 0 0 0 18 7h-1.26a8 8 0 1 0-11.62 9"/><polyline points="13 11 9 17 15 17 11 23"/></svg>`;
+        }
+        // Drizzle / Rain (300-321, 500-531)
+        if ((code >= 300 && code <= 321) || (code >= 500 && code <= 531)) {
+            return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/></svg>`;
+        }
+        // Snow (600-622)
+        if (code >= 600 && code <= 622) {
+            return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M8 15h.01"/><path d="M8 19h.01"/><path d="M12 17h.01"/><path d="M12 21h.01"/><path d="M16 15h.01"/><path d="M16 19h.01"/></svg>`;
+        }
+        // Mist / Smoke / Haze / Fog (701, 711, 721, 741)
+        if (code === 701 || code === 711 || code === 721 || code === 741) {
+            return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M3 19h18"/><path d="M5 22h14"/></svg>`;
+        }
+        // Clear sky (800)
+        if (code === 800) {
+            if (isNight) {
+                return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>`;
+            }
+            return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`;
+        }
+        // Partly cloudy (801-802)
+        if (code === 801 || code === 802) {
+            if (isNight) {
+                return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 0 5 5 6 6 0 0 1-5-5Z"/><path d="M17.5 19H9a5 5 0 1 1 2.2-9.5A5.5 5.5 0 0 1 21 13.5a3.5 3.5 0 0 1-3.5 5.5Z"/></svg>`;
+            }
+            return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="M20 12h2"/><path d="m19.07 4.93-1.41 1.41"/><path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"/><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"/></svg>`;
+        }
+        // Cloudy / Overcast (803-804)
+        if (code === 803 || code === 804) {
+            return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>`;
+        }
+        // Unclear / unknown weather condition -> revert to temperature-only pill
+        return null;
+    }
+
+    updateWeatherIcon(code = this.lastWeatherCode, iconCode = this.lastWeatherIconCode) {
+        if (!this.weatherIconEl) return;
+        if (this.hasNwsAlert) {
+            this.weatherIconEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" fill="rgba(250, 204, 21, 0.2)"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+            this.weatherIconEl.classList.add('weather-warning');
+            this.weatherIconEl.style.display = 'inline-flex';
+            this.weatherIconEl.title = this.nwsAlertLabel ? `Active Weather Alert: ${this.nwsAlertLabel}` : 'Active NWS Weather Warning/Advisory';
+            return;
+        }
+
+        this.weatherIconEl.classList.remove('weather-warning');
+        this.weatherIconEl.removeAttribute('title');
+
+        const svg = this.getWeatherSvg(code, iconCode);
+        if (svg) {
+            this.weatherIconEl.innerHTML = svg;
+            this.weatherIconEl.style.display = 'inline-flex';
+        } else {
+            this.weatherIconEl.innerHTML = '';
+            this.weatherIconEl.style.display = 'none';
+        }
+    }
+
     checkWeatherExpiration() {
         if (!this.weatherDisplay) return;
+        const now = Date.now();
+        if (this.lastNwsFetchTs > 0 && (now - this.lastNwsFetchTs > 1800000)) {
+            this.hasNwsAlert = false;
+            this.nwsAlertLabel = "";
+            this.lastNwsFetchTs = 0;
+            this.updateWeatherIcon();
+        }
         // If weather data is older than 30 minutes (1800000 ms), hide it
-        if (this.lastWeatherFetchTs > 0 && (Date.now() - this.lastWeatherFetchTs > 1800000)) {
+        if (this.lastWeatherFetchTs > 0 && (now - this.lastWeatherFetchTs > 1800000)) {
             this.weatherDisplay.style.display = 'none';
+            this.hasNwsAlert = false;
+            this.nwsAlertLabel = "";
+            this.lastNwsFetchTs = 0;
+            if (this.weatherIconEl) {
+                this.weatherIconEl.classList.remove('weather-warning');
+                this.weatherIconEl.removeAttribute('title');
+                this.weatherIconEl.innerHTML = '';
+                this.weatherIconEl.style.display = 'none';
+            }
+            if (this.isWeatherSnowing) {
+                this.isWeatherSnowing = false;
+                this.updateSnowState();
+            }
         }
     }
 
@@ -1160,6 +1459,10 @@ class ScheduleTracker {
                 this.lastState.endVisible = false;
             }
         }
+
+        // Toggle Announcement Card when second (lower) bar isn't shown
+        const secondBarVisible = !!(this.lastState.items[1] && this.lastState.items[1].display === 'flex');
+        this.updateAnnouncementVisibility(secondBarVisible, anyVisible);
     }
 
     formatTimeRemaining(seconds) {
@@ -1200,6 +1503,255 @@ class ScheduleTracker {
                 item.bar.classList.remove('low-perf');
             }
         });
+        this.updateSnowState();
+    }
+
+    setGlobalSnowOverride(mode) {
+        const valid = ['auto', 'on', 'off'];
+        this.globalSnowOverride = valid.includes(mode) ? mode : 'auto';
+        this.updateSnowState();
+    }
+
+    setDeviceSnowOverride(mode) {
+        const valid = ['global', 'auto', 'on', 'off'];
+        this.deviceSnowOverride = valid.includes(mode) ? mode : 'global';
+        this.updateSnowState();
+    }
+
+    getEffectiveSnowMode() {
+        return (this.deviceSnowOverride && this.deviceSnowOverride !== 'global')
+            ? this.deviceSnowOverride
+            : this.globalSnowOverride;
+    }
+
+    canRunSnow() {
+        if (this.lowPerf || this._perfThrottled) return false;
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+        if (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2) return false;
+        if (navigator.deviceMemory && navigator.deviceMemory <= 2) return false;
+        return true;
+    }
+
+    updateSnowState() {
+        const mode = this.getEffectiveSnowMode();
+        let shouldSnow = false;
+        if (mode === 'on') {
+            shouldSnow = this.canRunSnow();
+        } else if (mode === 'auto') {
+            shouldSnow = this.isWeatherSnowing && this.canRunSnow();
+        }
+        if (shouldSnow) {
+            this.startSnow();
+        } else {
+            this.stopSnow();
+        }
+    }
+
+    resizeSnowCanvas() {
+        if (!this.snowCanvas) return;
+        const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+        const w = Math.floor(window.innerWidth * dpr);
+        const h = Math.floor(window.innerHeight * dpr);
+        if (this._snowCanvasWidth !== w || this._snowCanvasHeight !== h) {
+            this.snowCanvas.width = w;
+            this.snowCanvas.height = h;
+            this._snowCanvasWidth = w;
+            this._snowCanvasHeight = h;
+        }
+        this._snowDpr = dpr;
+    }
+
+    startSnow() {
+        if (!this.snowCanvas || this._snowRaf) return;
+        const ctx = this.snowCanvas.getContext('2d');
+        if (!ctx) return;
+
+        this.snowCanvas.style.display = 'block';
+        this.resizeSnowCanvas();
+
+        const count = Math.min(48, Math.max(20, Math.floor(window.innerWidth / 36)));
+        this._snowParticles = Array.from({ length: count }, () => ({
+            x: Math.random() * window.innerWidth,
+            y: Math.random() * window.innerHeight,
+            r: 1.4 + Math.random() * 2.2,
+            vy: 18 + Math.random() * 26,
+            vx: (Math.random() - 0.5) * 14,
+            alpha: 0.2 + Math.random() * 0.32,
+            phase: Math.random() * Math.PI * 2
+        }));
+
+        this._snowLastTs = performance.now();
+        this._snowSlowFrames = 0;
+
+        const tick = (now) => {
+            if (!this._snowRaf) return;
+            const dtMs = now - this._snowLastTs;
+            this._snowLastTs = now;
+
+            if (document.hidden) {
+                this._snowRaf = requestAnimationFrame(tick);
+                return;
+            }
+
+            // Runtime FPS watchdog: if device consistently drops below ~22 FPS, stop snow
+            if (dtMs > 45 && dtMs < 500) {
+                this._snowSlowFrames++;
+                if (this._snowSlowFrames >= 20) {
+                    this._perfThrottled = true;
+                    this.stopSnow();
+                    return;
+                }
+            } else if (dtMs <= 45) {
+                this._snowSlowFrames = Math.max(0, this._snowSlowFrames - 1);
+            }
+
+            const dt = Math.min(dtMs / 1000, 0.05);
+            const dpr = this._snowDpr || 1;
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.clearRect(0, 0, w, h);
+            ctx.fillStyle = '#ffffff';
+
+            for (let i = 0; i < this._snowParticles.length; i++) {
+                const p = this._snowParticles[i];
+                p.phase += dt * 0.8;
+                p.x += (p.vx + Math.sin(p.phase) * 8) * dt;
+                p.y += p.vy * dt;
+
+                if (p.y > h + 6) {
+                    p.y = -6;
+                    p.x = Math.random() * w;
+                }
+                if (p.x > w + 6) p.x = -6;
+                if (p.x < -6) p.x = w + 6;
+
+                ctx.globalAlpha = p.alpha;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            this._snowRaf = requestAnimationFrame(tick);
+        };
+
+        this._snowRaf = requestAnimationFrame(tick);
+    }
+
+    stopSnow() {
+        if (this._snowRaf) {
+            cancelAnimationFrame(this._snowRaf);
+            this._snowRaf = null;
+        }
+        if (this.snowCanvas) {
+            const ctx = this.snowCanvas.getContext('2d');
+            if (ctx) ctx.clearRect(0, 0, this.snowCanvas.width, this.snowCanvas.height);
+            this.snowCanvas.style.display = 'none';
+        }
+    }
+
+    setGlobalAnnouncement(data) {
+        if (data && typeof data === 'object') {
+            this.globalAnnouncement = {
+                enabled: !!data.enabled,
+                text: typeof data.text === 'string' ? data.text : ""
+            };
+        } else {
+            this.globalAnnouncement = { enabled: false, text: "" };
+        }
+        this.refreshAnnouncementState();
+    }
+
+    setDeviceAnnouncement(mode, text) {
+        const valid = ['global', 'custom', 'off'];
+        this.deviceAnnouncementMode = valid.includes(mode) ? mode : 'global';
+        this.deviceAnnouncementText = typeof text === 'string' ? text : "";
+        this.refreshAnnouncementState();
+    }
+
+    getEffectiveAnnouncement() {
+        if (this.deviceAnnouncementMode === 'off') {
+            return { enabled: false, text: "" };
+        }
+        if (this.deviceAnnouncementMode === 'custom') {
+            return {
+                enabled: this.deviceAnnouncementText.trim().length > 0,
+                text: this.deviceAnnouncementText
+            };
+        }
+        return this.globalAnnouncement;
+    }
+
+    refreshAnnouncementState() {
+        const secondBarVisible = !!(this.lastState.items[1] && this.lastState.items[1].display === 'flex');
+        const anyVisible = !this.lastState.endVisible;
+        this.updateAnnouncementVisibility(secondBarVisible, anyVisible);
+    }
+
+    updateAnnouncementVisibility(secondBarVisible, anyVisible) {
+        if (!this.announcementContainer || !this.announcementTextEl) return;
+        const eff = this.getEffectiveAnnouncement();
+        const shouldShow = !!(anyVisible && !secondBarVisible && eff.enabled && eff.text.trim().length > 0);
+        if (shouldShow) {
+            let needsFit = false;
+            if (!this._announcementVisible) {
+                this.announcementContainer.style.display = 'flex';
+                this._announcementVisible = true;
+                needsFit = true;
+            }
+            if (this.announcementTextEl.textContent !== eff.text) {
+                this.announcementTextEl.textContent = eff.text;
+                needsFit = true;
+            }
+            if (needsFit) {
+                this.fitAnnouncementText(true);
+            }
+        } else if (this._announcementVisible) {
+            this.announcementContainer.style.display = 'none';
+            this._announcementVisible = false;
+        }
+    }
+
+    fitAnnouncementText(force = false) {
+        if (!this._announcementVisible || !this.announcementContainer || !this.announcementTextEl) return;
+        const container = this.announcementContainer;
+        const textEl = this.announcementTextEl;
+        const w = container.clientWidth;
+        const h = container.clientHeight;
+        if (w <= 0 || h <= 0) return;
+
+        const currentText = textEl.textContent || "";
+        if (!force && currentText === this._lastFittedText && w === this._lastFittedWidth && h === this._lastFittedHeight) {
+            return;
+        }
+
+        const style = window.getComputedStyle(container);
+        const padX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+        const padY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+        const maxW = Math.floor(w - padX);
+        const maxH = Math.floor(h - padY);
+        if (maxW <= 0 || maxH <= 0) return;
+
+        let low = 8;
+        let high = Math.min(72, Math.max(12, Math.floor(maxH * 0.62)));
+        if (high < low) high = low;
+        let best = low;
+
+        while (low <= high) {
+            const mid = Math.floor((low + high) / 2);
+            textEl.style.fontSize = `${mid}px`;
+            if (textEl.scrollHeight <= maxH && textEl.scrollWidth <= maxW) {
+                best = mid;
+                low = mid + 1;
+            } else {
+                high = mid - 1;
+            }
+        }
+        textEl.style.fontSize = `${best}px`;
+        this._lastFittedText = currentText;
+        this._lastFittedWidth = w;
+        this._lastFittedHeight = h;
     }
 
     setUse24HourClock(enabled) {
@@ -1249,5 +1801,6 @@ class ScheduleTracker {
 
 document.addEventListener('DOMContentLoaded', () => {
     const tracker = new ScheduleTracker();
+    window.mvhsTracker = tracker;
     tracker.init();
 });
