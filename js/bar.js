@@ -356,7 +356,9 @@ class RemoteManager {
                 this._lastSettingsJson = currentSettingsJson;
 
                 // Customization Options
-                this.tracker.setUse24HourClock(!!settings.clock24h);
+                if (localStorage.getItem('mvhs_clock_24h') === null) {
+                    this.tracker.setUse24HourClock(!!settings.clock24h);
+                }
                 this.tracker.setWeatherVisible(settings.showWeather !== false);
                 this.tracker.setTotalTimeVisible(settings.showTotalTime !== false);
                 this.tracker.setCreditsVisible(settings.showCredits !== false);
@@ -471,7 +473,7 @@ class ScheduleTracker {
         this.timeOffset = 0;
         this.serverOffset = 0;
         this.currentPeriodName = "";
-        this.clock24h = false;
+        this.clock24h = localStorage.getItem('mvhs_clock_24h') === 'true';
         this.barStyle = "liquid";
         this.lowPerf = false;
         this.showDeviceIDFlash = false;
@@ -489,6 +491,15 @@ class ScheduleTracker {
         this.dateContainer = document.getElementById("date-container");
         this.dateDisplay = document.getElementById("date-display");
         this.clockDisplay = document.getElementById("clock-display");
+        if (this.clockDisplay) {
+            this.clockDisplay.style.cursor = 'pointer';
+            this.clockDisplay.title = 'Click to toggle 12/24-hour mode';
+            this.clockDisplay.addEventListener('click', () => {
+                this.clock24h = !this.clock24h;
+                localStorage.setItem('mvhs_clock_24h', this.clock24h ? 'true' : 'false');
+                this.updateUI(true);
+            });
+        }
         this.weatherContainer = document.getElementById("weather-container");
         this.weatherIconEl = document.getElementById("weather-icon");
         this.weatherDisplay = document.getElementById("weather-display");
@@ -536,6 +547,14 @@ class ScheduleTracker {
                 if (this._announcementVisible) {
                     this.fitAnnouncementText();
                 }
+                clearTimeout(this._deviceIdCopyTimeout);
+                const creditItem = this.deviceIdDisplay.closest('.credit-item');
+                this.deviceIdDisplay.classList.add('device-id-copied');
+                if (creditItem) creditItem.classList.add('device-id-copied');
+                this._deviceIdCopyTimeout = setTimeout(() => {
+                    this.deviceIdDisplay.classList.remove('device-id-copied');
+                    if (creditItem) creditItem.classList.remove('device-id-copied');
+                }, 500);
             });
             this._announcementObserver.observe(this.announcementContainer);
         }
@@ -863,6 +882,14 @@ class ScheduleTracker {
                     try { document.execCommand('copy'); } catch(e) {}
                     document.body.removeChild(temp);
                 }
+                clearTimeout(this._deviceIdCopyTimeout);
+                const creditItem = this.deviceIdDisplay.closest('.credit-item');
+                this.deviceIdDisplay.classList.add('device-id-copied');
+                if (creditItem) creditItem.classList.add('device-id-copied');
+                this._deviceIdCopyTimeout = setTimeout(() => {
+                    this.deviceIdDisplay.classList.remove('device-id-copied');
+                    if (creditItem) creditItem.classList.remove('device-id-copied');
+                }, 500);
             });
         }
     }

@@ -18,9 +18,9 @@
 
     <!-- Login View -->
     <div id="login-container" class="center-container">
-        <div class="glass-card login-card">
+        <div class="panel-card login-card">
             <div class="card-header-icon">
-                <i data-lucide="shield-check"></i>
+                <i data-lucide="shield-check" class="icon-lg"></i>
             </div>
             <h1>Admin Sign In</h1>
             <p class="login-subtitle">MVHS Schedule Tracker Control Center</p>
@@ -34,7 +34,8 @@
                     <input type="password" id="admin-password" placeholder="Enter Password" autocomplete="current-password" required>
                 </div>
                 <button type="submit" id="login-btn" class="btn-primary btn-full">
-                    <i data-lucide="log-in"></i> Sign In
+                    <i data-lucide="log-in" class="icon-sm"></i>
+                    <span>Sign In</span>
                 </button>
             </form>
             <p id="login-error" class="error" role="alert"></p>
@@ -43,100 +44,100 @@
 
     <!-- Dashboard View -->
     <div id="admin-dashboard" class="dashboard-container" style="display: none;">
-        <header class="top-header glass-card">
-            <div class="header-title">
-                <div class="brand-badge">
-                    <i data-lucide="layout-dashboard"></i>
+        <header class="top-header">
+            <div class="header-brand">
+                <span class="brand-icon" aria-hidden="true">
+                    <i data-lucide="layout-dashboard" class="icon-md"></i>
+                </span>
+                <h1>MVHS Tracker Admin</h1>
+                <span class="admin-role-badge">CONSOLE</span>
+            </div>
+
+            <div class="header-fleet-summary" aria-label="Fleet Summary">
+                <div class="fleet-metric" title="Online and active within 7 days">
+                    <span class="status-dot online" aria-hidden="true"></span>
+                    <span class="metric-label">Online</span>
+                    <strong id="stat-online" class="metric-value">0</strong>
                 </div>
-                <div>
-                    <div class="brand-title-row">
-                        <h1>MVHS Tracker</h1>
-                        <span class="admin-role-badge">ADMIN</span>
-                    </div>
-                    <p class="header-sub">Mountain Vista High School Display Control</p>
+                <div class="fleet-metric" title="Online, no interaction in 7 days">
+                    <span class="status-dot inactive" aria-hidden="true"></span>
+                    <span class="metric-label">Inactive</span>
+                    <strong id="stat-inactive" class="metric-value">0</strong>
+                </div>
+                <div class="fleet-metric" title="Disconnected displays">
+                    <span class="status-dot offline" aria-hidden="true"></span>
+                    <span class="metric-label">Offline</span>
+                    <strong id="stat-offline" class="metric-value">0</strong>
+                </div>
+                <div class="fleet-metric fleet-metric-total" title="Total registered displays">
+                    <span class="metric-label">Total</span>
+                    <strong id="stat-total" class="metric-value">0</strong>
+                </div>
+                <div class="fleet-divider" aria-hidden="true"></div>
+                <div class="fleet-state" title="Global Snow Mode">
+                    <span class="metric-label">Snow:</span>
+                    <strong id="stat-snow" class="state-value">Auto</strong>
+                </div>
+                <div class="fleet-state" title="Global Announcement Status">
+                    <span class="metric-label">Announce:</span>
+                    <strong id="stat-announcement" class="state-value">Off</strong>
                 </div>
             </div>
+
             <div class="header-right">
-                <div class="nav-status-pill" title="Displays currently online and active">
-                    <span class="live-dot" aria-hidden="true"></span>
-                    <span><strong id="nav-online-count">0</strong> online</span>
-                </div>
-                <button id="logout-btn" class="btn-ghost" type="button">
-                    <i data-lucide="log-out"></i> <span>Logout</span>
+                <button id="logout-btn" class="btn-ghost btn-sm" type="button">
+                    <i data-lucide="log-out" class="icon-sm"></i>
+                    <span>Logout</span>
                 </button>
             </div>
         </header>
 
-        <main>
-            <!-- Top Summary KPI Bar -->
-            <section class="summary-kpi-bar" aria-label="Fleet Summary">
-                <div class="kpi-card glass-card">
-                    <span class="kpi-label">Total Displays</span>
-                    <strong class="kpi-value" id="stat-total">0</strong>
-                </div>
-                <div class="kpi-card glass-card kpi-online">
-                    <span class="kpi-label">Online Now</span>
-                    <strong class="kpi-value" id="stat-online">0</strong>
-                </div>
-                <div class="kpi-card glass-card kpi-inactive">
-                    <span class="kpi-label">Inactive</span>
-                    <strong class="kpi-value" id="stat-inactive">0</strong>
-                </div>
-                <div class="kpi-card glass-card kpi-offline">
-                    <span class="kpi-label">Offline</span>
-                    <strong class="kpi-value" id="stat-offline">0</strong>
-                </div>
-                <div class="kpi-card glass-card kpi-snow">
-                    <span class="kpi-label">Snow Mode</span>
-                    <strong class="kpi-chip" id="stat-snow">Auto</strong>
-                </div>
-                <div class="kpi-card glass-card kpi-announce">
-                    <span class="kpi-label">Announcement</span>
-                    <strong class="kpi-chip" id="stat-announcement">Off</strong>
-                </div>
-            </section>
+        <main class="workspace-shell">
+            <!-- Unified Top Global Controls Section (No Tabs) -->
+            <section id="global-controls-section" class="global-controls mobile-collapsed" aria-label="Global Controls">
+                <button type="button" id="global-controls-toggle" class="global-controls-toggle" aria-expanded="false" aria-controls="global-controls-body">
+                    <span class="toggle-title">Global Controls</span>
+                    <span class="toggle-meta">Actions, Theme, Snow &amp; Announcements</span>
+                    <i data-lucide="chevron-down" class="icon-sm toggle-chevron"></i>
+                </button>
 
-            <!-- Tabbed Global Control Center -->
-            <section class="global-controls glass-card" aria-label="Global Control Center">
-                <div class="section-header-row">
-                    <h2><i data-lucide="sliders"></i> Global Control Center</h2>
-                    <div class="control-tabs" role="tablist" aria-label="Global Control Sections">
-                        <button type="button" class="tab-btn active" role="tab" aria-selected="true" aria-controls="tab-actions" data-tab="tab-actions">
-                            <i data-lucide="zap"></i> <span>Quick Actions</span>
-                        </button>
-                        <button type="button" class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-theme" data-tab="tab-theme">
-                            <i data-lucide="palette"></i> <span>Theme &amp; Display</span>
-                        </button>
-                        <button type="button" class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-announcements" data-tab="tab-announcements">
-                            <i data-lucide="snowflake"></i> <span>Snow &amp; Announcements</span>
-                        </button>
+                <div id="global-controls-body" class="global-controls-body">
+                    <!-- Column 1: Quick Actions -->
+                    <div class="global-col global-col-actions">
+                        <div class="global-col-header">
+                            <h2>Quick Actions</h2>
+                        </div>
+                        <div class="actions-stack">
+                            <button type="button" id="refresh-all-btn" class="btn-warning btn-sm">
+                                <i data-lucide="refresh-cw" class="icon-sm"></i>
+                                <span>Refresh All</span>
+                            </button>
+                            <button type="button" id="hard-reload-all-btn" class="btn-warning btn-sm">
+                                <i data-lucide="rotate-ccw" class="icon-sm"></i>
+                                <span>Hard Reload All</span>
+                            </button>
+                            <button type="button" id="hold-identify-btn" class="btn-hold btn-sm">
+                                <i data-lucide="eye" class="icon-sm"></i>
+                                <span>Hold to Show Device IDs</span>
+                            </button>
+                            <button type="button" id="clear-all-names-btn" class="btn-danger-outline btn-sm">
+                                <i data-lucide="user-x" class="icon-sm"></i>
+                                <span>Clear All Device Names</span>
+                            </button>
+                            <button type="button" id="reset-defaults-btn" class="btn-ghost btn-sm">
+                                <i data-lucide="rotate-cw" class="icon-sm"></i>
+                                <span>Reset Global Defaults</span>
+                            </button>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Tab 1: Quick Actions -->
-                <div id="tab-actions" class="tab-panel active" role="tabpanel">
-                    <div class="actions-grid">
-                        <button type="button" id="refresh-all-btn" class="btn-warning">
-                            <i data-lucide="refresh-cw"></i> Refresh All Displays
-                        </button>
-                        <button type="button" id="hard-reload-all-btn" class="btn-warning">
-                            <i data-lucide="rotate-ccw"></i> Hard Reload All
-                        </button>
-                        <button type="button" id="hold-identify-btn" class="btn-hold">
-                            <i data-lucide="eye"></i> Hold to Show Device IDs
-                        </button>
-                        <button type="button" id="clear-all-names-btn" class="btn-danger-outline">
-                            <i data-lucide="user-x"></i> Clear All Device Names
-                        </button>
-                        <button type="button" id="reset-defaults-btn" class="btn-ghost">
-                            <i data-lucide="rotate-cw"></i> Reset Global Defaults
-                        </button>
-                    </div>
-                </div>
+                    <!-- Column 2: Theme & Display -->
+                    <div class="global-col global-col-theme">
+                        <div class="global-col-header">
+                            <h2>Theme &amp; Display</h2>
+                            <span id="global-theme-status" class="inline-status">Applies to all displays</span>
+                        </div>
 
-                <!-- Tab 2: Theme & Display -->
-                <div id="tab-theme" class="tab-panel" role="tabpanel" hidden>
-                    <div class="global-setting-panel">
                         <div class="theme-grid">
                             <div class="picker-group">
                                 <label for="global-bg-mode">Background Mode</label>
@@ -152,7 +153,7 @@
                             <!-- Solid Color Inputs -->
                             <div id="global-bg-color-group" class="bg-mode-group">
                                 <div class="picker-group">
-                                    <label for="input-global-bg">Background Color</label>
+                                    <label for="input-global-bg">Background</label>
                                     <div class="input-with-reset">
                                         <input type="color" id="input-global-bg" value="#00401e">
                                         <button type="button" class="btn-reset" data-target="input-global-bg" data-default="#00401e">Reset</button>
@@ -163,11 +164,11 @@
                             <!-- Gradient Inputs -->
                             <div id="global-bg-gradient-group" class="bg-mode-group" style="display: none;">
                                 <div class="picker-group">
-                                    <label for="input-global-grad1">Gradient Color 1</label>
+                                    <label for="input-global-grad1">Gradient 1</label>
                                     <input type="color" id="input-global-grad1" value="#00401e">
                                 </div>
                                 <div class="picker-group">
-                                    <label for="input-global-grad2">Gradient Color 2</label>
+                                    <label for="input-global-grad2">Gradient 2</label>
                                     <input type="color" id="input-global-grad2" value="#001a0c">
                                 </div>
                                 <div class="picker-group">
@@ -201,7 +202,7 @@
                             </div>
 
                             <div class="picker-group">
-                                <label for="input-global-anim-accent">Animation Accent</label>
+                                <label for="input-global-anim-accent">Accent</label>
                                 <div class="input-with-reset">
                                     <input type="color" id="input-global-anim-accent" value="#ffffff">
                                     <button type="button" class="btn-reset" data-target="input-global-anim-accent" data-default="#ffffff">Reset</button>
@@ -229,51 +230,52 @@
                                     </select>
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="panel-footer-actions split-between">
-                            <span id="global-theme-status" class="inline-status">Push visual theme updates across all connected displays.</span>
-                            <button type="button" id="save-global-theme-btn" class="btn-primary">
-                                <i data-lucide="check-circle-2"></i> Apply Theme to All
-                            </button>
+                            <div class="picker-group theme-apply-cell">
+                                <label class="sr-only" for="save-global-theme-btn">Apply Theme</label>
+                                <button type="button" id="save-global-theme-btn" class="btn-primary btn-sm btn-full">
+                                    <i data-lucide="check-circle-2" class="icon-sm"></i>
+                                    <span>Apply Theme to All</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Tab 3: Snow & Announcements -->
-                <div id="tab-announcements" class="tab-panel" role="tabpanel" hidden>
-                    <div class="global-setting-panel split-panel">
-                        <div class="sub-panel">
-                            <h3><i data-lucide="snowflake"></i> Snow Animation Override</h3>
-                            <p class="helper-text">Auto follows live Highlands Ranch weather. Low-performance displays automatically skip snow to stay smooth.</p>
-                            <div class="segmented-control" role="group" aria-label="Snow Animation Override">
-                                <button type="button" class="seg-btn active" data-snow="auto" aria-pressed="true">Auto (Weather)</button>
+                    <!-- Column 3: Snow & Announcements -->
+                    <div class="global-col global-col-announce">
+                        <div class="global-col-header">
+                            <h2>Snow &amp; Announcements</h2>
+                            <span id="snow-override-status" class="inline-status">Mode: Auto</span>
+                        </div>
+
+                        <div class="snow-row">
+                            <div class="segmented-control" role="group" aria-label="Snow Effect Override">
+                                <button type="button" class="seg-btn active" data-snow="auto" aria-pressed="true">Auto</button>
                                 <button type="button" class="seg-btn" data-snow="on" aria-pressed="false">Force On</button>
                                 <button type="button" class="seg-btn" data-snow="off" aria-pressed="false">Force Off</button>
                             </div>
-                            <p id="snow-override-status" class="inline-status margin-top-sm">Mode: Auto (follows Highlands Ranch weather)</p>
                         </div>
 
-                        <div class="sub-panel">
-                            <h3><i data-lucide="megaphone"></i> Lower-Bar Announcement</h3>
-                            <p class="helper-text">Displayed in the second bar slot whenever the lower schedule bar is hidden. Text auto-scales so it never overflows.</p>
+                        <div class="announcement-block">
                             <div class="announcement-meta-row">
                                 <label class="custom-checkbox">
                                     <input type="checkbox" id="input-announcement-enabled">
                                     <span class="checkbox-box"></span>
-                                    <span>Enable Announcement</span>
+                                    <span>Enable Lower-Bar Announcement</span>
                                 </label>
                                 <span id="announcement-char-count" class="char-counter">0 / 200</span>
                             </div>
-                            <textarea id="input-announcement-text" class="margin-top-sm" maxlength="200" placeholder="Enter school announcement (e.g. Pep Rally in the Main Gym at 2:15 PM!)"></textarea>
-                            <div class="panel-footer-actions split-between">
+                            <textarea id="input-announcement-text" rows="2" maxlength="200" placeholder="Enter school announcement (e.g. Pep Rally in the Main Gym at 2:15 PM!)"></textarea>
+                            <div class="announcement-footer">
                                 <span id="announcement-status" class="inline-status">Currently disabled</span>
                                 <div class="inline-btn-pair">
-                                    <button type="button" id="clear-announcement-btn" class="btn-ghost btn-sm">
-                                        <i data-lucide="eraser"></i> Clear
+                                    <button type="button" id="clear-announcement-btn" class="btn-ghost btn-xs">
+                                        <i data-lucide="eraser" class="icon-xs"></i>
+                                        <span>Clear</span>
                                     </button>
-                                    <button type="button" id="save-announcement-btn" class="btn-primary">
-                                        <i data-lucide="send"></i> Save Announcement
+                                    <button type="button" id="save-announcement-btn" class="btn-primary btn-xs">
+                                        <i data-lucide="send" class="icon-xs"></i>
+                                        <span>Save Announcement</span>
                                     </button>
                                 </div>
                             </div>
@@ -282,267 +284,304 @@
                 </div>
             </section>
 
-            <!-- Devices Section -->
-            <section class="device-list-container">
-                <div class="list-header">
-                    <h2><i data-lucide="monitor"></i> Connected Displays (<span id="device-count">0</span>)</h2>
-
-                    <div class="list-controls">
+            <!-- Master-Detail Split Workspace -->
+            <section class="workspace-split" aria-label="Displays Workspace">
+                <!-- Left Pane: Compact Device List -->
+                <aside class="device-list-pane" aria-label="Displays List">
+                    <div class="list-toolbar">
                         <div class="filter-group" role="group" aria-label="Filter devices by status">
-                            <button type="button" class="filter-btn active" data-filter="all">All</button>
-                            <button type="button" class="filter-btn" data-filter="online">Online</button>
-                            <button type="button" class="filter-btn" data-filter="inactive">Inactive</button>
-                            <button type="button" class="filter-btn" data-filter="offline">Offline</button>
+                            <button type="button" class="filter-btn active" data-filter="online">
+                                <span>Online</span>
+                                <span class="filter-count" id="filter-count-online">0</span>
+                            </button>
+                            <button type="button" class="filter-btn" data-filter="all">
+                                <span>All</span>
+                                <span class="filter-count" id="filter-count-all">0</span>
+                            </button>
+                            <button type="button" class="filter-btn" data-filter="inactive">
+                                <span>Inactive</span>
+                                <span class="filter-count" id="filter-count-inactive">0</span>
+                            </button>
+                            <button type="button" class="filter-btn" data-filter="offline">
+                                <span>Offline</span>
+                                <span class="filter-count" id="filter-count-offline">0</span>
+                            </button>
                         </div>
 
                         <div class="search-bar-container">
                             <div class="search-input-wrapper">
-                                <i data-lucide="search" class="search-icon"></i>
+                                <i data-lucide="search" class="search-icon icon-xs"></i>
                                 <input type="text" id="search-input" placeholder="Search name, ID, browser..." aria-label="Search devices">
+                                <button type="button" id="clear-search-btn" class="clear-search-btn" style="display: none;" aria-label="Clear search">
+                                    <i data-lucide="x" class="icon-xs"></i>
+                                </button>
                             </div>
-                            <button type="button" id="clear-search-btn" class="btn-ghost btn-sm" style="display: none;">
-                                <i data-lucide="x"></i> Clear
+                            <span id="device-count" class="search-result-count" title="Matching displays">0</span>
+                        </div>
+                    </div>
+
+                    <div id="device-list" class="device-list-rows" role="listbox" aria-label="Connected Displays"></div>
+
+                    <div id="device-list-footer" class="list-pagination-footer" style="display: none;">
+                        <button type="button" id="load-more-btn" class="btn-ghost btn-sm btn-full">Load 50 more</button>
+                    </div>
+                </aside>
+
+                <!-- Right Pane: Inline Device Inspector -->
+                <section id="control-modal" class="inspector-pane" aria-label="Device Inspector">
+                    <div id="inspector-empty" class="inspector-empty-state">
+                        <i data-lucide="monitor" class="icon-lg"></i>
+                        <p>Select a display from the list to inspect and configure</p>
+                    </div>
+
+                    <div id="inspector-content" class="inspector-content" style="display: none;">
+                        <div class="inspector-mobile-bar">
+                            <button type="button" id="inspector-back-btn" class="btn-ghost btn-sm">
+                                <i data-lucide="arrow-left" class="icon-sm"></i>
+                                <span>Back to Displays</span>
                             </button>
                         </div>
-                    </div>
-                </div>
 
-                <div id="device-list" class="device-grid">
-                    <p class="empty-msg">Waiting for devices to connect...</p>
-                </div>
-            </section>
-        </main>
-    </div>
-
-    <!-- Device Control Modal / Mobile Bottom Sheet -->
-    <div id="control-modal" class="modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="modal-device-name">
-        <div class="modal-content glass-card">
-            <div class="modal-handle" aria-hidden="true"></div>
-            <button type="button" class="close-btn" aria-label="Close modal">&times;</button>
-            <div class="modal-header">
-                <div class="modal-title-row">
-                    <h2 id="modal-device-name">Device Name</h2>
-                    <span id="modal-status-badge" class="status-pill">Offline</span>
-                </div>
-                <p class="device-id-sub">ID: <span id="modal-device-id">XXXXXX</span></p>
-            </div>
-
-            <div class="modal-body-scroll">
-                <div class="control-section">
-                    <h3><i data-lucide="edit-3"></i> General</h3>
-                    <label for="input-name" class="field-label">Display Name</label>
-                    <input type="text" id="input-name" placeholder="Hallway TV 1">
-                </div>
-
-                <hr>
-
-                <div class="control-section">
-                    <h3><i data-lucide="palette"></i> Theme &amp; Behavior</h3>
-                    <div class="setting-item">
-                        <label for="modal-bg-mode">Background Mode</label>
-                        <div class="custom-select-wrapper">
-                            <select id="modal-bg-mode" class="custom-select">
-                                <option value="color">Solid Color</option>
-                                <option value="gradient">Gradient</option>
-                                <option value="image">Image Link</option>
-                            </select>
+                        <div class="inspector-header">
+                            <div class="inspector-title-block">
+                                <div class="inspector-title-row">
+                                    <h2 id="modal-device-name">Device Name</h2>
+                                    <span id="modal-status-badge" class="status-pill">Offline</span>
+                                </div>
+                                <p class="device-id-sub">ID: <span id="modal-device-id">XXXXXX</span></p>
+                            </div>
+                            <button type="button" class="close-btn btn-ghost btn-xs" aria-label="Close inspector" title="Close Inspector">
+                                <i data-lucide="x" class="icon-sm"></i>
+                            </button>
                         </div>
-                    </div>
 
-                    <!-- Color Option -->
-                    <div id="modal-bg-color-group" class="bg-mode-group-modal">
-                        <div class="setting-item">
-                            <label for="input-bg-color">Background Color</label>
-                            <div class="input-with-reset">
-                                <input type="color" id="input-bg-color" value="#00401e">
-                                <button type="button" class="btn-reset" data-target="input-bg-color" data-default="#00401e">Reset</button>
+                        <div class="inspector-body">
+                            <div class="control-section">
+                                <h3>General</h3>
+                                <div class="setting-item flex-column">
+                                    <label for="input-name">Display Name</label>
+                                    <input type="text" id="input-name" placeholder="Hallway TV 1">
+                                </div>
+                            </div>
+
+                            <hr>
+
+                            <div class="control-section">
+                                <h3>Theme &amp; Behavior</h3>
+                                <div class="setting-item">
+                                    <label for="modal-bg-mode">Background Mode</label>
+                                    <div class="custom-select-wrapper">
+                                        <select id="modal-bg-mode" class="custom-select">
+                                            <option value="color">Solid Color</option>
+                                            <option value="gradient">Gradient</option>
+                                            <option value="image">Image Link</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Color Option -->
+                                <div id="modal-bg-color-group" class="bg-mode-group-modal">
+                                    <div class="setting-item">
+                                        <label for="input-bg-color">Background Color</label>
+                                        <div class="input-with-reset">
+                                            <input type="color" id="input-bg-color" value="#00401e">
+                                            <button type="button" class="btn-reset" data-target="input-bg-color" data-default="#00401e">Reset</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Gradient Option -->
+                                <div id="modal-bg-gradient-group" class="bg-mode-group-modal" style="display: none;">
+                                    <div class="setting-item">
+                                        <label for="input-bg-grad1">Gradient Color 1</label>
+                                        <input type="color" id="input-bg-grad1" value="#00401e">
+                                    </div>
+                                    <div class="setting-item">
+                                        <label for="input-bg-grad2">Gradient Color 2</label>
+                                        <input type="color" id="input-bg-grad2" value="#001a0c">
+                                    </div>
+                                    <div class="setting-item">
+                                        <label for="input-bg-grad-deg">Direction (Degrees)</label>
+                                        <input type="number" id="input-bg-grad-deg" value="135" min="0" max="360">
+                                    </div>
+                                </div>
+
+                                <!-- Image Link Option -->
+                                <div id="modal-bg-image-group" class="bg-mode-group-modal" style="display: none;">
+                                    <div class="setting-item flex-column">
+                                        <label for="input-bg-image">Background Image URL</label>
+                                        <input type="text" id="input-bg-image" placeholder="https://example.com/background.jpg">
+                                    </div>
+                                </div>
+
+                                <div class="setting-item">
+                                    <label for="input-bar-color">Progress Bar Color</label>
+                                    <div class="input-with-reset">
+                                        <input type="color" id="input-bar-color" value="#b1953a">
+                                        <button type="button" class="btn-reset" data-target="input-bar-color" data-default="#b1953a">Reset</button>
+                                    </div>
+                                </div>
+
+                                <div class="setting-item">
+                                    <label for="input-text-color">Text Color</label>
+                                    <div class="input-with-reset">
+                                        <input type="color" id="input-text-color" value="#ffffff">
+                                        <button type="button" class="btn-reset" data-target="input-text-color" data-default="#ffffff">Reset</button>
+                                    </div>
+                                </div>
+
+                                <div class="setting-item">
+                                    <label for="input-anim-accent">Bar Accent Color</label>
+                                    <div class="input-with-reset">
+                                        <input type="color" id="input-anim-accent" value="#ffffff">
+                                        <button type="button" class="btn-reset" data-target="input-anim-accent" data-default="#ffffff">Reset</button>
+                                    </div>
+                                </div>
+
+                                <div class="setting-item">
+                                    <label for="input-bar-style">Bar Animation Style</label>
+                                    <div class="custom-select-wrapper">
+                                        <select id="input-bar-style" class="custom-select">
+                                            <option value="liquid">Liquid</option>
+                                            <option value="glow">Glow</option>
+                                            <option value="pulse">Pulse</option>
+                                            <option value="solid">Solid</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="setting-item">
+                                    <label for="input-clock-format">Clock Format</label>
+                                    <div class="custom-select-wrapper">
+                                        <select id="input-clock-format" class="custom-select">
+                                            <option value="12">12-Hour (09:15:30)</option>
+                                            <option value="24">24-Hour (21:15:30)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="setting-item">
+                                    <label for="input-offset">Time Offset (Minutes)</label>
+                                    <input type="number" id="input-offset" value="0">
+                                </div>
+
+                                <div class="setting-item">
+                                    <label for="input-snow-override">Snow Animation Override</label>
+                                    <div class="custom-select-wrapper">
+                                        <select id="input-snow-override" class="custom-select">
+                                            <option value="global">Follow Global</option>
+                                            <option value="auto">Auto (Weather)</option>
+                                            <option value="on">Force On</option>
+                                            <option value="off">Force Off</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="setting-item">
+                                    <label for="input-device-announcement-mode">Announcement Override</label>
+                                    <div class="custom-select-wrapper">
+                                        <select id="input-device-announcement-mode" class="custom-select">
+                                            <option value="global">Follow Global</option>
+                                            <option value="custom">Custom Message</option>
+                                            <option value="off">Hidden on Device</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div id="modal-device-announcement-group" class="setting-item flex-column" style="display: none;">
+                                    <label for="input-device-announcement-text">Device Announcement Text</label>
+                                    <textarea id="input-device-announcement-text" maxlength="200" placeholder="Enter custom announcement for this display..."></textarea>
+                                </div>
+
+                                <div class="checkbox-group">
+                                    <label class="custom-checkbox">
+                                        <input type="checkbox" id="input-show-weather" checked>
+                                        <span class="checkbox-box"></span>
+                                        <span>Show Weather Widget</span>
+                                    </label>
+                                    <label class="custom-checkbox">
+                                        <input type="checkbox" id="input-show-total-time" checked>
+                                        <span class="checkbox-box"></span>
+                                        <span>Show Total Time Remaining</span>
+                                    </label>
+                                    <label class="custom-checkbox">
+                                        <input type="checkbox" id="input-show-credits" checked>
+                                        <span class="checkbox-box"></span>
+                                        <span>Show Footer Credits</span>
+                                    </label>
+                                    <label class="custom-checkbox">
+                                        <input type="checkbox" id="input-low-perf">
+                                        <span class="checkbox-box"></span>
+                                        <span>Low Performance Mode</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <hr>
+
+                            <div class="control-section">
+                                <h3>Override Message</h3>
+                                <div class="setting-item flex-column">
+                                    <label for="input-override-text">Overlay Text</label>
+                                    <textarea id="input-override-text" placeholder="Enter message for full-screen override"></textarea>
+                                </div>
+                                <label class="custom-checkbox margin-top-sm">
+                                    <input type="checkbox" id="input-override-active">
+                                    <span class="checkbox-box"></span>
+                                    <span>Activate Full Screen Override</span>
+                                </label>
+                            </div>
+
+                            <div class="control-section">
+                                <button type="button" id="save-all-device-settings-btn" class="btn-primary-large">
+                                    <i data-lucide="save" class="icon-sm"></i>
+                                    <span>Save Device Settings</span>
+                                </button>
+                            </div>
+
+                            <hr>
+
+                            <div class="control-section">
+                                <h3>Metadata &amp; Health</h3>
+                                <div class="metadata-grid">
+                                    <p><span>Browser</span> <strong id="modal-browser">---</strong></p>
+                                    <p><span>First Seen</span> <strong id="modal-first-seen">---</strong></p>
+                                    <p><span>Current Uptime</span> <strong id="modal-uptime">---</strong></p>
+                                    <p><span>Total Uptime</span> <strong id="modal-total-uptime">---</strong></p>
+                                    <p><span>Battery</span> <strong id="modal-battery">---</strong></p>
+                                    <p><span>Touch Points</span> <strong id="modal-touch">---</strong></p>
+                                    <p><span>Visibility</span> <strong id="modal-visibility">---</strong></p>
+                                    <p><span>Time Drift</span> <strong id="modal-drift">---</strong></p>
+                                    <p><span>Total Interactions</span> <strong id="modal-activity-total">---</strong></p>
+                                    <p><span>Last Interaction</span> <strong id="modal-activity-last">---</strong></p>
+                                    <p><span>Active (7d)</span> <strong id="modal-activity-7d">---</strong></p>
+                                </div>
+                            </div>
+
+                            <hr>
+
+                            <div class="control-section">
+                                <h3>Remote Actions</h3>
+                                <div class="btn-group">
+                                    <button type="button" id="refresh-device-btn" class="btn-warning btn-sm">
+                                        <i data-lucide="refresh-cw" class="icon-sm"></i>
+                                        <span>Refresh</span>
+                                    </button>
+                                    <button type="button" id="hard-reload-device-btn" class="btn-warning btn-sm">
+                                        <i data-lucide="rotate-ccw" class="icon-sm"></i>
+                                        <span>Hard Reload</span>
+                                    </button>
+                                    <button type="button" id="delete-device-btn" class="btn-danger btn-sm">
+                                        <i data-lucide="trash-2" class="icon-sm"></i>
+                                        <span>Delete Device</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Gradient Option -->
-                    <div id="modal-bg-gradient-group" class="bg-mode-group-modal" style="display: none;">
-                        <div class="setting-item">
-                            <label for="input-bg-grad1">Gradient Color 1</label>
-                            <input type="color" id="input-bg-grad1" value="#00401e">
-                        </div>
-                        <div class="setting-item">
-                            <label for="input-bg-grad2">Gradient Color 2</label>
-                            <input type="color" id="input-bg-grad2" value="#001a0c">
-                        </div>
-                        <div class="setting-item">
-                            <label for="input-bg-grad-deg">Direction (Degrees)</label>
-                            <input type="number" id="input-bg-grad-deg" value="135" min="0" max="360">
-                        </div>
-                    </div>
-
-                    <!-- Image Link Option -->
-                    <div id="modal-bg-image-group" class="bg-mode-group-modal" style="display: none;">
-                        <div class="setting-item flex-column">
-                            <label for="input-bg-image">Background Image URL</label>
-                            <input type="text" id="input-bg-image" placeholder="https://example.com/background.jpg">
-                        </div>
-                    </div>
-
-                    <div class="setting-item">
-                        <label for="input-bar-color">Progress Bar Color</label>
-                        <div class="input-with-reset">
-                            <input type="color" id="input-bar-color" value="#b1953a">
-                            <button type="button" class="btn-reset" data-target="input-bar-color" data-default="#b1953a">Reset</button>
-                        </div>
-                    </div>
-
-                    <div class="setting-item">
-                        <label for="input-text-color">Text Color</label>
-                        <div class="input-with-reset">
-                            <input type="color" id="input-text-color" value="#ffffff">
-                            <button type="button" class="btn-reset" data-target="input-text-color" data-default="#ffffff">Reset</button>
-                        </div>
-                    </div>
-
-                    <div class="setting-item">
-                        <label for="input-anim-accent">Bar Accent Color</label>
-                        <div class="input-with-reset">
-                            <input type="color" id="input-anim-accent" value="#ffffff">
-                            <button type="button" class="btn-reset" data-target="input-anim-accent" data-default="#ffffff">Reset</button>
-                        </div>
-                    </div>
-
-                    <div class="setting-item">
-                        <label for="input-bar-style">Bar Animation Style</label>
-                        <div class="custom-select-wrapper">
-                            <select id="input-bar-style" class="custom-select">
-                                <option value="liquid">Liquid</option>
-                                <option value="glow">Glow</option>
-                                <option value="pulse">Pulse</option>
-                                <option value="solid">Solid</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="setting-item">
-                        <label for="input-clock-format">Clock Format</label>
-                        <div class="custom-select-wrapper">
-                            <select id="input-clock-format" class="custom-select">
-                                <option value="12">12-Hour (09:15:30)</option>
-                                <option value="24">24-Hour (21:15:30)</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="setting-item">
-                        <label for="input-offset">Time Offset (Minutes)</label>
-                        <input type="number" id="input-offset" value="0">
-                    </div>
-
-                    <div class="setting-item">
-                        <label for="input-snow-override">Snow Animation Override</label>
-                        <div class="custom-select-wrapper">
-                            <select id="input-snow-override" class="custom-select">
-                                <option value="global">Follow Global</option>
-                                <option value="auto">Auto (Weather)</option>
-                                <option value="on">Force On</option>
-                                <option value="off">Force Off</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="setting-item">
-                        <label for="input-device-announcement-mode">Announcement Override</label>
-                        <div class="custom-select-wrapper">
-                            <select id="input-device-announcement-mode" class="custom-select">
-                                <option value="global">Follow Global</option>
-                                <option value="custom">Custom Message</option>
-                                <option value="off">Hidden on Device</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div id="modal-device-announcement-group" class="setting-item flex-column" style="display: none;">
-                        <label for="input-device-announcement-text">Device Announcement Text</label>
-                        <textarea id="input-device-announcement-text" maxlength="200" placeholder="Enter custom announcement for this display..."></textarea>
-                    </div>
-
-                    <div class="checkbox-group">
-                        <label class="custom-checkbox">
-                            <input type="checkbox" id="input-show-weather" checked>
-                            <span class="checkbox-box"></span>
-                            <span>Show Weather Widget</span>
-                        </label>
-                        <label class="custom-checkbox">
-                            <input type="checkbox" id="input-show-total-time" checked>
-                            <span class="checkbox-box"></span>
-                            <span>Show Total Time Remaining</span>
-                        </label>
-                        <label class="custom-checkbox">
-                            <input type="checkbox" id="input-show-credits" checked>
-                            <span class="checkbox-box"></span>
-                            <span>Show Footer Credits</span>
-                        </label>
-                        <label class="custom-checkbox">
-                            <input type="checkbox" id="input-low-perf">
-                            <span class="checkbox-box"></span>
-                            <span>Low Performance Mode</span>
-                        </label>
-                    </div>
-                </div>
-
-                <hr>
-
-                <div class="control-section">
-                    <h3><i data-lucide="alert-triangle"></i> Override Message</h3>
-                    <label for="input-override-text" class="field-label">Overlay Text</label>
-                    <textarea id="input-override-text" placeholder="Enter message for full-screen override"></textarea>
-                    <label class="custom-checkbox margin-top-sm">
-                        <input type="checkbox" id="input-override-active">
-                        <span class="checkbox-box"></span>
-                        <span>Activate Full Screen Override</span>
-                    </label>
-                </div>
-
-                <div class="control-section">
-                    <button type="button" id="save-all-device-settings-btn" class="btn-primary-large">
-                        <i data-lucide="save"></i> Save All Device Settings
-                    </button>
-                </div>
-
-                <hr>
-
-                <div class="control-section">
-                    <h3><i data-lucide="info"></i> Metadata &amp; Health</h3>
-                    <div class="metadata-grid">
-                        <p><span>Browser</span> <strong id="modal-browser">---</strong></p>
-                        <p><span>First Seen</span> <strong id="modal-first-seen">---</strong></p>
-                        <p><span>Current Uptime</span> <strong id="modal-uptime">---</strong></p>
-                        <p><span>Total Uptime</span> <strong id="modal-total-uptime">---</strong></p>
-                        <p><span>Battery</span> <strong id="modal-battery">---</strong></p>
-                        <p><span>Touch Points</span> <strong id="modal-touch">---</strong></p>
-                        <p><span>Visibility</span> <strong id="modal-visibility">---</strong></p>
-                        <p><span>Time Drift</span> <strong id="modal-drift">---</strong></p>
-                        <p><span>Total Interactions</span> <strong id="modal-activity-total">---</strong></p>
-                        <p><span>Last Interaction</span> <strong id="modal-activity-last">---</strong></p>
-                        <p><span>Active (7d)</span> <strong id="modal-activity-7d">---</strong></p>
-                    </div>
-                </div>
-
-                <hr>
-
-                <div class="control-section">
-                    <h3><i data-lucide="zap"></i> Remote Actions</h3>
-                    <div class="btn-group">
-                        <button type="button" id="refresh-device-btn" class="btn-warning">
-                            <i data-lucide="refresh-cw"></i> Refresh Device
-                        </button>
-                        <button type="button" id="hard-reload-device-btn" class="btn-warning">
-                            <i data-lucide="rotate-ccw"></i> Hard Reload
-                        </button>
-                        <button type="button" id="delete-device-btn" class="btn-danger">
-                            <i data-lucide="trash-2"></i> Delete Device
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+                </section>
+            </section>
+        </main>
     </div>
 
     <!-- Firebase SDK (Compat) -->

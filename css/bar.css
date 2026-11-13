@@ -480,6 +480,11 @@ html, body {
     opacity: 0.55;
     white-space: nowrap;
     display: inline-block;
+    transition: opacity 0.15s ease;
+}
+
+.credit-item.device-id-copied {
+    opacity: 1 !important;
 }
 
 .credit-separator {
@@ -511,6 +516,13 @@ html, body {
     color: inherit;
     cursor: pointer;
     text-decoration: none !important;
+    transition: color 0.15s ease, opacity 0.15s ease;
+}
+
+.device-id-credit.device-id-copied {
+    color: #ffffff !important;
+    opacity: 1 !important;
+    text-shadow: none !important;
 }
 
 .device-id-credit:hover {
